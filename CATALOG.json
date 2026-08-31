@@ -59,6 +59,24 @@
       "product": "products/JANUS.RESEARCH_JOB.json"
     },
     {
+      "sku": "JANUS.INFERENCE",
+      "title": "JANUS Bounded Inference Run",
+      "class": "inference",
+      "status": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.INFERENCE.json"
+    },
+    {
+      "sku": "JANUS.COMPUTE",
+      "title": "JANUS Bounded Compute",
+      "class": "compute",
+      "status": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.COMPUTE.json"
+    },
+    {
       "sku": "HELIOS.PILOT",
       "title": "JANUS HELIOS Standard Pilot",
       "class": "technology_license",
