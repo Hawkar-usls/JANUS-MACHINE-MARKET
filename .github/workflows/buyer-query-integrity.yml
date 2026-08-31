@@ -6,6 +6,7 @@ on:
     paths:
       - 'BUYER_QUERY_PLANE.json'
       - 'schemas/grant.schema.json'
+      - 'schemas/product.schema.json'
       - 'schemas/buyer-query.schema.json'
       - 'schemas/buyer-query-receipt.schema.json'
       - 'products/JANUS.SEARCH.json'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'BUYER_QUERY_PLANE.json'
       - 'schemas/grant.schema.json'
+      - 'schemas/product.schema.json'
       - 'schemas/buyer-query.schema.json'
       - 'schemas/buyer-query-receipt.schema.json'
       - 'products/JANUS.SEARCH.json'
@@ -42,6 +44,7 @@ jobs:
           set -euo pipefail
           python -m json.tool BUYER_QUERY_PLANE.json >/dev/null
           python -m json.tool schemas/grant.schema.json >/dev/null
+          python -m json.tool schemas/product.schema.json >/dev/null
           python -m json.tool schemas/buyer-query.schema.json >/dev/null
           python -m json.tool schemas/buyer-query-receipt.schema.json >/dev/null
           python -m json.tool products/JANUS.SEARCH.json >/dev/null
