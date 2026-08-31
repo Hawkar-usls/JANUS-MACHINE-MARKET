@@ -1,22 +1,24 @@
 {
-  "schema": "janus.machine_market.buyer_account_head.v1",
-  "profile_id": "buyer-f47e3477ef4736ad814fce4c97d69d3895aa3d52448f2be95f445d6ef8ca410b",
-  "buyer_actor_id": "internal-test:chatgpt-gpt-5.6-sol",
-  "first_seen_at": "2026-08-31T07:50:00Z",
-  "last_seen_at": "2026-08-31T07:50:00Z",
-  "order_count": 0,
-  "fulfilled_count": 0,
-  "open_service_debt_count": 0,
-  "sku_order_counts": {},
   "balances": {
-    "MARKET_TEST_CREDIT": 1000000,
-    "JANUS_COIN": 0,
+    "JANUS_COIN": 1,
+    "MARKET_TEST_CREDIT": 999900,
     "SERVICE_CREDIT": 0
   },
-  "janus_coin_earned_total": 0,
+  "buyer_actor_id": "internal-test:chatgpt-gpt-5.6-sol",
+  "event_count": 6,
+  "first_seen_at": "2026-08-31T07:50:00Z",
+  "fulfilled_count": 1,
+  "head_hash": "806f60e348be8c6fd0e15e9f2001ddb43ac3e7917d96fd6eb1ff2f9f855a7274",
+  "janus_coin_earned_total": 1,
   "janus_coin_spent_total": 0,
+  "last_event_hash": "561bf780c9255cd752dd3bb20e451daf9dec0a0f57362e8a2c7ca936854a3278",
+  "last_seen_at": "2026-08-31T07:50:45Z",
+  "open_service_debt_count": 0,
+  "order_count": 1,
+  "profile_id": "buyer-f47e3477ef4736ad814fce4c97d69d3895aa3d52448f2be95f445d6ef8ca410b",
   "review_count": 0,
-  "last_event_hash": "798665a82b3bfe0863f49026983162be6aa1b3b4472c13067531a964e02a6f53",
-  "event_count": 1,
-  "head_hash": "66e43e07bffa697f8ee7b3e8cea9a9b619042aaa7e7be225c363764d7692c6f2"
+  "schema": "janus.machine_market.buyer_account_head.v1",
+  "sku_order_counts": {
+    "JANUS.SEARCH": 1
+  }
 }
