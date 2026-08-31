@@ -3,6 +3,10 @@
   "name": "JANUS MACHINE MARKET",
   "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
   "status": "DISCOVERY_READY",
+  "beacon": {
+    "href": "BEACON.json",
+    "media_type": "application/json"
+  },
   "catalog": {
     "href": "CATALOG.json",
     "media_type": "application/json"
@@ -11,6 +15,10 @@
     "href": "COMMERCIAL.json",
     "media_type": "application/json"
   },
+  "llm_index": {
+    "href": "llms.txt",
+    "media_type": "text/plain"
+  },
   "request_schema": "schemas/request.schema.json",
   "quote_schema": "schemas/quote.schema.json",
   "receipt_schema": "schemas/receipt.schema.json",
@@ -18,6 +26,28 @@
   "transaction_api": {
     "status": "NOT_ESTABLISHED",
     "endpoint": null
+  },
+  "discovery_protocols": {
+    "janus_native": {
+      "status": "ACTIVE_IN_REPOSITORY",
+      "pointer": ".well-known/agent-market.json"
+    },
+    "a2a": {
+      "status": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
+      "publication_record": "discovery/A2A_PUBLICATION.json"
+    },
+    "mcp": {
+      "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
+      "publication_record": "discovery/MCP_PUBLICATION.json"
+    },
+    "x402_bazaar": {
+      "status": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
+      "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"
+    },
+    "openapi": {
+      "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API",
+      "publication_record": "discovery/OPENAPI_PUBLICATION.json"
+    }
   },
   "x402": {
     "status": "PLANNED_NOT_ACTIVE"
