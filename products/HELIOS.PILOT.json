@@ -1,0 +1,32 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "HELIOS.PILOT",
+  "title": "JANUS HELIOS Standard Pilot",
+  "class": "technology_license",
+  "status": "DELEGATED_ARMED_DISABLED",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Discovery listing for the bounded JANUS HELIOS standard pilot. Canonical licensing, invoice, payment-observation and grant authority remain in Hawkar-usls/Janus-HELIOS.",
+  "canonical_repository": "https://github.com/Hawkar-usls/Janus-HELIOS",
+  "canonical_docs": "docs/PILOT_AUTHORITY.md",
+  "pilot": {
+    "term_days": 90,
+    "exclusive": false,
+    "transferable": false,
+    "sublicensable": false,
+    "real_money_gambling": false,
+    "public_production": false,
+    "automatic_commercial_rights": false
+  },
+  "payment": {
+    "status": "CANONICAL_HELIOS_POLICY_CONTROLS",
+    "market_does_not_issue_invoice": true,
+    "market_does_not_issue_grant": true
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false,
+    "market_listing_is_license": false
+  },
+  "license": "Canonical JANUS HELIOS terms only. Apache-2.0 on JANUS MACHINE MARKET does not license HELIOS Core."
+}
