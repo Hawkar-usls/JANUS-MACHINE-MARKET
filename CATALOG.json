@@ -1,0 +1,71 @@
+{
+  "schema": "janus.machine_market.catalog.v1",
+  "market": "JANUS MACHINE MARKET",
+  "generated": "2026-08-31",
+  "currency_policy": "Each product declares its own pricing and payment authority.",
+  "products": [
+    {
+      "sku": "JANUS.SEARCH",
+      "title": "JANUS Search",
+      "class": "search_api",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.SEARCH.json"
+    },
+    {
+      "sku": "JANUS.DATASET_SCOUT",
+      "title": "JANUS Dataset Scout",
+      "class": "data_discovery",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.DATASET_SCOUT.json"
+    },
+    {
+      "sku": "JANUS.EVIDENCE_PACK",
+      "title": "JANUS Evidence Pack",
+      "class": "research_synthesis",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.EVIDENCE_PACK.json"
+    },
+    {
+      "sku": "JANUS.ARCHIVE_SCAN",
+      "title": "JANUS Archive Scan",
+      "class": "archive_research",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.ARCHIVE_SCAN.json"
+    },
+    {
+      "sku": "JANUS.REPO_AUDIT",
+      "title": "JANUS Repository Audit",
+      "class": "repository_analysis",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.REPO_AUDIT.json"
+    },
+    {
+      "sku": "JANUS.RESEARCH_JOB",
+      "title": "JANUS Bounded Research Job",
+      "class": "research_job",
+      "status": "SPECIFICATION_READY",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.RESEARCH_JOB.json"
+    },
+    {
+      "sku": "HELIOS.PILOT",
+      "title": "JANUS HELIOS Standard Pilot",
+      "class": "technology_license",
+      "status": "DELEGATED_ARMED_DISABLED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/HELIOS.PILOT.json"
+    }
+  ]
+}
