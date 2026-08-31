@@ -2,75 +2,42 @@
   "schema": "janus.machine_market.agent_manifest.v1",
   "name": "JANUS MACHINE MARKET",
   "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
-  "status": "DISCOVERY_READY",
-  "beacon": {
-    "href": "BEACON.json",
-    "media_type": "application/json"
-  },
-  "catalog": {
-    "href": "CATALOG.json",
-    "media_type": "application/json"
-  },
-  "commercial": {
-    "href": "COMMERCIAL.json",
-    "media_type": "application/json"
-  },
-  "llm_index": {
-    "href": "llms.txt",
-    "media_type": "text/plain"
-  },
+  "status": "DISCOVERY_AND_BOUNDED_MACHINE_TASK_INGRESS_READY",
+  "beacon": {"href": "BEACON.json", "media_type": "application/json"},
+  "catalog": {"href": "CATALOG.json", "media_type": "application/json"},
+  "pricing": {"href": "PRICING.json", "media_type": "application/json", "status": "PREVIEW_RATECARD_NOT_LIVE"},
+  "machine_ingress": {"href": "MACHINE_INGRESS.json", "media_type": "application/json", "status": "LIVE_BOUNDED_GITHUB_API_INGRESS"},
+  "commercial": {"href": "COMMERCIAL.json", "media_type": "application/json"},
+  "llm_index": {"href": "llms.txt", "media_type": "text/plain"},
   "request_schema": "schemas/request.schema.json",
   "quote_schema": "schemas/quote.schema.json",
   "receipt_schema": "schemas/receipt.schema.json",
   "grant_schema": "schemas/grant.schema.json",
-  "transaction_api": {
-    "status": "NOT_ESTABLISHED",
-    "endpoint": null
+  "transaction_api": {"status": "NOT_ESTABLISHED", "endpoint": null},
+  "task_execution": {
+    "status": "LIVE_BOUNDED_R1_FOR_THREE_SKUS",
+    "live_skus": ["JANUS.SEARCH", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"],
+    "ingress": "MACHINE_INGRESS.json",
+    "result_transport": "GitHub issue comments + persistent Market receipts",
+    "html_required_for_machine_client": false
   },
   "discovery_protocols": {
-    "janus_native": {
-      "status": "ACTIVE_IN_REPOSITORY",
-      "pointer": ".well-known/agent-market.json"
-    },
-    "a2a": {
-      "status": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
-      "publication_record": "discovery/A2A_PUBLICATION.json"
-    },
-    "mcp": {
-      "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
-      "publication_record": "discovery/MCP_PUBLICATION.json"
-    },
-    "x402_bazaar": {
-      "status": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
-      "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"
-    },
-    "openapi": {
-      "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API",
-      "publication_record": "discovery/OPENAPI_PUBLICATION.json"
-    }
+    "janus_native": {"status": "ACTIVE_IN_REPOSITORY", "pointer": ".well-known/agent-market.json"},
+    "a2a": {"status": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME", "publication_record": "discovery/A2A_PUBLICATION.json"},
+    "mcp": {"status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER", "publication_record": "discovery/MCP_PUBLICATION.json"},
+    "x402_bazaar": {"status": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE", "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"},
+    "openapi": {"status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API", "publication_record": "discovery/OPENAPI_PUBLICATION.json"}
   },
-  "x402": {
-    "status": "PLANNED_NOT_ACTIVE"
-  },
-  "payment_routes": [
-    {
-      "id": "USDT_ETHEREUM_DECLARED_RECEIVER",
-      "status": "DECLARED_NOT_GENERAL_PURCHASE_AUTHORITY",
-      "chain": "Ethereum Mainnet",
-      "chain_id": 1,
-      "asset": "USDT",
-      "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-      "receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
-      "warning": "Do not send funds without an exact product-specific invoice or explicit active purchase route. Unsolicited payment grants nothing."
-    }
-  ],
-  "capabilities": [
-    "research_search",
-    "dataset_discovery",
-    "evidence_synthesis",
-    "archive_scan",
-    "repository_audit",
-    "bounded_research_job",
-    "technology_pilot_discovery"
-  ]
+  "x402": {"status": "PLANNED_NOT_ACTIVE"},
+  "payment_routes": [{
+    "id": "USDT_ETHEREUM_DECLARED_RECEIVER",
+    "status": "DECLARED_NOT_GENERAL_PURCHASE_AUTHORITY",
+    "chain": "Ethereum Mainnet",
+    "chain_id": 1,
+    "asset": "USDT",
+    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
+    "warning": "Do not send funds without an exact product-specific invoice or explicit active purchase route. Unsolicited payment grants nothing."
+  }],
+  "capabilities": ["research_search", "dataset_discovery", "evidence_synthesis", "archive_scan", "repository_audit", "bounded_research_job", "technology_pilot_discovery"]
 }
