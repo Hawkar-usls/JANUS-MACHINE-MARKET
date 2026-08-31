@@ -19,6 +19,17 @@
     "mode": "NOT_PUBLISHED",
     "quote_required": true
   },
+  "post_purchase_query": {
+    "status": "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
+    "plane": "BUYER_QUERY_PLANE.json",
+    "enabled_only_by_explicit_purchase_grant_entitlement": true,
+    "default_max_turns": 1,
+    "conversation_mode": "READ_ONLY_HRAIN_MEMORY_BOUND",
+    "query_is_command": false,
+    "response_is_world_truth": false,
+    "external_effect_authorized": false,
+    "exact_retry_must_not_create_second_billable_execution": true
+  },
   "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
   "authority": {
     "payment_is_authority": false,
