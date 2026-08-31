@@ -1,0 +1,37 @@
+{
+  "schema": "janus.machine_market.janus_coin_reward_policy.v1",
+  "status": "PURCHASE_BONUS_POLICY_READY",
+  "asset": "JANUS_COIN",
+  "purpose": "Grant complimentary GM Shop play credits after verified service delivery without reducing purchased quota or converting payment into execution authority.",
+  "production_purchase_reward": {
+    "rule": "floor(verified_paid_usdt_atomic / 1000)",
+    "usdt_atomic_per_coin": 1000,
+    "equivalent_usdt_per_coin_for_reward_calculation_only": "0.001000",
+    "minimum_reward_coins": 0,
+    "mint_trigger": "VERIFIED_BUYER_DELIVERY",
+    "mint_before_delivery": false
+  },
+  "test_mode": {
+    "market_test_credit_may_mint_test_coin": true,
+    "test_coin_is_production_reward": false,
+    "test_coin_cash_value": false
+  },
+  "spend": {
+    "gm_shop": "PREPARED_SEPARATE_CONTRACT",
+    "transferability_policy": "PERMITTED_IN_PRINCIPLE",
+    "peer_to_peer_transfer_protocol": "NOT_IMPLEMENTED",
+    "secondary_market": "NOT_IMPLEMENTED"
+  },
+  "authority": {
+    "janus_coin_is_payment_proof": false,
+    "janus_coin_is_command_authority": false,
+    "janus_coin_is_execution_authority": false,
+    "janus_coin_mint_changes_purchased_quota": false
+  },
+  "laws": [
+    "PURCHASED SERVICE IS DELIVERED IN FULL BEFORE BONUS MINT",
+    "BONUS COIN != CASH REFUND",
+    "BONUS COIN != PAYMENT PROOF",
+    "COIN TRANSFER IS NOT FORBIDDEN BUT IS NOT IMPLEMENTED"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "janus.machine_market.purchase_protocol.v1",
+  "status": "ARMED_PRICE_AND_MERGE_GATES_PENDING",
+  "service": "JANUS.SEARCH",
+  "purpose": "Machine-readable path from request intent to quote, exact payment verification, PURCHASE_GRANT, JANUS HOME execution and result reconciliation.",
+  "stages": [
+    "DISCOVER_PRODUCT",
+    "REQUEST_QUOTE",
+    "RECEIVE_BOUND_QUOTE",
+    "PAY_EXACT_QUOTED_USDT",
+    "SUBMIT_TX_HASH_WITH_ORIGINAL_REQUEST",
+    "VERIFY_EXACT_ERC20_TRANSFER",
+    "CLAIM_PAYMENT_REFERENCE_CREATE_ONLY",
+    "ISSUE_PURCHASE_GRANT",
+    "PUBLISH_PAID_MARKET_TO_HOME_PACKET",
+    "HOME_ACTIVATOR_ADMISSION",
+    "JANUS_READ_ONLY_SERVICE",
+    "RETURN_HOME",
+    "RECONCILE_RESULT_TO_PAYMENT_CLAIM",
+    "RETURN_RESULT_TO_BUYER"
+  ],
+  "quote": {
+    "trigger_title_prefix": "[JANUS QUOTE]",
+    "request_marker_begin": "<!-- JANUS_QUOTE_REQUEST_JSON",
+    "request_marker_end": "JANUS_QUOTE_REQUEST_JSON -->",
+    "request_schema": "janus.machine_market.quote_request.v1",
+    "quote_schema": "janus.machine_market.quote.v1",
+    "price_manifest": "pricing/JANUS.SEARCH.json",
+    "payment_route": "PAYMENT_ROUTE.json",
+    "quote_is_payment": false,
+    "quote_is_purchase_grant": false,
+    "quote_is_execution_authority": false
+  },
+  "payment_submission": {
+    "trigger_title_prefix": "[JANUS PAID SEARCH]",
+    "request_marker_begin": "<!-- JANUS_PAID_BUYER_QUERY_JSON",
+    "request_marker_end": "JANUS_PAID_BUYER_QUERY_JSON -->",
+    "request_schema": "janus.machine_market.paid_buyer_query_request.v1",
+    "required_fields": ["tx_hash", "message_text"],
+    "buyer_identity_source": "ACTUAL_GITHUB_ISSUE_AUTHOR",
+    "payment_reference_replay_policy": "CREATE_ONLY_ONE_PAYMENT_REFERENCE_TO_AT_MOST_ONE_PURCHASE_IDENTITY"
+  },
+  "payment_verification": {
+    "network": "Ethereum Mainnet",
+    "asset": "USDT/ERC20",
+    "minimum_confirmations": 12,
+    "rpc_quorum": 2,
+    "default_independent_providers": ["Cloudflare", "PublicNode"],
+    "environment_override_supported": true,
+    "exact_transfer_log_required": true
+  },
+  "service_path": [
+    "JANUS-MACHINE-MARKET",
+    "PHYSARIUS_CREDENTIALLESS_PULL",
+    "Hawkar-usls/Hawkar-usls HOME",
+    "ACTIVATOR",
+    "EXISTING_CONVERSATION_TISSUE",
+    "HRAiN",
+    "RETURN_HOME",
+    "PHYSARIUS_CREDENTIALLESS_MARKET_RECONCILE"
+  ],
+  "authority_laws": [
+    "PAYMENT != COMMAND",
+    "PAYMENT != EXECUTION_AUTHORITY",
+    "QUOTE != PAYMENT",
+    "QUOTE != PURCHASE_GRANT",
+    "PURCHASE_GRANT != EXECUTION_AUTHORITY",
+    "BUYER_QUERY != COMMAND",
+    "PHYSARIUS_DELIVERY != AUTHORITY",
+    "EXACT_RETRY != SECOND_COGNITION"
+  ],
+  "current_live_gates": {
+    "price_published": false,
+    "payment_route_live": false,
+    "rpc_quorum_configured": true,
+    "home_paid_nerve_merged": false,
+    "market_paid_lane_merged": false,
+    "real_paid_roundtrip_witness": false
+  }
+}

@@ -3,24 +3,40 @@
   "sku": "JANUS.SEARCH",
   "title": "JANUS Search",
   "class": "search_api",
-  "status": "SPECIFICATION_READY",
+  "status": "PAID_RUNTIME_ARMED_PRICE_AND_MERGE_GATES_PENDING",
   "machine_discovery": true,
   "machine_purchase": false,
-  "summary": "Bounded research/search job returning structured findings with source provenance and explicit uncertainty.",
+  "summary": "Bounded JANUS research/search conversation routed through the persistent HOME/Activator resident with HRAiN context, provenance and explicit authority limits.",
   "request": {
-    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
-    "input_fields": ["query", "source_scope", "freshness", "max_sources", "output_schema"]
+    "mode": "MACHINE_QUOTE_AND_PAID_REQUEST_PROTOCOL_PREPARED",
+    "purchase_protocol": "PURCHASE_PROTOCOL.json",
+    "quote_trigger": "[JANUS QUOTE]",
+    "paid_trigger": "[JANUS PAID SEARCH]",
+    "input_fields": ["message_text", "conversation_id", "turn_index"]
   },
   "delivery": {
     "format": "application/json",
-    "outputs": ["answer", "evidence", "provenance", "contradictions", "confidence", "receipt"]
+    "path": "Market -> HOME -> Activator -> existing conversation tissue -> HRAiN -> RETURN HOME -> Market",
+    "outputs": ["janus_response", "provenance", "resident_uuid", "model_digest", "file_fabric_digest", "execution_identity", "result_receipt"]
   },
   "pricing": {
     "mode": "NOT_PUBLISHED",
-    "quote_required": true
+    "manifest": "pricing/JANUS.SEARCH.json",
+    "quote_required": true,
+    "payment_route": "PAYMENT_ROUTE.json",
+    "send_payment_now": false
+  },
+  "paid_runtime": {
+    "status": "ARMED_DISABLED",
+    "payment_verification": "EXACT_USDT_ERC20_TRANSFER_WITH_RPC_QUORUM",
+    "minimum_confirmations": 12,
+    "payment_reference_replay": "CREATE_ONLY",
+    "home_paid_nerve_required": true,
+    "market_paid_lane_required": true,
+    "real_paid_roundtrip_witness": false
   },
   "post_purchase_query": {
-    "status": "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
+    "status": "ZERO_PRICE_HOME_ROUNDTRIP_PROVEN__PAID_BINDING_PREPARED",
     "plane": "BUYER_QUERY_PLANE.json",
     "enabled_only_by_explicit_purchase_grant_entitlement": true,
     "default_max_turns": 1,
@@ -32,7 +48,9 @@
   },
   "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
   "authority": {
-    "payment_is_authority": false,
+    "payment_is_command": false,
+    "payment_is_execution_authority": false,
+    "purchase_grant_is_execution_authority": false,
     "unsolicited_payment_grants_rights": false
   },
   "license": "Per-product/service terms; marketplace Apache-2.0 does not license underlying inputs, outputs, models, datasets or technology."

@@ -1,0 +1,63 @@
+{
+  "schema": "janus.machine_market.fulfillment_warranty.v1",
+  "status": "DURABLE_SERVICE_DEBT_CONTRACT_READY",
+  "purpose": "Ensure an admitted paid or test order remains an explicit Market obligation until a verified result is delivered or an explicit compensation/refund-resolution path is recorded.",
+  "state_machine": [
+    "ORDER_ADMITTED",
+    "SERVICE_DEBT_OPEN",
+    "OUTBOX_PUBLISHED",
+    "HOME_ACCEPTED",
+    "JANUS_RESULT_SEALED",
+    "MARKET_RECONCILED",
+    "BUYER_DELIVERED",
+    "SERVICE_DEBT_CLOSED"
+  ],
+  "recovery_states": [
+    "RETRY_PENDING",
+    "TRANSPORT_DEGRADED",
+    "HOME_TEMPORARILY_UNAVAILABLE",
+    "RESULT_READY_DELIVERY_PENDING",
+    "SLA_BREACH_DEBT_STILL_OPEN",
+    "COMPENSATION_REQUIRED",
+    "REFUND_REVIEW_REQUIRED"
+  ],
+  "semantics": {
+    "payment_acceptance_opens_service_debt": true,
+    "test_credit_order_opens_service_debt": true,
+    "timeout_closes_debt": false,
+    "workflow_failure_closes_debt": false,
+    "transport_submission_closes_debt": false,
+    "home_acceptance_closes_debt": false,
+    "only_verified_buyer_delivery_closes_normal_service_debt": true,
+    "silence_is_negative_evidence": false,
+    "exact_retry_is_new_order": false,
+    "result_delivery_semantics": "AT_LEAST_ONCE_TRANSPORT_WITH_EXACTLY_ONE_RESULT_IDENTITY",
+    "cognition_semantics": "AT_MOST_ONE_COGNITION_PER_QUERY_ID"
+  },
+  "reconciler": {
+    "interval_minutes": 5,
+    "scan_open_service_debts": true,
+    "replay_missing_outbox": true,
+    "recover_persisted_home_result": true,
+    "reconcile_unreturned_market_result": true,
+    "never_reexecute_when_exact_result_identity_exists": true,
+    "fresh_checkout_verify_after_state_write": true
+  },
+  "buyer_protection": {
+    "buyer_account_records_open_debt": true,
+    "buyer_can_query_order_state": true,
+    "open_debt_suppresses_price_raise": true,
+    "sla_breach_can_issue_service_credit": true,
+    "automatic_onchain_refund": false,
+    "reason_automatic_onchain_refund_is_disabled": "Outbound merchant fund movement requires a separately audited authority and wallet-control contract; it must not be silently coupled to service execution."
+  },
+  "laws": [
+    "PAYMENT ACCEPTED => SERVICE DEBT OPEN",
+    "SILENCE != DELIVERY",
+    "TIMEOUT != SERVICE FAILURE VERDICT",
+    "DELIVERY RETRY != SECOND COGNITION",
+    "RESULT IDENTITY IS CREATE ONLY",
+    "SERVICE DEBT IS NOT CLOSED BY INTERNAL SUCCESS ALONE",
+    "BUYER DELIVERY RECEIPT CLOSES NORMAL DEBT"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "janus.machine_market.account_plane.v1",
+  "status": "PERSISTENT_BUYER_MEMORY_PREPARED",
+  "account_source": "event_sourced_market_state",
+  "runtime": "runtime/buyer_accounts.py",
+  "policy": "BUYER_ACCOUNT_POLICY.json",
+  "human_cabinet": {
+    "phase_1": "READ_ONLY_NON_SECRET_PROFILE_VIEW",
+    "phase_2": "AUTHENTICATED_PRIVATE_VIEW_WHEN_BACKEND_AUTHORITY_EXISTS",
+    "must_show": [
+      "buyer identity",
+      "current service/quota entitlements",
+      "JANUS Coin balance",
+      "open orders/service debt",
+      "fulfilled orders",
+      "review eligibility",
+      "GM Shop eligibility"
+    ],
+    "must_not_show": [
+      "private keys",
+      "secret tokens",
+      "merchant wallet control",
+      "other buyers private data"
+    ]
+  },
+  "machine_account": {
+    "machine_readable": true,
+    "same_ledger_as_human_account": true,
+    "identity_can_be_agent_actor_id": true
+  },
+  "memory_semantics": {
+    "remember_purchase_history": true,
+    "remember_fulfillment_history": true,
+    "remember_balances": true,
+    "remember_open_service_debt": true,
+    "remember_reviews": true,
+    "remember_freeform_personal_data_by_default": false
+  }
+}

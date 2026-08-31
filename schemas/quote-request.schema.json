@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/quote-request.schema.json",
+  "title": "JANUS MACHINE MARKET Quote Request",
+  "type": "object",
+  "required": ["schema", "sku", "buyer_actor_id", "request_id", "input"],
+  "properties": {
+    "schema": {"const": "janus.machine_market.quote_request.v1"},
+    "sku": {"const": "JANUS.SEARCH"},
+    "buyer_actor_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "input": {
+      "type": "object",
+      "required": ["message_text"],
+      "properties": {
+        "message_text": {"type": "string", "minLength": 1, "maxLength": 8000},
+        "conversation_id": {"type": ["string", "null"]},
+        "turn_index": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "created_at": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

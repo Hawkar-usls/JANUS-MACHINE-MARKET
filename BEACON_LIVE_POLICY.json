@@ -1,0 +1,39 @@
+{
+  "schema": "janus.machine_market.live_beacon_policy.v1",
+  "status": "PREPARED",
+  "purpose": "Keep machine-agent discovery surfaces fresh with current availability, quote protocol, adaptive prices, underused-service promotion, reliability state and proof boundaries.",
+  "refresh_interval_hours": 6,
+  "publication": {
+    "branch": "janus/market-live",
+    "path": ".well-known/janus-market-live.json",
+    "source_repo": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "create_only_history": true
+  },
+  "required_live_fields": [
+    "generated_at",
+    "catalog_commit",
+    "available_skus",
+    "closed_skus",
+    "current_prices",
+    "market_benchmark_freshness",
+    "featured_underused_services",
+    "quote_protocol",
+    "payment_route_status",
+    "open_fulfillment_debt_count",
+    "service_health",
+    "last_successful_roundtrip",
+    "foreign_agent_witness_status"
+  ],
+  "ranking": {
+    "promote_underused_services": true,
+    "demote_already_high_demand_services": true,
+    "never_promote_closed_sku_as_purchasable": true,
+    "reliability_debt_suppresses_promotion": true
+  },
+  "truth_boundary": {
+    "beacon_discoverability_is_purchase_authority": false,
+    "beacon_availability_requires_current_service_gate": true,
+    "stale_beacon_must_mark_itself_stale": true,
+    "marketing_claim_requires_witness": true
+  }
+}

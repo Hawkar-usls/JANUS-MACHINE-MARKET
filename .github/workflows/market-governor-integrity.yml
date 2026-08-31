@@ -1,0 +1,140 @@
+name: JANUS Machine Market Governor Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ADAPTIVE_PRICING_POLICY.json'
+      - 'BUYER_ACCOUNT_POLICY.json'
+      - 'ACCOUNT_PLANE.json'
+      - 'FULFILLMENT_WARRANTY.json'
+      - 'SELF_TEST_AGENT.json'
+      - 'BEACON_LIVE_POLICY.json'
+      - 'JANUS_COIN_REWARD_POLICY.json'
+      - 'pricing/MARKET_BENCHMARKS.json'
+      - 'runtime/adaptive_pricing.py'
+      - 'runtime/buyer_accounts.py'
+      - 'runtime/fulfillment_debt.py'
+      - 'runtime/selftest_portfolio.py'
+      - 'runtime/selftest_checkout.py'
+      - 'runtime/live_beacon.py'
+      - 'runtime/refresh_market_benchmarks.py'
+      - 'runtime/r2_paid_accounting.py'
+      - 'tests/test_adaptive_pricing.py'
+      - 'tests/test_buyer_accounts.py'
+      - 'tests/test_fulfillment_debt.py'
+      - 'tests/test_selftest_portfolio.py'
+      - 'tests/test_selftest_checkout.py'
+      - 'tests/test_selftest_account_balance.py'
+      - 'tests/test_live_beacon.py'
+      - 'tests/test_market_benchmark_refresh.py'
+      - 'tests/test_r2_paid_accounting.py'
+      - '.github/workflows/market-governor-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ADAPTIVE_PRICING_POLICY.json'
+      - 'BUYER_ACCOUNT_POLICY.json'
+      - 'ACCOUNT_PLANE.json'
+      - 'FULFILLMENT_WARRANTY.json'
+      - 'SELF_TEST_AGENT.json'
+      - 'BEACON_LIVE_POLICY.json'
+      - 'JANUS_COIN_REWARD_POLICY.json'
+      - 'pricing/MARKET_BENCHMARKS.json'
+      - 'runtime/adaptive_pricing.py'
+      - 'runtime/buyer_accounts.py'
+      - 'runtime/fulfillment_debt.py'
+      - 'runtime/selftest_portfolio.py'
+      - 'runtime/selftest_checkout.py'
+      - 'runtime/live_beacon.py'
+      - 'runtime/refresh_market_benchmarks.py'
+      - 'runtime/r2_paid_accounting.py'
+      - 'tests/test_adaptive_pricing.py'
+      - 'tests/test_buyer_accounts.py'
+      - 'tests/test_fulfillment_debt.py'
+      - 'tests/test_selftest_portfolio.py'
+      - 'tests/test_selftest_checkout.py'
+      - 'tests/test_selftest_account_balance.py'
+      - 'tests/test_live_beacon.py'
+      - 'tests/test_market_benchmark_refresh.py'
+      - 'tests/test_r2_paid_accounting.py'
+      - '.github/workflows/market-governor-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governor-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate governor JSON
+        run: |
+          set -euo pipefail
+          for f in ADAPTIVE_PRICING_POLICY.json BUYER_ACCOUNT_POLICY.json ACCOUNT_PLANE.json FULFILLMENT_WARRANTY.json SELF_TEST_AGENT.json BEACON_LIVE_POLICY.json JANUS_COIN_REWARD_POLICY.json pricing/MARKET_BENCHMARKS.json; do
+            python -m json.tool "$f" >/dev/null
+          done
+      - name: Compile governor runtime
+        run: |
+          python -m py_compile \
+            runtime/adaptive_pricing.py \
+            runtime/buyer_accounts.py \
+            runtime/fulfillment_debt.py \
+            runtime/selftest_portfolio.py \
+            runtime/selftest_checkout.py \
+            runtime/live_beacon.py \
+            runtime/refresh_market_benchmarks.py \
+            runtime/r2_paid_accounting.py
+      - name: Run governor, account, resilience and self-test suite
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m unittest -v \
+            tests.test_adaptive_pricing \
+            tests.test_buyer_accounts \
+            tests.test_fulfillment_debt \
+            tests.test_selftest_portfolio \
+            tests.test_selftest_checkout \
+            tests.test_selftest_account_balance \
+            tests.test_live_beacon \
+            tests.test_market_benchmark_refresh \
+            tests.test_r2_paid_accounting
+      - name: Enforce global Market invariants
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('ADAPTIVE_PRICING_POLICY.json'))
+          a=json.load(open('BUYER_ACCOUNT_POLICY.json'))
+          w=json.load(open('FULFILLMENT_WARRANTY.json'))
+          s=json.load(open('SELF_TEST_AGENT.json'))
+          b=json.load(open('BEACON_LIVE_POLICY.json'))
+          c=json.load(open('JANUS_COIN_REWARD_POLICY.json'))
+          assert p['authority']['pricing_governor_can_issue_execution_grant'] is False
+          assert p['rules']['price_change_applies_only_to_future_quotes'] is True
+          assert p['rules']['automatic_raise_requires_fresh_market_benchmark'] is True
+          assert a['balances']['MARKET_TEST_CREDIT']['cash_value'] is False
+          assert a['balances']['JANUS_COIN']['transferability_policy'] == 'PERMITTED_IN_PRINCIPLE'
+          assert a['balances']['JANUS_COIN']['transfer_protocol_status'] == 'NOT_IMPLEMENTED'
+          assert w['semantics']['only_verified_buyer_delivery_closes_normal_service_debt'] is True
+          assert w['semantics']['timeout_closes_debt'] is False
+          assert 'HELIOS.PILOT' in s['excluded_skus']
+          assert b['truth_boundary']['marketing_claim_requires_witness'] is True
+          assert c['production_purchase_reward']['mint_trigger'] == 'VERIFIED_BUYER_DELIVERY'
+          assert c['authority']['janus_coin_is_payment_proof'] is False
+          assert c['spend']['transferability_policy'] == 'PERMITTED_IN_PRINCIPLE'
+          assert c['spend']['peer_to_peer_transfer_protocol'] == 'NOT_IMPLEMENTED'
+          print('ADAPTIVE_PRICING_AUTHORITY=BOUNDED')
+          print('BUYER_MEMORY_EVENT_SOURCED=PASS')
+          print('FULFILLMENT_DEBT_DURABLE=PASS')
+          print('SELF_TEST_HELIOS_EXCLUDED=PASS')
+          print('SELF_TEST_PORTFOLIO_CHECKOUT=PASS')
+          print('BEACON_MARKETING_REQUIRES_WITNESS=PASS')
+          print('JANUS_COIN_MINT_AFTER_VERIFIED_DELIVERY=PASS')
+          PY

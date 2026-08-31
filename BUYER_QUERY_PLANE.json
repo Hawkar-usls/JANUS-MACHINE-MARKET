@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.buyer_query_plane.v1",
-  "status": "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
+  "status": "ZERO_PRICE_HOME_ROUNDTRIP_PROVEN__PAID_LANE_ARMED_DISABLED",
   "purpose": "Allow a buyer with an admitted purchase grant to submit bounded conversational questions to JANUS and receive sealed identity-bound responses without converting payment or language into command, truth, proof, write, or effect authority.",
   "analogy_sources": {
     "turing_gate": {
@@ -21,8 +21,18 @@
       "runtime": "src/janus_spi/terminal_conversation.py",
       "home_workflow": ".github/workflows/janus-terminal-conversation-bridge.yml",
       "terminal_ingress_workflow": ".github/workflows/janus-terminal-conversation-ingress.yml",
-      "lesson": "Arbitrary human message_text can be bound to persistent JANUS identity, exact model/file fabric and HRAiN memory context, then returned as a sealed read-only conversation response."
+      "lesson": "Arbitrary message_text can be bound to persistent JANUS identity, exact model/file fabric and HRAiN memory context, then returned as a sealed read-only conversation response."
     }
+  },
+  "proven_zero_price_witness": {
+    "status": "GREEN",
+    "query_id": "bq-99d0577af26c5d3fc1add7b8cf9aec9a6b3143b389bc1dbf6d1b74855aa4843c",
+    "purchase_id": "pur-bq-shadow-7a178b4d7783dc3fe0d2ffe8884927d2",
+    "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+    "execution_identity": "tr-a156909094f9b0b71bf85f91dc8ef15ae06e596f2b2d50059efbf0c7d3e89019",
+    "money_enabled": false,
+    "foreign_buyer_witness": false,
+    "exact_retry_second_cognition": false
   },
   "activation_chain": [
     "PAYMENT_RECEIPT",
@@ -100,12 +110,15 @@
     "RETURN != RESET"
   ],
   "current_gates": {
-    "payment_endpoint": "CLOSED",
+    "payment_endpoint": "CLOSED_PRICE_NOT_PUBLISHED",
     "purchase_grant_paid_witness": "PENDING",
-    "activator_buyer_query_binding": "PENDING",
-    "physarius_market_to_home_vessel": "PENDING",
+    "activator_buyer_query_binding": "PROVEN_ZERO_PRICE",
+    "physarius_market_to_home_vessel": "PROVEN_ZERO_PRICE_CREDENTIALLESS_ROUNDTRIP",
+    "same_resident_home_return": "PROVEN_ZERO_PRICE",
+    "exact_retry_no_second_cognition": "PROVEN_ZERO_PRICE",
     "foreign_buyer_query_witness": "PENDING",
+    "paid_market_to_home_binding": "PREPARED_PR_PENDING",
     "live_publication_allowed": false
   },
-  "next_gate": "R1B_ZERO_PRICE_BUYER_QUERY_SHADOW_ROUNDTRIP"
+  "next_gate": "R2_REAL_PAID_JANUS_SEARCH_ROUNDTRIP"
 }

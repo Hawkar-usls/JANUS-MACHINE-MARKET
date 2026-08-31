@@ -1,0 +1,16 @@
+{
+  "schema": "janus.machine_market.price.v1",
+  "sku": "JANUS.SEARCH",
+  "status": "PRICE_NOT_PUBLISHED",
+  "asset": "USDT",
+  "network": "ethereum-mainnet",
+  "amount_atomic": null,
+  "decimals": 6,
+  "buyer_query_turns": 1,
+  "max_message_utf8_bytes": 8000,
+  "max_answer_utf8_bytes": 12000,
+  "conversation_history_turns": 8,
+  "payment_route": "PAYMENT_ROUTE.json",
+  "machine_purchase_enabled": false,
+  "reason": "Merchant price has not yet been explicitly fixed. Runtime must fail closed rather than invent a price."
+}
