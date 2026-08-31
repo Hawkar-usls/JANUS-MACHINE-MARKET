@@ -1,0 +1,151 @@
+name: JANUS Machine Market Repository Audit Shadow Outbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'schemas/repo-audit-request.schema.json'
+      - 'schemas/market-home-repo-audit-packet.schema.json'
+      - 'runtime/r2_repo_audit_shadow.py'
+      - 'tests/test_r2_repo_audit_shadow.py'
+      - '.github/workflows/r2-repo-audit-shadow-outbox.yml'
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate and test repository audit packet
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m json.tool schemas/repo-audit-request.schema.json >/dev/null
+          python -m json.tool schemas/market-home-repo-audit-packet.schema.json >/dev/null
+          python -m py_compile runtime/r2_repo_audit_shadow.py tests/test_r2_repo_audit_shadow.py
+          python -m unittest -v tests.test_r2_repo_audit_shadow
+
+  publish:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS REPO AUDIT SHADOW]') &&
+      github.event.issue.user.login == github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-market-home-outbox-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Materialize owner-shadow repository audit request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/repo-audit-live
+          python - <<'PY'
+          import json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
+          issue=payload['issue']; login=issue['user']['login']; owner=payload['repository']['owner']['login']
+          if login != owner: raise SystemExit('REPO_AUDIT_SHADOW_OWNER_ONLY')
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_REPO_AUDIT_SHADOW_JSON'; end='JANUS_REPO_AUDIT_SHADOW_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s: raise SystemExit('REPO_AUDIT_JSON_MARKER_MISSING')
+          user=json.loads(body[s+len(begin):e].strip())
+          req={
+            'buyer_actor_id':f'github:{login}',
+            'repository':user.get('repository'),
+            'ref':user.get('ref','main'),
+            'max_tree_entries':int(user.get('max_tree_entries',5000)),
+            'max_blob_files':int(user.get('max_blob_files',24)),
+            'max_total_blob_bytes':int(user.get('max_total_blob_bytes',750000)),
+            'created_at':str(issue['created_at']),
+            'source_issue_id':int(issue['id']),
+            'source_issue_number':int(issue['number']),
+          }
+          pathlib.Path('runtime/repo-audit-live/request.json').write_text(json.dumps(req,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+      - name: Build deterministic create-only packet
+        run: |
+          python runtime/r2_repo_audit_shadow.py --request runtime/repo-audit-live/request.json --output runtime/repo-audit-live/packet.json > runtime/repo-audit-live/summary.txt
+      - name: Publish packet to public HOME outbox
+        id: outbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market Repo Audit Outbox"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          wt="$RUNNER_TEMP/market-home-outbox-repo-audit"
+          rm -rf "$wt"
+          git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+          git worktree add -B janus-market-home-outbox-repo-audit "$wt" origin/janus/market-home-outbox
+          rid="$(python -c "import json; print(json.load(open('runtime/repo-audit-live/packet.json'))['service_request']['request_id'])")"
+          target="$wt/.janus/market-home-outbox/${rid}.repo-audit.packet.json"
+          mkdir -p "$(dirname "$target")"
+          if [ -f "$target" ]; then
+            cmp -s runtime/repo-audit-live/packet.json "$target" || { echo 'REPO_AUDIT_OUTBOX_CREATE_ONLY_CONFLICT' >&2; exit 2; }
+            echo 'REPO_AUDIT_OUTBOX_EXACT_RETRY_IDENTICAL=TRUE'
+          else
+            cp runtime/repo-audit-live/packet.json "$target"
+          fi
+          cd "$wt"; git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'REPO_AUDIT_OUTBOX_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "Repo audit shadow ${rid}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'REPO_AUDIT_OUTBOX_COMMIT=PASS'
+          fi
+          echo "request_id=$rid" >> "$GITHUB_OUTPUT"
+          echo "outbox_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+      - name: Return packet binding to issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/comment.md"
+          import json
+          p=json.load(open('runtime/repo-audit-live/packet.json'))
+          print('JANUS.REPO_AUDIT zero-price packet published for credentialless HOME pull.\n')
+          print(f"- request_id: `{p['service_request']['request_id']}`")
+          print(f"- purchase_id: `{p['purchase_grant']['purchase_id']}`")
+          print(f"- repository: `{p['service_request']['repository']}`")
+          print(f"- ref: `{p['service_request']['ref']}`")
+          print(f"- packet_hash: `{p['packet_hash']}`")
+          print('- money_enabled: `false`')
+          print('- execute_repository_code: `false`')
+          print('- repository_write_authorized: `false`')
+          print('\nHOME/Activator must admit the request before the repository audit exists.')
+          print(f"\n<!-- REPO_AUDIT_PACKET_ID:{p['packet_id']} -->")
+          PY
+          issue='${{ github.event.issue.number }}'
+          marker="REPO_AUDIT_PACKET_ID:$(python -c "import json; print(json.load(open('runtime/repo-audit-live/packet.json'))['packet_id'])")"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -Fq "$marker"; then
+            echo 'REPO_AUDIT_PACKET_COMMENT_ALREADY_PRESENT=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/comment.md")" >/dev/null
+          fi
