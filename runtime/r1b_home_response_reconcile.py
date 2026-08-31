@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Verify and persist HOME -> JANUS MACHINE MARKET buyer-query responses.
+
+R1D GitHub Pages tasks use the existing buyer-query nerve; this verifier remains
+the authoritative return gate. A browser/UI cannot manufacture delivery: the
+HOME response must bind the persistent resident, HRAiN context, Market packet,
+credentialless pull receipt, and zero-authority ceiling before Market state or
+the source issue is updated.
+"""
 from __future__ import annotations
 
 import argparse
