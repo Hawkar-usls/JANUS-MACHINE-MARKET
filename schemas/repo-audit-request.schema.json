@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/repo-audit-request.schema.json",
+  "title": "JANUS Repository Audit Request",
+  "type": "object",
+  "required": ["schema", "request_id", "sku", "buyer_actor_id", "repository", "ref", "audit_scope", "bounds", "read_only", "execute_repository_code", "command_authority_granted", "external_effect_authorized", "request_hash"],
+  "properties": {
+    "schema": {"const": "janus.market_service.repo_audit_request.v1"},
+    "request_id": {"type": "string", "minLength": 1},
+    "sku": {"const": "JANUS.REPO_AUDIT"},
+    "buyer_actor_id": {"type": "string", "minLength": 1},
+    "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+    "ref": {"type": "string", "minLength": 1, "maxLength": 200},
+    "audit_scope": {"const": "BOUNDED_STATIC_REPOSITORY_SURFACE"},
+    "bounds": {
+      "type": "object",
+      "required": ["max_tree_entries", "max_blob_files", "max_total_blob_bytes"],
+      "properties": {
+        "max_tree_entries": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "max_blob_files": {"type": "integer", "minimum": 1, "maximum": 40},
+        "max_total_blob_bytes": {"type": "integer", "minimum": 1, "maximum": 2000000}
+      },
+      "additionalProperties": false
+    },
+    "read_only": {"const": true},
+    "execute_repository_code": {"const": false},
+    "command_authority_granted": {"const": false},
+    "external_effect_authorized": {"const": false},
+    "request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}
