@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/product.schema.json",
+  "title": "JANUS MACHINE MARKET Product Contract",
+  "type": "object",
+  "required": ["schema", "sku", "title", "class", "status", "machine_discovery", "machine_purchase", "summary"],
+  "properties": {
+    "schema": {"const": "janus.machine_market.product.v1"},
+    "sku": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "class": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "minLength": 1},
+    "machine_discovery": {"type": "boolean"},
+    "machine_purchase": {"type": "boolean"},
+    "summary": {"type": "string", "minLength": 1},
+    "request": {"type": ["object", "null"]},
+    "delivery": {"type": ["object", "null"]},
+    "pricing": {"type": ["object", "null"]},
+    "authority": {"type": ["object", "null"]},
+    "license": {"type": ["string", "null"]},
+    "canonical_repository": {"type": ["string", "null"]}
+  },
+  "additionalProperties": true
+}
