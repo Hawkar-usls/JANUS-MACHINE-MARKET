@@ -3,28 +3,68 @@
   "sku": "JANUS.DATASET_SCOUT",
   "title": "JANUS Dataset Scout",
   "class": "data_discovery",
-  "status": "SPECIFICATION_READY",
+  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
   "machine_discovery": true,
   "machine_purchase": false,
-  "summary": "Finds public datasets matching a machine-readable brief and returns provenance, access paths and license observations without assuming redistribution rights.",
+  "summary": "Finds public datasets matching a machine-readable brief and returns provenance, access paths and license observations through a bounded HOME/Activator metadata-only service without assuming payload, redistribution or license authority.",
   "request": {
-    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
-    "input_fields": ["query", "domain", "date_range", "license_preferences", "format_preferences"]
+    "mode": "LIVE_ZERO_PRICE_OWNER_SHADOW_HOME_ADMISSION_REQUIRED",
+    "input_fields": ["query", "domain", "date_range", "license_preferences", "format_preferences"],
+    "read_only": true,
+    "metadata_only": true,
+    "dataset_payload_download_authorized": false,
+    "redistribution_authority_granted": false
   },
   "delivery": {
     "format": "application/json",
-    "outputs": ["dataset_manifest", "source_urls", "license_observations", "deduplication_notes", "provenance", "receipt"]
+    "outputs": ["dataset_manifest", "source_urls", "license_observations", "deduplication_notes", "provenance", "receipt"],
+    "verified_result_receipt_required": true
   },
   "pricing": {
-    "mode": "NOT_PUBLISHED",
-    "quote_required": true
+    "mode": "NOT_PUBLISHED_FOR_PRODUCTION",
+    "quote_required": true,
+    "owner_shadow_test_price": 0,
+    "production_payment_witness": false
   },
   "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
   "authority": {
     "payment_is_authority": false,
     "unsolicited_payment_grants_rights": false,
-    "discovery_is_redistribution_authority": false
+    "discovery_is_redistribution_authority": false,
+    "dataset_payload_download_authorized": false,
+    "redistribution_authority_granted": false,
+    "license_authority_granted": false,
+    "command_authority_granted": false,
+    "external_effect_authorized": false
   },
-  "notes": ["Discovery is not redistribution authority. Source licenses remain controlling."],
+  "live_witness": {
+    "mode": "OWNER_SHADOW_PROXY",
+    "source_issue": 19,
+    "request_id": "ds-shadow-399bd005e79ac7c5d86e47a0604c9b967a675bbc09ba8f63",
+    "purchase_id": "pur-ds-shadow-e3f4d51e9f1873b7b67ad9eabfbff21a",
+    "packet_hash": "4d227d580d917c9dba8833725e30d8e92493097078a28be296ce76dd004a1792",
+    "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+    "query": "climate",
+    "domain": "earth science",
+    "candidate_count": 5,
+    "catalogs_succeeded": ["ZENODO", "HUGGINGFACE"],
+    "dataset_scout_result_hash": "475636565287238bfb1d9e8f577c397204c114dd73f93269c24ea4fc03f069b8",
+    "home_response_hash": "17c8f0264c9bfc41dd12f4897c1406829888e1ab42d08bb347dcac07d7089a0f",
+    "market_delivery_receipt_hash": "bd0277cc4178d9209b5df7acce95a22688afff7e338f055b3fff330a7d6b25f7",
+    "verified_buyer_delivery": true,
+    "service_debt_closed": true,
+    "dataset_payload_downloaded": false,
+    "redistribution_authority_granted": false,
+    "license_authority_granted": false,
+    "production_money_used": false,
+    "foreign_agent_witness": false,
+    "scheduler_witness": "SUBSTITUTE_ONLY_CRON_NOT_PROVED"
+  },
+  "notes": [
+    "Dataset metadata is not dataset payload.",
+    "Discovery is not redistribution authority.",
+    "Observed license metadata is not an authoritative legal determination; source licenses remain controlling.",
+    "A successful catalog metadata read with zero candidates is not negative evidence."
+  ],
   "license": "Per-product/service terms; third-party dataset licenses remain controlling."
 }

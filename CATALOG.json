@@ -17,7 +17,7 @@
       "sku": "JANUS.DATASET_SCOUT",
       "title": "JANUS Dataset Scout",
       "class": "data_discovery",
-      "status": "SPECIFICATION_READY",
+      "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.DATASET_SCOUT.json"
