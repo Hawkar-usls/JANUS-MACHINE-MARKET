@@ -172,13 +172,19 @@ def append_event(*, ledger_path: Path, event: dict[str, Any]) -> dict[str, Any]:
         for line in ledger_path.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 existing.append(json.loads(line))
+
+    # Create-only retry law: an exact repeat of an already committed event is a
+    # successful no-op even though the ledger head has advanced since that
+    # event was originally constructed. A same event_id with different bytes
+    # remains a hard conflict.
+    for row in existing:
+        if row.get("event_id") == event.get("event_id"):
+            require(row == event, "ACCOUNT_EVENT_ID_CREATE_ONLY_CONFLICT")
+            return project(existing)
+
     previous = existing[-1]["event_hash"] if existing else None
     require(event.get("previous_event_hash") == previous, "ACCOUNT_APPEND_PREVIOUS_HASH_MISMATCH")
     require(verify_event(event, expected_previous=previous), "ACCOUNT_APPEND_EVENT_INVALID")
-    if any(row.get("event_id") == event.get("event_id") for row in existing):
-        same = next(row for row in existing if row.get("event_id") == event.get("event_id"))
-        require(same == event, "ACCOUNT_EVENT_ID_CREATE_ONLY_CONFLICT")
-        return project(existing)
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
     with ledger_path.open("a", encoding="utf-8") as f:
         f.write(canonical(event) + "\n")
