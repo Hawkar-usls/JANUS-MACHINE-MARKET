@@ -3,27 +3,58 @@
   "sku": "JANUS.REPO_AUDIT",
   "title": "JANUS Repository Audit",
   "class": "repository_analysis",
-  "status": "SPECIFICATION_READY",
+  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
   "machine_discovery": true,
   "machine_purchase": false,
-  "summary": "Bounded audit of a public repository covering architecture, claims, dependency surfaces, reproducibility signals, licensing observations and unresolved risks.",
+  "summary": "Bounded read-only audit of a public repository through JANUS HOME/Activator, covering architecture, claims, dependency surfaces, reproducibility signals, licensing observations and unresolved risks without executing repository code.",
   "request": {
-    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
-    "input_fields": ["repository", "audit_scope", "claim_depth", "dependency_depth", "output_schema"]
+    "mode": "LIVE_ZERO_PRICE_OWNER_SHADOW_HOME_ADMISSION_REQUIRED",
+    "input_fields": ["repository", "ref", "max_tree_entries", "max_blob_files", "max_total_blob_bytes"],
+    "audit_scope": "BOUNDED_STATIC_REPOSITORY_SURFACE",
+    "read_only": true,
+    "execute_repository_code": false
   },
   "delivery": {
     "format": "application/json",
-    "outputs": ["architecture_map", "claim_audit", "dependency_observations", "risk_register", "unknowns", "provenance", "receipt"]
+    "outputs": ["architecture_map", "claim_audit", "dependency_observations", "risk_register", "unknowns", "provenance", "receipt"],
+    "verified_result_receipt_required": true
   },
   "pricing": {
-    "mode": "NOT_PUBLISHED",
-    "quote_required": true
+    "mode": "NOT_PUBLISHED_FOR_PRODUCTION",
+    "quote_required": true,
+    "owner_shadow_test_price": 0,
+    "production_payment_witness": false
   },
   "authority": {
     "payment_is_authority": false,
     "unsolicited_payment_grants_rights": false,
+    "command_authority_granted": false,
+    "external_effect_authorized": false,
+    "repository_write_authorized": false,
+    "repository_code_execution_authorized": false,
     "audit_is_security_certification": false,
     "audit_is_legal_opinion": false
+  },
+  "live_witness": {
+    "mode": "OWNER_SHADOW_PROXY",
+    "source_issue": 15,
+    "request_id": "ra-shadow-c077b2c3052f4d63d4706b055fb3d3529e49d77c94b03ef7",
+    "purchase_id": "pur-ra-shadow-2c2c1a35f8de9bb8485d7df4d9a07902",
+    "packet_hash": "94831d09df4169909ab5ba467408d7b66adc2bc799167cac3b959f8c15ffd014",
+    "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+    "target_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "target_ref": "main",
+    "resolved_commit_sha": "e5b592c7fa57abad677176650dc7701d7ca3f28a",
+    "tree_sha": "ee01c6d7a82b16a2bf488e599b7be49472e5af5c",
+    "audit_result_hash": "934d8163775fea7b4e48bc820ac4115f14ce4b1eba2eaeaf4ded8ecb718d9153",
+    "home_response_hash": "4b17120f03d7078f86b7628cf33819ccb66cffb1bfb4545217a4ce3cfe57125d",
+    "market_delivery_receipt_hash": "5b6a6a161fda0262904a1c3ea9961c9b488333fe758bc7d1d2d45ca557c09ba2",
+    "verified_buyer_delivery": true,
+    "service_debt_closed": true,
+    "repository_code_executed": false,
+    "production_money_used": false,
+    "foreign_agent_witness": false,
+    "scheduler_witness": "SUBSTITUTE_ONLY_CRON_NOT_PROVED"
   },
   "license": "Per-product/service terms; audited repository licenses and third-party rights remain controlling."
 }
