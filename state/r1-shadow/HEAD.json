@@ -1,0 +1,9 @@
+{
+  "execution_id": "exe-shadow-00f9ca5eb478e4bd7b4979b10407ad78",
+  "foreign_agent_witness": false,
+  "purchase_id": "pur-shadow-6248e004b4e57008bbdcf498695aa39b",
+  "request_hash": "55a7ca3d3c6e507def4cf733e5b065c8c22feec12d781ea74751550538e45356",
+  "request_origin": "SELF_OWNER_ISSUE_SHADOW",
+  "result_sha256": "8ef1efae99527f5141a01c77fabfa08993ca36e80e8fea6bd307a00516de55b0",
+  "schema": "janus.machine_market.r1_persistent_witness.v1"
+}

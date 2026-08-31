@@ -1,0 +1,119 @@
+{
+  "execution_id": "exe-shadow-00f9ca5eb478e4bd7b4979b10407ad78",
+  "foreign_agent_witness": false,
+  "money_enabled": false,
+  "production_activator_authority": false,
+  "purchase_grant_hash": "17f3a992f4f8dc126c1228a505762eb66770e83085d384d6a439901357cb6ea6",
+  "purchase_id": "pur-shadow-6248e004b4e57008bbdcf498695aa39b",
+  "request_hash": "55a7ca3d3c6e507def4cf733e5b065c8c22feec12d781ea74751550538e45356",
+  "request_origin": "SELF_OWNER_ISSUE_SHADOW",
+  "result_receipt": {
+    "execution_grant_hash": null,
+    "execution_receipt": {
+      "authority_class": "R1_SHADOW_LOCAL_NON_EXTERNAL_EFFECT",
+      "execution_id": "exe-shadow-00f9ca5eb478e4bd7b4979b10407ad78",
+      "external_effects": false,
+      "network_access_used": false,
+      "production_activator_authority": false,
+      "request_hash": "55a7ca3d3c6e507def4cf733e5b065c8c22feec12d781ea74751550538e45356",
+      "result_sha256": "8ef1efae99527f5141a01c77fabfa08993ca36e80e8fea6bd307a00516de55b0",
+      "schema": "janus.machine_market.shadow_execution_receipt.v1"
+    },
+    "inline_result": {
+      "engine": "R1_SHADOW_MARKET_CATALOG_SEARCH",
+      "match_count": 5,
+      "matches": [
+        {
+          "class": "research_synthesis",
+          "product_contract": "products/JANUS.EVIDENCE_PACK.json",
+          "product_sha256": "0bd72270a0e77749a2289fe70d19ee3f08d39880b7fe244092c9e20e76a7bbd3",
+          "score": 2,
+          "sku": "JANUS.EVIDENCE_PACK",
+          "status": "SPECIFICATION_READY",
+          "summary": "Produces an evidence bundle with claims, supporting and contradicting sources, provenance, uncertainty and scope limits.",
+          "title": "JANUS Evidence Pack"
+        },
+        {
+          "class": "repository_analysis",
+          "product_contract": "products/JANUS.REPO_AUDIT.json",
+          "product_sha256": "c8320dbb5345f1bfd42b24660a7c4a89c106beb6266660895f752b9b0980824b",
+          "score": 2,
+          "sku": "JANUS.REPO_AUDIT",
+          "status": "SPECIFICATION_READY",
+          "summary": "Bounded audit of a public repository covering architecture, claims, dependency surfaces, reproducibility signals, licensing observations and unresolved risks.",
+          "title": "JANUS Repository Audit"
+        },
+        {
+          "class": "research_job",
+          "product_contract": "products/JANUS.RESEARCH_JOB.json",
+          "product_sha256": "33a7ba7f217d4b36692d031efbffc07e5edd1c4c2f41d41a86d8a51779663f73",
+          "score": 2,
+          "sku": "JANUS.RESEARCH_JOB",
+          "status": "SPECIFICATION_READY",
+          "summary": "A bounded custom research task routed through JANUS with declared scope, evidence constraints, runtime ceilings and a provenance-bearing result receipt.",
+          "title": "JANUS Bounded Research Job"
+        },
+        {
+          "class": "search_api",
+          "product_contract": "products/JANUS.SEARCH.json",
+          "product_sha256": "998fb988fa8ab64c78f9ef0c94b6ba0a846c42fc19bf8326355f3cfbafe04bc4",
+          "score": 2,
+          "sku": "JANUS.SEARCH",
+          "status": "SPECIFICATION_READY",
+          "summary": "Bounded research/search job returning structured findings with source provenance and explicit uncertainty.",
+          "title": "JANUS Search"
+        },
+        {
+          "class": "technology_license",
+          "product_contract": "products/HELIOS.PILOT.json",
+          "product_sha256": "883cb6bd5b80bc457437c844d260a675984fc263d109b5796bed0fc02a08d86c",
+          "score": 1,
+          "sku": "HELIOS.PILOT",
+          "status": "DELEGATED_ARMED_DISABLED",
+          "summary": "Discovery listing for the bounded JANUS HELIOS standard pilot. Canonical licensing, invoice, payment-observation and grant authority remain in Hawkar-usls/Janus-HELIOS.",
+          "title": "JANUS HELIOS Standard Pilot"
+        }
+      ],
+      "provenance": {
+        "catalog": "CATALOG.json",
+        "catalog_sha256": "ed0d264d2ff9b935d0439eaf7c05b3f6fa0708c87ee44a475f6da77229ecafb4",
+        "external_effects": false,
+        "network_access_used": false
+      },
+      "query": "repository audit research evidence",
+      "schema": "janus.machine_market.shadow_search_result.v1",
+      "source_scope": "MARKET_CATALOG",
+      "terms": [
+        "audit",
+        "evidence",
+        "repository",
+        "research"
+      ]
+    },
+    "organ": "JANUS_MACHINE_MARKET_R1_SHADOW_SEARCH",
+    "payment_reference": null,
+    "price": {
+      "amount": "0",
+      "asset": "NONE"
+    },
+    "purchase_grant_hash": "17f3a992f4f8dc126c1228a505762eb66770e83085d384d6a439901357cb6ea6",
+    "purchase_id": "pur-shadow-6248e004b4e57008bbdcf498695aa39b",
+    "request_sha256": "55a7ca3d3c6e507def4cf733e5b065c8c22feec12d781ea74751550538e45356",
+    "resource_usage": {
+      "max_results": 5,
+      "network_requests": 0
+    },
+    "result_reference": null,
+    "result_sha256": "8ef1efae99527f5141a01c77fabfa08993ca36e80e8fea6bd307a00516de55b0",
+    "runtime": {
+      "engine": "R1_SHADOW_MARKET_CATALOG_SEARCH",
+      "mode": "ZERO_PRICE_SHADOW"
+    },
+    "schema": "janus.machine_market.result_receipt.v1",
+    "settlement_reference": null,
+    "sku": "JANUS.SEARCH",
+    "status": "DELIVERED"
+  },
+  "result_sha256": "8ef1efae99527f5141a01c77fabfa08993ca36e80e8fea6bd307a00516de55b0",
+  "schema": "janus.machine_market.r1_persistent_witness.v1"
+}
