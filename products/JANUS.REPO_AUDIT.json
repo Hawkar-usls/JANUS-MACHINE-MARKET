@@ -1,0 +1,29 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.REPO_AUDIT",
+  "title": "JANUS Repository Audit",
+  "class": "repository_analysis",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Bounded audit of a public repository covering architecture, claims, dependency surfaces, reproducibility signals, licensing observations and unresolved risks.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["repository", "audit_scope", "claim_depth", "dependency_depth", "output_schema"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["architecture_map", "claim_audit", "dependency_observations", "risk_register", "unknowns", "provenance", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false,
+    "audit_is_security_certification": false,
+    "audit_is_legal_opinion": false
+  },
+  "license": "Per-product/service terms; audited repository licenses and third-party rights remain controlling."
+}
