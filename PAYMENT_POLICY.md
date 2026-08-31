@@ -43,6 +43,44 @@ The market adopts this commercial invariant:
 
 A retry with the same accepted `purchase_id` and `request_hash` must return the prior accepted state, prior result reference, or an idempotent status. It must not silently create a second chargeable execution.
 
+## Post-purchase buyer queries
+
+A product may explicitly include a bounded conversational entitlement after an admitted purchase. The governing contract is `BUYER_QUERY_PLANE.json`.
+
+The entitlement must be inside the accepted `PURCHASE_GRANT`; payment alone never creates it. At minimum it binds:
+
+```text
+purchase_id
++ purchase_grant_hash
++ sku
++ buyer_actor_id
++ max_turns
++ message / answer byte ceilings
++ entitlement_nonce
++ expiry
+```
+
+Each question then receives its own deterministic query identity. The commercial invariant is:
+
+```text
+1 query_id + 1 query_hash => <= 1 execution identity
+```
+
+An exact retry must return the prior response identity and must not create a second billable execution.
+
+The conversation plane remains read-only:
+
+```text
+PAYMENT != COMMAND
+PURCHASE_GRANT != UNBOUNDED_CONVERSATION
+BUYER_QUERY != COMMAND
+BUYER_QUERY != WRITE_AUTHORITY
+JANUS_RESPONSE != WORLD_TRUTH
+MODEL_OUTPUT != EVIDENCE
+```
+
+The current implementation is **prepared, not live**. A paid buyer-query route must not be published until a paid purchase witness, Activator binding, Physarius Market→HOME vessel, persistent response receipt, replay proof, and foreign-buyer witness are all established.
+
 ## Current payment state
 
 The market publishes a declared USDT / Ethereum receiving route for machine-readable policy work, but **no general JANUS MACHINE MARKET purchase endpoint is currently active**.
