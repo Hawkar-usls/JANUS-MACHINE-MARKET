@@ -26,11 +26,32 @@
     "JANUS_COIN_PLAY_CREDIT"
   ],
   "visual_artifacts": {
-    "rendering": "CSS_3D_ARCH_AND_OCULUS",
+    "rendering": "PHYSICAL_ARCH_FRONT_TO_TOP_CAMERA_WITH_CSS_OCULUS_OVERLAY",
     "canonical_asset_manifest": "https://github.com/Hawkar-usls/janus-meta-registry/blob/main/data/JANUS-PHYSICAL-ARCH-OCULUS-ASSET-MANIFEST-2026-08-17.json",
     "arch_asset": "JANUS_ARCH_QNAP_A1_ECO_READY.3mf",
     "coin_asset": "JANUS_Coin(4).3mf",
-    "axle_asset": "JANUS_AXLE_COIN_TWO_SIDED_LAUREL_A1_v2.6_ADHESION_ROTATION_REPAIR(1).3mf"
+    "axle_asset": "JANUS_AXLE_COIN_TWO_SIDED_LAUREL_A1_v2.6_ADHESION_ROTATION_REPAIR(1).3mf",
+    "pages_assets": [
+      {
+        "path": "assets/janus-arch-front.webp",
+        "role": "FRONT_CAMERA_PHYSICAL_GATE",
+        "sha256": "3d8f5444882fc2e37c57a3d7755726ac53a76b4f5eb91a684c5109b71a8c93ff"
+      },
+      {
+        "path": "assets/janus-arch-top.webp",
+        "role": "TOP_CAMERA_PHYSICAL_OCULUS_AXIS",
+        "sha256": "b6ec0625f4550d45a9a633a25ada9336ecb32fc8be10ffd3e8d133405c27e411"
+      }
+    ],
+    "activation_sequence": [
+      "FRONT_CAMERA",
+      "PORTAL_CYAN_LUMEN_RISE",
+      "OCULUS_AXLE_ACCELERATE",
+      "CROSSFADE_TO_TOP_CAMERA",
+      "TOP_CAMERA_RESULT",
+      "RETURN_TO_FRONT_CAMERA"
+    ],
+    "responsive_targets": ["DESKTOP", "TABLET", "PHONE_PORTRAIT", "PHONE_LANDSCAPE"]
   },
   "runtime_api": null,
   "law": "PURCHASED_QUOTA_IS_GUARANTEED_AND_SEPARATE_FROM_NON_CASH_PLAY_CREDIT"
