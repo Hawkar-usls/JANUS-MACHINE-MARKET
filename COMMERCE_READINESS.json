@@ -1,0 +1,50 @@
+{
+  "schema": "janus.machine_market.commerce_readiness.v1",
+  "status": "PREPARED_BLOCKED_BY_FOREIGN_AGENT_WITNESS",
+  "money_enabled": false,
+  "autonomous_purchase_declared": false,
+  "reason": "FOREIGN_AGENT_WITNESS.json remains false; live payment acceptance must stay fail-closed until the independent requester persistent receipt exists.",
+  "payment_rail": {
+    "network": "ethereum-mainnet",
+    "chain_id": 1,
+    "asset": "USDT",
+    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "decimals": 6,
+    "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
+    "state": "DECLARED_NOT_CHECKOUT",
+    "required_confirmations": 12,
+    "unsolicited_payment_grants": "NOTHING"
+  },
+  "authority_chain": [
+    "OFFER",
+    "REQUEST",
+    "QUOTE",
+    "PAYMENT_RECEIPT",
+    "PURCHASE_GRANT",
+    "POLICY_SCOPE_GATES",
+    "EXECUTION_GRANT",
+    "RESULT",
+    "RESULT_RECEIPT"
+  ],
+  "required_live_gates": {
+    "foreign_agent_witness": false,
+    "money_enabled_policy": false,
+    "product_machine_purchase": false,
+    "payment_observer": "NOT_LIVE",
+    "persistent_purchase_ledger": "REQUIRED",
+    "execution_grant_bridge": "REQUIRED",
+    "result_receipt_replay": "REQUIRED"
+  },
+  "idempotency_laws": [
+    "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
+    "1 payment_reference => <= 1 accepted purchase grant",
+    "exact retry returns prior state/result and creates no second charge"
+  ],
+  "closed_skus": {
+    "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+  },
+  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT",
+  "policy": "PAYMENT_POLICY.md",
+  "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json"
+}
