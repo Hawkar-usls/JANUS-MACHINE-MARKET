@@ -1,0 +1,22 @@
+{
+  "schema": "janus.machine_market.foreign_agent_witness_status.v1",
+  "status": "PENDING_REAL_EXTERNAL_REQUEST",
+  "foreign_agent_witness": false,
+  "promotion_authority": "PERSISTENT_RECEIPT_ONLY",
+  "gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT",
+  "policy": "runtime/FOREIGN_AGENT_WITNESS_POLICY.json",
+  "receipt_schema": "schemas/foreign-agent-witness-receipt.schema.json",
+  "instructions": "docs/FOREIGN_AGENT_WITNESS_GATE.md",
+  "accepted_sku": "JANUS.SEARCH",
+  "price": 0,
+  "money_enabled": false,
+  "autonomous_purchase_declared": false,
+  "self_owner_request_can_promote": false,
+  "synthetic_request_can_promote": false,
+  "workflow_dispatch_can_promote": false,
+  "closed_skus": {
+    "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+  },
+  "law": "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL_AND_PERSISTENT_RECEIPT"
+}
