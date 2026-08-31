@@ -5,33 +5,13 @@
   "evidence_branch": "evidence/letter-gate-clean-witness-2026-08-31",
   "hardening_main_sha": "ca42feb888d2da5cfa5aac03b4ec9523a467f8d1",
   "latest_mutex_main_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
-  "gate_state": "BLOCKED_PENDING_FINAL_POST_MUTEX_CLEAN_WITNESS",
+  "gate_state": "BLOCKED_FINAL_WITNESS_IN_PROGRESS",
   "truth_boundary": "No pre-hardening or pre-final-mutex delivery may be reused as LETTER GATE PASS evidence.",
-  "clean_witness": {
+  "superseded_witness": {
     "source_issue": 24,
     "status": "SUPERSEDED_BY_FINAL_MUTEX_PATCH",
-    "source_issue_title": "[JANUS REPO AUDIT SHADOW] LETTER gate post-hardening clean witness",
-    "outbox": {
-      "status": "PASS_BUT_SUPERSEDED",
-      "workflow_run_id": 33408333100,
-      "contract_job_id": 99541390823,
-      "contract_job_conclusion": "success",
-      "publish_job_id": 99541427638,
-      "publish_job_conclusion": "success",
-      "request_id": "ra-shadow-d7ac2c3f0d408fc39bb8df8dbfe6963c5b6c4df9c7719213",
-      "purchase_id": "pur-ra-shadow-0e8d6b5adec5c9a50ef521ad47d21eaf",
-      "packet_id": "rap-shadow-9ac96abd332524a4f792d848cc6511f7f14fe7a865b43d60",
-      "packet_hash": "622e93fa26a6e7714d27f9b02bff4790f51739f8e88a0d1e49e748478f506363",
-      "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
-      "ref": "main",
-      "money_enabled": false,
-      "execute_repository_code": false,
-      "repository_write_authorized": false
-    },
-    "home_bridge": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
-    "market_reconcile": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
-    "persistent_receipt": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
-    "fresh_checkout_replay": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"}
+    "request_id": "ra-shadow-d7ac2c3f0d408fc39bb8df8dbfe6963c5b6c4df9c7719213",
+    "outbox_workflow_run_id": 33408333100
   },
   "global_state_writer_audit": {
     "status": "PASS_FOR_KNOWN_PERSISTENT_WRITERS",
@@ -51,12 +31,19 @@
       "reconcile_job_conclusion": "skipped_by_pull_request_design",
       "merge_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
       "status": "MERGED"
-    },
-    "note": "The previously identified Dataset Scout mutex mismatch is closed. Final gate promotion still requires a new witness created only after merge SHA 30efeae6add72a2b3d99ed554d1d336df23f8760."
+    }
   },
   "final_post_mutex_witness": {
-    "status": "NOT_STARTED",
-    "required_after_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760"
+    "status": "ISSUE_CREATED_WAITING_OUTBOX",
+    "required_after_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
+    "source_issue": 26,
+    "source_issue_title": "[JANUS REPO AUDIT SHADOW] LETTER gate FINAL post-mutex clean witness",
+    "created_at": "2026-08-31T15:35:54Z",
+    "outbox": {"status": "WAITING"},
+    "home_bridge": {"status": "WAITING"},
+    "market_reconcile": {"status": "WAITING"},
+    "persistent_receipt": {"status": "WAITING"},
+    "fresh_checkout_replay": {"status": "WAITING"}
   },
-  "promotion_rule": "PASS only after a new post-final-mutex owner-shadow request is created, HOME returns a fully verified response, patched Market reconcile persists the exact delivery receipt on janus/market-state, fresh-checkout replay succeeds, and all exact bindings are independently rechecked."
+  "promotion_rule": "PASS only after final issue #26 produces a post-final-mutex outbox packet, HOME returns a fully verified response, patched Market reconcile persists the exact delivery receipt on janus/market-state, fresh-checkout replay succeeds, and all exact bindings are independently rechecked."
 }
