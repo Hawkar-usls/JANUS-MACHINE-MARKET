@@ -1,0 +1,45 @@
+name: JANUS Machine Market Buyer Query Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'BUYER_QUERY_PLANE.json'
+      - 'schemas/grant.schema.json'
+      - 'schemas/buyer-query.schema.json'
+      - 'schemas/buyer-query-receipt.schema.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'tools/validate_buyer_query_plane.py'
+      - '.github/workflows/buyer-query-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'BUYER_QUERY_PLANE.json'
+      - 'schemas/grant.schema.json'
+      - 'schemas/buyer-query.schema.json'
+      - 'schemas/buyer-query-receipt.schema.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'tools/validate_buyer_query_plane.py'
+      - '.github/workflows/buyer-query-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  buyer-query-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m json.tool BUYER_QUERY_PLANE.json >/dev/null
+          python -m json.tool schemas/grant.schema.json >/dev/null
+          python -m json.tool schemas/buyer-query.schema.json >/dev/null
+          python -m json.tool schemas/buyer-query-receipt.schema.json >/dev/null
+          python -m json.tool products/JANUS.SEARCH.json >/dev/null
+      - name: Enforce fail-closed post-purchase query law
+        run: python tools/validate_buyer_query_plane.py
