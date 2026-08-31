@@ -1,0 +1,30 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.RESEARCH_JOB",
+  "title": "JANUS Bounded Research Job",
+  "class": "research_job",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "A bounded custom research task routed through JANUS with declared scope, evidence constraints, runtime ceilings and a provenance-bearing result receipt.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["objective", "source_scope", "allowed_methods", "runtime_budget", "output_contract"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["result", "evidence", "provenance", "unknowns", "runtime", "resource_usage", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false,
+    "arbitrary_shell": false,
+    "unbounded_network_access": false,
+    "secret_access": false
+  },
+  "license": "Per-product/service terms. Output rights, source rights and third-party material remain governed by the declared job terms and source licenses."
+}
