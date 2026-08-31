@@ -1,0 +1,47 @@
+{
+  "schema": "janus.letter_gate.clean_witness.v1",
+  "updated_at": "2026-08-31",
+  "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "evidence_branch": "evidence/letter-gate-clean-witness-2026-08-31",
+  "hardening_main_sha": "ca42feb888d2da5cfa5aac03b4ec9523a467f8d1",
+  "gate_state": "BLOCKED_WITNESS_IN_PROGRESS",
+  "truth_boundary": "No pre-hardening delivery may be reused as LETTER GATE evidence.",
+  "clean_witness": {
+    "source_issue": 24,
+    "source_issue_title": "[JANUS REPO AUDIT SHADOW] LETTER gate post-hardening clean witness",
+    "outbox": {
+      "status": "PASS",
+      "workflow_run_id": 33408333100,
+      "contract_job_id": 99541390823,
+      "contract_job_conclusion": "success",
+      "publish_job_id": 99541427638,
+      "publish_job_conclusion": "success",
+      "request_id": "ra-shadow-d7ac2c3f0d408fc39bb8df8dbfe6963c5b6c4df9c7719213",
+      "purchase_id": "pur-ra-shadow-0e8d6b5adec5c9a50ef521ad47d21eaf",
+      "packet_id": "rap-shadow-9ac96abd332524a4f792d848cc6511f7f14fe7a865b43d60",
+      "packet_hash": "622e93fa26a6e7714d27f9b02bff4790f51739f8e88a0d1e49e748478f506363",
+      "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+      "ref": "main",
+      "money_enabled": false,
+      "execute_repository_code": false,
+      "repository_write_authorized": false
+    },
+    "home_bridge": {
+      "status": "WAITING_FOR_POST_HARDENING_RUN"
+    },
+    "market_reconcile": {
+      "status": "WAITING_FOR_HOME_RESPONSE"
+    },
+    "persistent_receipt": {
+      "status": "NOT_YET_VERIFIED"
+    },
+    "fresh_checkout_replay": {
+      "status": "NOT_YET_VERIFIED"
+    }
+  },
+  "global_state_writer_audit": {
+    "status": "REQUIRED_BEFORE_GATE_PASS",
+    "note": "All workflows that push janus/market-state must be confirmed to share janus-machine-market-state-writer; any conflicting writer is a blocker until patched."
+  },
+  "promotion_rule": "PASS only after the post-hardening HOME response is fully verified by patched reconcile, a persistent delivery receipt exists on janus/market-state, fresh-checkout replay succeeds, and the global state-writer mutex audit is clean."
+}
