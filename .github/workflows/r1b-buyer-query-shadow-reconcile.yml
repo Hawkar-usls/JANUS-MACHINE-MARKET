@@ -232,7 +232,7 @@ jobs:
           print(f"\n<!-- R1B_RETURNED_QUERY_ID:{r['query_id']} -->")
           if issue is None:
               raise SystemExit('R1B_RETURN_ROUTE_ISSUE_MISSING')
-          Path('/tmp/r1b-issue-number').write_text(str(issue))
+          open('/tmp/r1b-issue-number','w',encoding='utf-8').write(str(issue))
           PY
           issue="$(cat /tmp/r1b-issue-number)"
           existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
