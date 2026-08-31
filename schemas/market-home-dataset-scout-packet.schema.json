@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/market-home-dataset-scout-packet.schema.json",
+  "title": "JANUS Machine Market HOME Dataset Scout Packet",
+  "type": "object",
+  "required": ["schema", "packet_id", "packet_hash", "created_at", "sku", "market_repository", "home_repository", "commerce_mode", "money_enabled", "payment_reference", "purchase_grant", "purchase_grant_hash", "service_request", "service_request_hash", "return_route", "command_authority_granted", "external_effect_authorized", "dataset_payload_download_authorized", "redistribution_authority_granted"],
+  "properties": {
+    "schema": {"const": "janus.machine_market.home_dataset_scout_packet.v1"},
+    "packet_id": {"type": "string", "pattern": "^dsp-shadow-[0-9a-f]{48}$"},
+    "packet_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "created_at": {"type": "string", "minLength": 1},
+    "sku": {"const": "JANUS.DATASET_SCOUT"},
+    "market_repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
+    "home_repository": {"const": "Hawkar-usls/Hawkar-usls"},
+    "commerce_mode": {"const": "ZERO_PRICE_SHADOW"},
+    "money_enabled": {"const": false},
+    "payment_reference": {"type": "null"},
+    "purchase_grant": {"type": "object"},
+    "purchase_grant_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "service_request": {"type": "object"},
+    "service_request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "return_route": {"type": "object"},
+    "command_authority_granted": {"const": false},
+    "external_effect_authorized": {"const": false},
+    "dataset_payload_download_authorized": {"const": false},
+    "redistribution_authority_granted": {"const": false}
+  },
+  "additionalProperties": false
+}
