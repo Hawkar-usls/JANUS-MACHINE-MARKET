@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/quote.schema.json",
+  "title": "JANUS MACHINE MARKET Quote",
+  "type": "object",
+  "required": ["schema", "quote_id", "request_id", "sku", "status", "offer_hash", "request_hash"],
+  "properties": {
+    "schema": {"const": "janus.machine_market.quote.v1"},
+    "quote_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "sku": {"type": "string", "minLength": 1},
+    "status": {"enum": ["QUOTED", "BLOCKED", "UNAVAILABLE", "EXPIRED"]},
+    "price": {"type": ["object", "null"]},
+    "offer_hash": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "request_hash": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "terms_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
+    "expires_at": {"type": ["string", "null"]},
+    "payment_challenge": {"type": ["object", "null"]},
+    "reasons": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
