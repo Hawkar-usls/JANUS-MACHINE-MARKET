@@ -11,6 +11,7 @@
       "usd_per_unit": 0.007,
       "source": "https://exa.ai/pricing",
       "source_type": "PUBLISHED_PRICING_PAGE",
+      "verified_at": "2026-08-31T07:19:00Z",
       "comparable_to": ["JANUS.SEARCH"]
     },
     {
@@ -20,6 +21,7 @@
       "usd_per_unit": 0.008,
       "source": "https://help.tavily.com/articles/8816424538-pricing",
       "source_type": "PUBLISHED_PRICING_PAGE",
+      "verified_at": "2026-08-31T07:19:00Z",
       "comparable_to": ["JANUS.SEARCH"],
       "comparability_note": "Use only when the requested JANUS service maps to a one-credit Tavily operation."
     },
@@ -30,6 +32,7 @@
       "usd_per_unit": 0.01,
       "source": "https://help.openai.com/en/articles/20001415",
       "source_type": "PUBLISHED_RATE_CARD",
+      "verified_at": "2026-08-31T07:19:00Z",
       "comparable_to": ["JANUS.SEARCH"],
       "comparability_note": "Published rate excludes additional model token charges."
     }
