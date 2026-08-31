@@ -1,0 +1,52 @@
+name: JANUS Market Pages Execution Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/site.js'
+      - 'assets/store-exec-v1.js'
+      - 'tests/test_store_pages_execution_contract.py'
+      - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
+      - '.github/workflows/store-pages-execution-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/site.js'
+      - 'assets/store-exec-v1.js'
+      - 'tests/test_store_pages_execution_contract.py'
+      - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
+      - '.github/workflows/store-pages-execution-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile contract test
+        run: python -m py_compile tests/test_store_pages_execution_contract.py
+      - name: Verify Pages -> Market -> HOME ingress contract
+        run: python -m unittest -v tests.test_store_pages_execution_contract
+      - name: Preserve canonical commerce boundary
+        run: |
+          python - <<'PY'
+          import json
+          readiness=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
+          witness=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          assert witness['foreign_agent_witness'] is False
+          assert readiness['money_enabled'] is False
+          assert readiness['autonomous_purchase_declared'] is False
+          print('PAGES_TO_JANUS_R1_EXECUTION_NERVE=WIRED')
+          print('PAYMENTS=LOCKED')
+          print('FOREIGN_AGENT_WITNESS=PENDING_REAL_EXTERNAL_REQUEST')
+          PY
