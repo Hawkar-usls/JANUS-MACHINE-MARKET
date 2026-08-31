@@ -147,6 +147,15 @@ def parse_exact_transfer(
     return matches[0]
 
 
+def resolve_rpc_urls(route: dict[str, Any]) -> tuple[list[str], str]:
+    verification = route.get("verification") or {}
+    override = [u.strip() for u in os.environ.get("JANUS_ETH_RPC_URLS", "").split(",") if u.strip()]
+    if override:
+        return list(dict.fromkeys(override)), "ENV_OVERRIDE"
+    defaults = [str(u).strip() for u in verification.get("public_rpc_urls") or [] if str(u).strip()]
+    return list(dict.fromkeys(defaults)), "PUBLIC_ROUTE_DEFAULTS"
+
+
 def verify_payment(
     *,
     tx_hash: str,
@@ -227,10 +236,12 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     route = json.loads(Path(args.route).read_text(encoding="utf-8"))
-    urls = [u for u in os.environ.get("JANUS_ETH_RPC_URLS", "").split(",") if u.strip()]
+    urls, source = resolve_rpc_urls(route)
     receipt = verify_payment(tx_hash=args.tx_hash, route=route, expected_amount_atomic=args.amount_atomic, rpc_urls=urls)
     Path(args.output).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("R2_PAYMENT_VERIFIED=PASS")
+    print("R2_RPC_SOURCE=" + source)
+    print("R2_RPC_PROVIDER_COUNT=" + str(len(urls)))
     print("PAYMENT_REFERENCE=" + receipt["payment_reference"])
     print("PAYMENT_RECEIPT_HASH=" + receipt["receipt_hash"])
     return 0
