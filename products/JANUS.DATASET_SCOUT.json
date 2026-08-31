@@ -1,0 +1,30 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.DATASET_SCOUT",
+  "title": "JANUS Dataset Scout",
+  "class": "data_discovery",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Finds public datasets matching a machine-readable brief and returns provenance, access paths and license observations without assuming redistribution rights.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["query", "domain", "date_range", "license_preferences", "format_preferences"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["dataset_manifest", "source_urls", "license_observations", "deduplication_notes", "provenance", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false,
+    "discovery_is_redistribution_authority": false
+  },
+  "notes": ["Discovery is not redistribution authority. Source licenses remain controlling."],
+  "license": "Per-product/service terms; third-party dataset licenses remain controlling."
+}
