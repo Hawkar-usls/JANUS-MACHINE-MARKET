@@ -1,0 +1,46 @@
+{
+  "schema": "janus.machine_market.a2a_publication.v1",
+  "standard": "A2A_AGENT_CARD",
+  "status": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
+  "target_protocol_version": "1.0",
+  "standard_well_known_path": "/.well-known/agent-card.json",
+  "current_publication_allowed": false,
+  "reason": "A standards-shaped Agent Card must not be published until its advertised HTTPS A2A interface actually exists and supports the declared protocol binding.",
+  "planned_skills": [
+    {
+      "id": "janus-search",
+      "sku": "JANUS.SEARCH",
+      "tags": ["research", "search", "evidence", "provenance"]
+    },
+    {
+      "id": "janus-dataset-scout",
+      "sku": "JANUS.DATASET_SCOUT",
+      "tags": ["datasets", "discovery", "research"]
+    },
+    {
+      "id": "janus-evidence-pack",
+      "sku": "JANUS.EVIDENCE_PACK",
+      "tags": ["evidence", "synthesis", "provenance"]
+    },
+    {
+      "id": "janus-archive-scan",
+      "sku": "JANUS.ARCHIVE_SCAN",
+      "tags": ["archives", "search", "research"]
+    },
+    {
+      "id": "janus-repo-audit",
+      "sku": "JANUS.REPO_AUDIT",
+      "tags": ["github", "repository", "audit"]
+    }
+  ],
+  "publication_gates": [
+    "LIVE_HTTPS_A2A_ENDPOINT",
+    "A2A_1_0_PROTOCOL_TEST_PASS",
+    "AGENT_CARD_SCHEMA_VALID",
+    "SKILL_TO_SKU_BINDINGS_VALID",
+    "NO_CLOSED_SKU_ADVERTISED_AS_EXECUTABLE",
+    "SECURITY_REQUIREMENTS_DECLARED",
+    "NO_SECRETS_IN_AGENT_CARD"
+  ],
+  "publication_action_after_green": "Publish a valid AgentCard at /.well-known/agent-card.json on the same HTTPS origin as the live A2A service."
+}
