@@ -1,32 +1,43 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/schemas/payment-receipt.schema.json",
-  "title": "JANUS Machine Market payment receipt",
+  "title": "JANUS Machine Market Ethereum USDT payment observation/receipt",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema",
-    "status",
-    "tx_hash",
-    "chain_id",
-    "token_contract",
-    "to",
-    "amount_usdt_micros",
-    "confirmations",
-    "required_confirmations"
+    "schema", "status", "quote_hash", "chain_id", "token_contract", "to",
+    "amount_usdt_micros", "confirmations", "required_confirmations"
   ],
   "properties": {
     "schema": {"const": "janus.machine_market.payment_receipt.v1"},
-    "status": {"enum": ["OBSERVED", "CONFIRMED", "REJECTED", "QUARANTINED"]},
-    "tx_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "status": {"enum": ["NOT_FOUND", "OBSERVED", "CONFIRMED", "QUARANTINED"]},
+    "quote_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "chain_id": {"const": 1},
     "token_contract": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
     "to": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
     "amount_usdt_micros": {"type": "integer", "minimum": 0},
     "confirmations": {"type": "integer", "minimum": 0},
     "required_confirmations": {"type": "integer", "minimum": 12},
+    "tx_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "log_index": {"type": "integer", "minimum": 0},
+    "payment_reference": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}:[0-9]+$"},
     "block_number": {"type": "integer", "minimum": 0},
+    "block_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
     "observed_at": {"type": "string", "format": "date-time"},
-    "quote_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
-  }
+    "reason": {"type": "string", "maxLength": 160},
+    "candidate_payment_references": {
+      "type": "array", "maxItems": 32,
+      "items": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}:[0-9]+$"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["OBSERVED", "CONFIRMED"]}}, "required": ["status"]},
+      "then": {"required": ["tx_hash", "log_index", "payment_reference", "block_number", "block_hash"]}
+    },
+    {
+      "if": {"properties": {"status": {"const": "CONFIRMED"}}, "required": ["status"]},
+      "then": {"properties": {"confirmations": {"minimum": 12}}}
+    }
+  ]
 }
