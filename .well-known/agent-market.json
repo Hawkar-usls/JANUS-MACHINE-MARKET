@@ -17,7 +17,8 @@
     "underused_available_services_are_promoted": true,
     "closed_services_are_never_promoted_as_purchasable": true
   },
-  "transaction_api_status": "ISSUE_PROTOCOL_PREPARED_PAID_PRS_AND_LIVE_PRICE_PENDING",
+  "transaction_api_status": "NOT_ESTABLISHED",
+  "issue_commerce_protocol_status": "PREPARED_IN_R2_PR_PRICE_AND_MERGE_GATES_PENDING",
   "standard_discovery_status": {
     "a2a": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
     "mcp": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
@@ -26,5 +27,5 @@
     "github_machine_quote": "PREPARED_IN_R2_PR",
     "github_paid_search": "PREPARED_IN_R2_PR"
   },
-  "warning": "Discoverable does not mean purchasable. Follow the current live beacon and purchase protocol. Unsolicited payment grants nothing."
+  "warning": "Discoverable does not mean purchasable. The GitHub Issue commerce protocol is not an HTTP transaction API. Follow the current live beacon and purchase protocol. Unsolicited payment grants nothing."
 }
