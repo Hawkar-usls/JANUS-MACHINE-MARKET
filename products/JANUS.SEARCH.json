@@ -1,0 +1,28 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.SEARCH",
+  "title": "JANUS Search",
+  "class": "search_api",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Bounded research/search job returning structured findings with source provenance and explicit uncertainty.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["query", "source_scope", "freshness", "max_sources", "output_schema"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["answer", "evidence", "provenance", "contradictions", "confidence", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false
+  },
+  "license": "Per-product/service terms; marketplace Apache-2.0 does not license underlying inputs, outputs, models, datasets or technology."
+}
