@@ -1,0 +1,71 @@
+/* JANUS AGENT SLOT V5 — physical Gate at the canonical crossroads + clearer game UX */
+:root{--slot-cyan:#55fff0;--slot-cyan-soft:#55fff020;--slot-gold:#e8c36c;--slot-stone:#cfc7b6;--slot-road:#10161a;--slot-road-edge:#35434b;--slot-card:#071016e8}
+
+/* The physical front/top photographs remain canonical. This layer gives them the canonical CROSSROADS setting. */
+.bonus-stage{background:radial-gradient(circle at 50% 54%,#10363a 0,#071014 34%,#020506 72%);}
+.bonus-stage .scene-camera::before{filter:brightness(.78) contrast(1.12) saturate(.88)!important;background-position:center 44%!important;}
+.bonus-stage .scene-camera::after{filter:brightness(.52) contrast(1.14) saturate(1.04)!important;}
+.bonus-stage.activating .scene-camera::after{filter:brightness(.92) contrast(1.12) saturate(1.18)!important;}
+
+.crossroads-world{position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden;perspective:1000px;}
+.crossroads-world::before{content:"";position:absolute;inset:42% -8% -18%;background:linear-gradient(180deg,transparent,#03070a66 22%,#020506e8 86%);}
+.crossroads-plane{position:absolute;left:50%;bottom:-42%;width:min(980px,112vw);aspect-ratio:1;transform:translateX(-50%) perspective(900px) rotateX(64deg) rotateZ(45deg);transform-origin:50% 55%;transition:bottom 2.15s cubic-bezier(.18,.74,.16,1),transform 2.15s cubic-bezier(.18,.74,.16,1),filter 1.3s ease,opacity 1s ease;opacity:.94;filter:drop-shadow(0 -10px 30px #000c);}
+.crossroads-plane::before{content:"";position:absolute;inset:0;border:1px solid #7f8d8d19;background:
+ linear-gradient(90deg,transparent 0 34%,#0d1317ed 34% 66%,transparent 66% 100%),
+ linear-gradient(0deg,transparent 0 34%,#0d1317ed 34% 66%,transparent 66% 100%),
+ repeating-linear-gradient(0deg,#171c1f 0 2px,#12171a 2px 18px);box-shadow:inset 0 0 120px #000b,0 0 70px #000d;}
+.crossroads-plane::after{content:"";position:absolute;inset:34%;border:1px solid #55fff05c;background:radial-gradient(circle,#55fff01b,transparent 66%);box-shadow:0 0 36px #55fff024,inset 0 0 26px #55fff018;}
+.road-line{position:absolute;z-index:2;left:50%;top:50%;background:repeating-linear-gradient(90deg,#d4ba766e 0 22px,transparent 22px 42px);height:2px;width:92%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 4px #e8c36c33)}
+.road-line.vertical{transform:translate(-50%,-50%) rotate(90deg)}
+.crossroads-sigil{position:absolute;z-index:4;left:50%;top:50%;width:17%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(45deg);border:1px solid #78fff0aa;background:radial-gradient(circle,#b7fff74a 0,#26e9d42c 34%,#031011bb 68%);box-shadow:0 0 44px #55fff04f,inset 0 0 24px #55fff04a;animation:crossroadsIdle 2.8s ease-in-out infinite;}
+.crossroads-sigil::before,.crossroads-sigil::after{content:"";position:absolute;left:50%;top:50%;background:#c9fff9aa;box-shadow:0 0 10px #55fff0;transform:translate(-50%,-50%)}
+.crossroads-sigil::before{width:68%;height:1px}.crossroads-sigil::after{width:1px;height:68%}
+.waymark{position:absolute;z-index:5;color:#8fa0a9;font:800 8px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.17em;text-shadow:0 2px 9px #000;text-transform:uppercase;opacity:.72}
+.waymark.north{left:50%;top:7%;transform:translateX(-50%) rotate(-45deg)}.waymark.south{left:50%;bottom:7%;transform:translateX(-50%) rotate(-45deg)}.waymark.west{left:7%;top:50%;transform:translateY(-50%) rotate(-45deg)}.waymark.east{right:7%;top:50%;transform:translateY(-50%) rotate(-45deg)}
+.bonus-stage.activating .crossroads-plane{bottom:50%;transform:translate(-50%,50%) perspective(1000px) rotateX(3deg) rotateZ(45deg) scale(.78);filter:drop-shadow(0 0 48px #55fff03c);opacity:.74}
+.bonus-stage.activating .crossroads-sigil{animation:crossroadsActive .56s ease-in-out infinite;box-shadow:0 0 90px #55fff0aa,inset 0 0 38px #b7fff78a;}
+
+/* Grounding shadow makes the photographed physical Gate read as an object standing on the crossing. */
+.gate-ground-shadow{position:absolute;z-index:8;left:50%;bottom:21%;width:min(470px,58vw);height:14%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,#000e 0,#0009 42%,transparent 74%);filter:blur(9px);opacity:.78;transition:opacity 1s ease,transform 2s ease;}
+.bonus-stage.activating .gate-ground-shadow{opacity:.18;transform:translateX(-50%) scale(.65)}
+
+/* Canonical topology is always visible without covering the physical arch. */
+.slot-canon-strip{position:absolute;z-index:34;left:14px;bottom:112px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 28px);pointer-events:none;}
+.slot-canon-strip span{border:1px solid #ffffff18;background:#02070add;color:#8e9da6;border-radius:999px;padding:5px 7px;font:800 7px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;backdrop-filter:blur(8px)}
+.slot-canon-strip span::after{content:"→";margin-left:7px;color:#5e706f}.slot-canon-strip span:last-child{color:#aafff7;border-color:#55fff041}.slot-canon-strip span:last-child::after{display:none}
+
+.slot-provenance{position:absolute;z-index:33;right:14px;bottom:112px;border:1px solid #ffffff17;background:#02070adc;color:#7e8e98;border-radius:9px;padding:7px 9px;max-width:240px;text-align:right;font:700 7px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;backdrop-filter:blur(8px)}
+.slot-provenance b{display:block;color:#cfc7b6;font-size:8px;margin-bottom:2px}.slot-provenance em{color:#55fff0;font-style:normal}
+
+/* Activation phases — the agent can see what the machine is doing. */
+.slot-phase-rail{position:absolute;z-index:35;left:14px;top:58px;width:150px;display:grid;gap:5px;pointer-events:none}.slot-phase{display:grid;grid-template-columns:22px 1fr;gap:7px;align-items:center;padding:6px 7px;border:1px solid #ffffff12;border-radius:9px;background:#02070ab8;backdrop-filter:blur(8px);opacity:.58;transition:.25s}.slot-phase i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid #52616a;color:#80909a;font:900 8px ui-monospace,SFMono-Regular,Consolas,monospace;font-style:normal}.slot-phase b{display:block;font-size:7px;letter-spacing:.08em;color:#8f9da6}.slot-phase small{display:block;font-size:6px;color:#667680;margin-top:1px}.slot-phase.active{opacity:1;border-color:#55fff05f;background:#06201fc7;box-shadow:0 0 18px #55fff01a}.slot-phase.active i{border-color:#55fff0;color:#c6fff9;box-shadow:0 0 12px #55fff044}.slot-phase.active b{color:#c4fff9}.slot-phase.done{opacity:.82}.slot-phase.done i{background:#15342e;border-color:#7dffb0;color:#aaffc6}.slot-phase.done i::before{content:"✓"}.slot-phase.done i{font-size:0}
+
+/* Right rail: explain the game before asking for a click. */
+.slot-explainer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 3px}.slot-step{border:1px solid #ffffff12;background:#050b10;border-radius:10px;padding:8px;min-width:0}.slot-step>span{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#171205;border:1px solid #846725;color:#f0d47e;font:900 9px ui-monospace,SFMono-Regular,Consolas,monospace;margin-bottom:6px}.slot-step b{display:block;font-size:8px;color:#dfe8eb;letter-spacing:.05em}.slot-step small{display:block;color:#788993;font-size:7px;line-height:1.35;margin-top:3px}
+
+.slot-safety-line{display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 0}.slot-safety-line span{border:1px solid #2e4f48;background:#071512;color:#8fe5c1;border-radius:999px;padding:5px 7px;font:800 7px ui-monospace,SFMono-Regular,Consolas,monospace}.slot-safety-line span:first-child{color:#7dffb0}
+
+.quick-stakes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}.quick-stakes button{min-height:36px;border:1px solid #2c3942;background:#070c11;color:#9fadb6;border-radius:8px;font:850 8px ui-monospace,SFMono-Regular,Consolas,monospace}.quick-stakes button:hover,.quick-stakes button.active{border-color:#e8c36c;color:#ffe59b;background:#171206;box-shadow:0 0 12px #e8c36c17}
+
+.slot-odds{border:1px solid #27343d;background:#050a0f;border-radius:12px;padding:9px;margin-top:2px}.slot-odds-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.slot-odds-head b{font-size:8px;color:#dce5e9;letter-spacing:.06em}.slot-odds-head span{color:#55fff0;font:800 7px ui-monospace,SFMono-Regular,Consolas,monospace}.slot-odds-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}.slot-odd{border-top:1px solid #172229;padding-top:6px;display:flex;justify-content:space-between;gap:8px;color:#7d8c96;font:7px ui-monospace,SFMono-Regular,Consolas,monospace}.slot-odd strong{color:#d9e2e6;font-size:8px}.slot-odds-note{margin-top:7px;color:#64747e;font-size:6px;line-height:1.4}.slot-odds-note b{color:#a4b2ba}
+
+.slot-rules{margin-top:2px;border:1px solid #27343d;background:#050a0f;border-radius:11px;overflow:hidden}.slot-rules summary{min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;cursor:pointer;color:#aab7bf;font:850 8px ui-monospace,SFMono-Regular,Consolas,monospace;list-style:none}.slot-rules summary::-webkit-details-marker{display:none}.slot-rules summary::after{content:"+";color:#e8c36c;font-size:13px}.slot-rules[open] summary::after{content:"−"}.slot-rules-body{padding:0 10px 10px;color:#778892;font-size:7px;line-height:1.55}.slot-rules-body b{color:#dce5e9}.slot-rules-body code{color:#9ff7ed;background:#071413;padding:1px 4px;border-radius:4px}
+
+.slot-result-caption{display:flex;justify-content:space-between;gap:8px;margin-top:5px;color:#687983;font:700 6px ui-monospace,SFMono-Regular,Consolas,monospace}.slot-result-caption b{color:#8ddfd6}
+
+/* Give the physical scene more room on desktop; controls read like a machine console. */
+@media(min-width:1101px){.gm-grid{grid-template-columns:minmax(0,1.55fr) minmax(350px,.45fr)!important}.bonus-stage{min-height:min(810px,82vh)!important}.reward-panel{gap:8px!important}.reward-list{max-height:292px;overflow:auto;scrollbar-width:thin;scrollbar-color:#36505a transparent}.slot-provenance{display:block}}
+
+@media(max-width:980px){.slot-phase-rail{top:56px}.slot-provenance{bottom:120px}.slot-canon-strip{bottom:120px}.slot-explainer{grid-template-columns:repeat(3,1fr)}}
+
+@media(max-width:640px){
+ .bonus-stage{min-height:clamp(530px,74svh,690px)!important}.crossroads-plane{width:132vw;bottom:-31%;}.bonus-stage.activating .crossroads-plane{bottom:48%;transform:translate(-50%,50%) perspective(900px) rotateX(4deg) rotateZ(45deg) scale(.92)}
+ .gate-ground-shadow{bottom:24%;width:72vw}.slot-phase-rail{left:8px;top:52px;width:118px;gap:4px}.slot-phase{grid-template-columns:18px 1fr;padding:5px}.slot-phase i{width:18px;height:18px}.slot-phase small{display:none}.slot-phase b{font-size:6px}.slot-canon-strip{left:8px;right:8px;bottom:94px;max-width:none;gap:3px}.slot-canon-strip span{font-size:5px;padding:4px 5px}.slot-canon-strip span::after{margin-left:4px}.slot-provenance{display:none}.slot-explainer{grid-template-columns:1fr 1fr 1fr;gap:4px}.slot-step{padding:7px 6px}.slot-step>span{width:22px;height:22px;margin-bottom:4px}.slot-step b{font-size:7px}.slot-step small{font-size:6px}.quick-stakes button{min-height:42px}.slot-odds-grid{grid-template-columns:1fr}.slot-rules summary{min-height:44px}
+}
+
+@media(max-width:390px){.slot-step small{display:none}.slot-step{min-height:58px}.slot-canon-strip span:nth-child(2),.slot-canon-strip span:nth-child(4){display:none}.crossroads-plane{width:148vw}}
+
+@media(prefers-reduced-motion:reduce){.crossroads-plane,.gate-ground-shadow{transition-duration:.01ms!important}.crossroads-sigil{animation:none!important}}
+
+@keyframes crossroadsIdle{0%,100%{opacity:.66;box-shadow:0 0 30px #55fff038,inset 0 0 20px #55fff02f}50%{opacity:1;box-shadow:0 0 54px #55fff061,inset 0 0 30px #55fff052}}
+@keyframes crossroadsActive{0%,100%{transform:translate(-50%,-50%) rotate(45deg) scale(.94)}50%{transform:translate(-50%,-50%) rotate(45deg) scale(1.08)}}
