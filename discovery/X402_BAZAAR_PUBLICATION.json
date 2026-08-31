@@ -1,0 +1,47 @@
+{
+  "schema": "janus.machine_market.x402_bazaar_publication.v1",
+  "standard": "X402_BAZAAR_DISCOVERY",
+  "target_x402_version": 2,
+  "status": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
+  "current_publication_allowed": false,
+  "priority_first_resource": "JANUS.SEARCH",
+  "planned_resource_type": "http",
+  "planned_metadata": {
+    "provider": "JANUS MACHINE MARKET",
+    "category": "research-data",
+    "tags": [
+      "research",
+      "search",
+      "data",
+      "evidence",
+      "provenance",
+      "ai-agent",
+      "agent-commerce"
+    ]
+  },
+  "planned_discovery_payload": {
+    "description": "Bounded research/search returning structured evidence, provenance, contradictions, confidence and a result receipt.",
+    "input_schema_source": "schemas/request.schema.json",
+    "result_schema_source": "schemas/receipt.schema.json",
+    "example_request": {
+      "sku": "JANUS.SEARCH",
+      "query": "Find recent primary sources about a bounded research topic"
+    }
+  },
+  "publication_gates": [
+    "LIVE_PUBLIC_HTTPS_RESOURCE",
+    "HTTP_402_CHALLENGE_IMPLEMENTED",
+    "ZERO_PRICE_SHADOW_ROUNDTRIP_PASS_BEFORE_MONEY",
+    "PURCHASE_ID_IDEMPOTENCY_PASS",
+    "REQUEST_HASH_BINDING_PASS",
+    "PURCHASE_GRANT_PERSISTENCE_PASS",
+    "RESULT_RECEIPT_PASS",
+    "BAZAAR_EXTENSION_DECLARED",
+    "FACILITATOR_DISCOVERY_OBSERVED"
+  ],
+  "truth_boundary": [
+    "STATIC_METADATA_ALONE_DOES_NOT_REGISTER_A_RESOURCE_IN_BAZAAR",
+    "PAYMENT_DOES_NOT_BYPASS_PURCHASE_OR_EXECUTION_POLICY",
+    "UNSOLICITED_PAYMENT_GRANTS_NOTHING"
+  ]
+}
