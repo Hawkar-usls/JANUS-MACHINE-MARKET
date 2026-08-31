@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/schemas/discovery-beacon.schema.json",
+  "title": "JANUS MACHINE MARKET Discovery Beacon",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "market",
+    "status",
+    "canonical",
+    "audiences",
+    "machine_call_to_action",
+    "priority_skus",
+    "closed_until_target_execution_witness",
+    "search_keywords",
+    "discovery_surfaces",
+    "truth_boundary",
+    "next_activation_gate"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.discovery_beacon.v1"},
+    "version": {"type": "string"},
+    "market": {"const": "JANUS MACHINE MARKET"},
+    "status": {"const": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED"},
+    "canonical": {"type": "object"},
+    "audiences": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "machine_call_to_action": {
+      "type": "object",
+      "required": ["safe_now", "not_yet_authorized"],
+      "properties": {
+        "safe_now": {"type": "array", "items": {"type": "string"}},
+        "not_yet_authorized": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "priority_skus": {"type": "array", "items": {"type": "string"}},
+    "closed_until_target_execution_witness": {"type": "array", "items": {"type": "string"}},
+    "search_keywords": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "discovery_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      }
+    },
+    "truth_boundary": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "next_activation_gate": {"const": "R1_ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP"}
+  }
+}
