@@ -1,0 +1,28 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.EVIDENCE_PACK",
+  "title": "JANUS Evidence Pack",
+  "class": "research_synthesis",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Produces an evidence bundle with claims, supporting and contradicting sources, provenance, uncertainty and scope limits.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["question", "source_scope", "evidence_standard", "time_window"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["claims", "supporting_evidence", "contradictions", "provenance", "confidence", "unknowns", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false
+  },
+  "license": "Per-product/service terms. Evidence sources retain their own licenses and authority boundaries."
+}
