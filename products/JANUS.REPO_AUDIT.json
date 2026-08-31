@@ -3,7 +3,7 @@
   "sku": "JANUS.REPO_AUDIT",
   "title": "JANUS Repository Audit",
   "class": "repository_analysis",
-  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+  "status": "BLOCKED_P1_HARDENED_ROUNDTRIP_PENDING",
   "machine_discovery": true,
   "machine_purchase": false,
   "summary": "Bounded read-only audit of a public repository through JANUS HOME/Activator, covering architecture, claims, dependency surfaces, reproducibility signals, licensing observations and unresolved risks without executing repository code.",
@@ -35,6 +35,19 @@
     "audit_is_security_certification": false,
     "audit_is_legal_opinion": false
   },
+  "hardening_gate": {
+    "status": "BLOCKED",
+    "review_source": "JANUS-MACHINE-MARKET_PR_14",
+    "previous_witness_gate_authority": false,
+    "required_fixes": [
+      "NO_UNTRUSTED_IDENTIFIER_INTERPOLATION_IN_SHELL_SOURCE",
+      "SCHEMA_AND_FORMAT_VALIDATION_BEFORE_PATH_CONSTRUCTION",
+      "VERIFY_BEFORE_SELECT_AND_QUARANTINE_INVALID_RESPONSES",
+      "RESULT_RETURN_FIELDS_VALIDATED_BEFORE_DELIVERY_RECEIPT",
+      "SHARED_JANUS_MACHINE_MARKET_STATE_WRITER_MUTEX"
+    ],
+    "pass_condition": "NEW_CLEAN_HOME_TO_MARKET_PERSISTENT_RECEIPT_FRESH_CHECKOUT_REPLAY"
+  },
   "live_witness": {
     "mode": "OWNER_SHADOW_PROXY",
     "source_issue": 15,
@@ -51,6 +64,8 @@
     "market_delivery_receipt_hash": "5b6a6a161fda0262904a1c3ea9961c9b488333fe758bc7d1d2d45ca557c09ba2",
     "verified_buyer_delivery": true,
     "service_debt_closed": true,
+    "gate_authority": false,
+    "superseded_for_gate_decision": true,
     "repository_code_executed": false,
     "production_money_used": false,
     "foreign_agent_witness": false,

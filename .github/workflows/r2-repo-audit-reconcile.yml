@@ -6,12 +6,22 @@ on:
     paths:
       - 'runtime/r2_repo_audit_reconcile.py'
       - 'tests/test_r2_repo_audit_reconcile.py'
+      - 'schemas/repo-audit-request.schema.json'
+      - 'schemas/market-home-repo-audit-packet.schema.json'
+      - 'schemas/home-repo-audit-response.schema.json'
+      - 'schemas/repo-audit-delivery-receipt.schema.json'
+      - 'schemas/repo-audit-response-quarantine.schema.json'
       - '.github/workflows/r2-repo-audit-reconcile.yml'
   push:
     branches: [main]
     paths:
       - 'runtime/r2_repo_audit_reconcile.py'
       - 'tests/test_r2_repo_audit_reconcile.py'
+      - 'schemas/repo-audit-request.schema.json'
+      - 'schemas/market-home-repo-audit-packet.schema.json'
+      - 'schemas/home-repo-audit-response.schema.json'
+      - 'schemas/repo-audit-delivery-receipt.schema.json'
+      - 'schemas/repo-audit-response-quarantine.schema.json'
       - '.github/workflows/r2-repo-audit-reconcile.yml'
   workflow_dispatch:
   schedule:
@@ -33,6 +43,11 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
+          python -m json.tool schemas/repo-audit-request.schema.json >/dev/null
+          python -m json.tool schemas/market-home-repo-audit-packet.schema.json >/dev/null
+          python -m json.tool schemas/home-repo-audit-response.schema.json >/dev/null
+          python -m json.tool schemas/repo-audit-delivery-receipt.schema.json >/dev/null
+          python -m json.tool schemas/repo-audit-response-quarantine.schema.json >/dev/null
           python -m py_compile runtime/r2_repo_audit_reconcile.py tests/test_r2_repo_audit_reconcile.py
           python -m unittest -v tests.test_r2_repo_audit_reconcile
 
@@ -40,7 +55,7 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: contract
     concurrency:
-      group: janus-machine-market-service-reconcile
+      group: janus-machine-market-state-writer
       cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -91,74 +106,105 @@ jobs:
           git worktree add -B janus-market-service-state "$state" origin/janus/market-state
           echo "MARKET_STATE_WT=$state" >> "$GITHUB_ENV"
 
-      - name: Select oldest unreconciled repository-audit response
+      - name: Verify, quarantine, then select repository-audit response
         id: select
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p runtime/repo-audit-reconcile
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import json, os
-          from pathlib import Path
-          home=Path(os.environ['HOME_SERVICE_WT'])/'.janus/market-service-responses'
-          state=Path(os.environ['MARKET_STATE_WT'])/'state/r2-services/repo-audit/receipts'
-          rows=[]
-          if home.is_dir():
-              for p in sorted(home.glob('*.repo-audit-result.json')):
-                  try: r=json.loads(p.read_text(encoding='utf-8'))
-                  except Exception: continue
-                  rid=str(r.get('service_request_id') or '')
-                  if not rid or (state/f'{rid}.json').exists(): continue
-                  rows.append((rid,p,r))
-          if not rows:
-              print('found=false'); print('request_id='); raise SystemExit(0)
-          rid,p,r=rows[0]
-          target=Path('runtime/repo-audit-reconcile/home-response.json')
-          target.write_text(json.dumps(r,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print('found=true'); print('request_id='+rid)
-          PY
-
-      - name: No unreconciled repository-audit result
-        if: steps.select.outputs.found != 'true'
-        run: echo 'REPO_AUDIT_NO_UNRECONCILED_HOME_RESULT=TRUE'
-
-      - name: Verify exact packet and persist delivery
-        if: steps.select.outputs.found == 'true'
         env:
           PYTHONPATH: .
         shell: bash
         run: |
           set -euo pipefail
-          rid='${{ steps.select.outputs.request_id }}'
-          packet="$MARKET_OUTBOX_WT/.janus/market-home-outbox/${rid}.repo-audit.packet.json"
-          test -f "$packet"
-          cp "$packet" runtime/repo-audit-reconcile/packet.json
-          response_path=".janus/market-service-responses/${rid}.repo-audit-result.json"
-          HOME_RESPONSE_PATH="$response_path" python - <<'PY'
+          mkdir -p runtime/repo-audit-reconcile
+          home_commit="$(git -C "$HOME_SERVICE_WT" rev-parse --verify HEAD 2>/dev/null || true)"
+          HOME_SOURCE_COMMIT="$home_commit" python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from pathlib import Path
+          from runtime.r2_repo_audit_reconcile import select_oldest_verified_response
+
+          state_root=Path(os.environ['MARKET_STATE_WT'])/'state/r2-services/repo-audit'
+          result=select_oldest_verified_response(
+              home_response_dir=Path(os.environ['HOME_SERVICE_WT'])/'.janus/market-service-responses',
+              outbox_dir=Path(os.environ['MARKET_OUTBOX_WT'])/'.janus/market-home-outbox',
+              receipts_dir=state_root/'receipts',
+              quarantine_dir=state_root/'quarantine',
+              stage_dir=Path('runtime/repo-audit-reconcile'),
+              home_source_commit=os.environ['HOME_SOURCE_COMMIT'],
+          )
+          for key, value in result.items():
+              if isinstance(value, bool):
+                  value=str(value).lower()
+              print(f'{key}={value}')
+          PY
+
+      - name: No unreconciled repository-audit result
+        if: steps.select.outputs.found != 'true' && steps.select.outputs.state_changed != 'true'
+        run: echo 'REPO_AUDIT_NO_UNRECONCILED_HOME_RESULT=TRUE'
+
+      - name: Record rejected HOME responses as quarantined
+        if: steps.select.outputs.state_changed == 'true'
+        env:
+          QUARANTINED_COUNT: ${{ steps.select.outputs.quarantined_count }}
+        run: echo "REPO_AUDIT_HOME_RESPONSES_QUARANTINED=$QUARANTINED_COUNT"
+
+      - name: Verify exact packet and persist delivery
+        if: steps.select.outputs.found == 'true'
+        env:
+          PYTHONPATH: .
+          REQUEST_ID: ${{ steps.select.outputs.request_id }}
+          HOME_RESPONSE_PATH: ${{ steps.select.outputs.home_response_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
           import json, os, subprocess
           from pathlib import Path
-          from runtime.r2_repo_audit_reconcile import build_market_receipt, verify_home_response
+          from runtime.r2_repo_audit_reconcile import (
+              build_market_receipt,
+              build_result_comment,
+              create_only_json,
+              expected_home_response_path,
+              require_request_id,
+              verify_home_response,
+          )
+
+          rid=require_request_id(os.environ['REQUEST_ID'])
+          response_path=os.environ['HOME_RESPONSE_PATH']
+          if response_path != expected_home_response_path(rid):
+              raise SystemExit('REPO_AUDIT_HOME_RESPONSE_PATH_INVALID')
           packet=json.load(open('runtime/repo-audit-reconcile/packet.json'))
           response=json.load(open('runtime/repo-audit-reconcile/home-response.json'))
-          assert verify_home_response(response, packet=packet)
+          if packet['service_request']['request_id'] != rid:
+              raise SystemExit('REPO_AUDIT_SELECTION_PACKET_ID_MISMATCH')
+          if response['service_request_id'] != rid:
+              raise SystemExit('REPO_AUDIT_SELECTION_RESPONSE_ID_MISMATCH')
+          if not verify_home_response(response, packet=packet):
+              raise SystemExit('REPO_AUDIT_HOME_RESPONSE_INVALID')
+
           home=Path(os.environ['HOME_SERVICE_WT'])
           source_commit=subprocess.check_output(['git','-C',str(home),'rev-parse','HEAD'],text=True).strip()
-          blob=subprocess.check_output(['git','-C',str(home),'hash-object',os.environ['HOME_RESPONSE_PATH']],text=True).strip()
-          receipt=build_market_receipt(response,packet=packet,home_source_commit=source_commit,home_response_path=os.environ['HOME_RESPONSE_PATH'],home_response_blob_sha=blob)
+          blob=subprocess.check_output(
+              ['git','-C',str(home),'hash-object',response_path], text=True
+          ).strip()
+          receipt=build_market_receipt(
+              response,
+              packet=packet,
+              home_source_commit=source_commit,
+              home_response_path=response_path,
+              home_response_blob_sha=blob,
+          )
+          comment=build_result_comment(response,packet=packet)
           Path('runtime/repo-audit-reconcile/receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('runtime/repo-audit-reconcile/result-comment.md').write_text(comment,encoding='utf-8')
+          state=Path(os.environ['MARKET_STATE_WT'])/'state/r2-services/repo-audit'
+          create_only_json(state/'receipts'/f'{rid}.json',receipt)
+          create_only_json(state/'responses'/f'{rid}.json',response)
           PY
-          receipts="$MARKET_STATE_WT/state/r2-services/repo-audit/receipts"
-          responses="$MARKET_STATE_WT/state/r2-services/repo-audit/responses"
-          mkdir -p "$receipts" "$responses"
-          target_receipt="$receipts/${rid}.json"
-          target_response="$responses/${rid}.json"
-          if [ -f "$target_receipt" ]; then cmp -s runtime/repo-audit-reconcile/receipt.json "$target_receipt" || exit 2; else cp runtime/repo-audit-reconcile/receipt.json "$target_receipt"; fi
-          if [ -f "$target_response" ]; then cmp -s runtime/repo-audit-reconcile/home-response.json "$target_response" || exit 2; else cp runtime/repo-audit-reconcile/home-response.json "$target_response"; fi
           echo 'REPO_AUDIT_VERIFIED_BUYER_DELIVERY=PASS'
           echo 'REPO_AUDIT_SERVICE_DEBT_CLOSED=PASS'
 
       - name: Commit create-only Market delivery state
-        if: steps.select.outputs.found == 'true'
+        if: steps.select.outputs.found == 'true' || steps.select.outputs.state_changed == 'true'
+        env:
+          REQUEST_ID: ${{ steps.select.outputs.request_id }}
         shell: bash
         run: |
           set -euo pipefail
@@ -169,7 +215,8 @@ jobs:
           if git diff --cached --quiet; then
             echo 'REPO_AUDIT_MARKET_STATE_COMMIT=NO_CHANGE_EXACT_RETRY'
           else
-            git commit -m "Deliver repo audit ${{ steps.select.outputs.request_id }}"
+            subject="${REQUEST_ID:-quarantine-only}"
+            git commit -m "Reconcile repo audit $subject"
             git push origin HEAD:refs/heads/janus/market-state
             echo 'REPO_AUDIT_MARKET_STATE_COMMIT=PASS'
           fi
@@ -178,6 +225,7 @@ jobs:
         if: steps.select.outputs.found == 'true'
         env:
           PYTHONPATH: .
+          REQUEST_ID: ${{ steps.select.outputs.request_id }}
         shell: bash
         run: |
           set -euo pipefail
@@ -188,16 +236,23 @@ jobs:
           REPLAY="$replay" python - <<'PY'
           import json, os
           from pathlib import Path
-          from runtime.r2_repo_audit_reconcile import verify_home_response
-          rid='${{ steps.select.outputs.request_id }}'
+          from runtime.r2_repo_audit_reconcile import (
+              require_request_id,
+              verify_home_response,
+              verify_market_receipt,
+          )
+
+          rid=require_request_id(os.environ['REQUEST_ID'])
           root=Path(os.environ['REPLAY'])/'state/r2-services/repo-audit'
           receipt=json.loads((root/'receipts'/f'{rid}.json').read_text())
           response=json.loads((root/'responses'/f'{rid}.json').read_text())
           packet=json.load(open('runtime/repo-audit-reconcile/packet.json'))
-          assert receipt['verified_buyer_delivery'] is True and receipt['service_debt_closed'] is True
-          assert verify_home_response(response,packet=packet)
-          assert receipt['home_response_hash']==response['home_response_hash']
-          assert receipt['audit_result_hash']==response['audit_result_hash']
+          if packet['service_request']['request_id'] != rid:
+              raise SystemExit('REPO_AUDIT_REPLAY_PACKET_ID_MISMATCH')
+          if not verify_home_response(response,packet=packet):
+              raise SystemExit('REPO_AUDIT_REPLAY_RESPONSE_INVALID')
+          if not verify_market_receipt(receipt,response=response,packet=packet):
+              raise SystemExit('REPO_AUDIT_REPLAY_RECEIPT_INVALID')
           print('REPO_AUDIT_FRESH_CHECKOUT_DELIVERY=PASS')
           PY
 
@@ -205,40 +260,32 @@ jobs:
         if: steps.select.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: .
+          REQUEST_ID: ${{ steps.select.outputs.request_id }}
         shell: bash
         run: |
           set -euo pipefail
-          issue="$(python -c "import json; print((json.load(open('runtime/repo-audit-reconcile/packet.json')).get('return_route') or {}).get('source_issue_number') or '')")"
-          test -n "$issue" || exit 0
-          python - <<'PY' > "$RUNNER_TEMP/repo-audit-comment.md"
-          import json
-          r=json.load(open('runtime/repo-audit-reconcile/home-response.json'))
-          a=r['audit_result']; t=a['target']; arch=a['architecture_map']; lic=a['license_observations']; risks=a['risk_register']
-          print('JANUS.REPO_AUDIT verified result delivered.\n')
-          print(f"- resident_uuid: `{r['resident_uuid']}`")
-          print(f"- repository: `{t['repository']}`")
-          print(f"- requested_ref: `{t['requested_ref']}`")
-          print(f"- resolved_commit_sha: `{t['resolved_commit_sha']}`")
-          print(f"- tree_sha: `{t['tree_sha']}`")
-          print(f"- result_hash: `{r['audit_result_hash']}`")
-          print(f"- home_response_hash: `{r['home_response_hash']}`")
-          print(f"- observed_tree_entries: `{a['bounds']['observed_tree_entries']}`")
-          print(f"- tests_observed: `{str(arch['has_tests']).lower()}`")
-          print(f"- ci_observed: `{str(arch['has_ci']).lower()}`")
-          print(f"- license_file_observed: `{str(lic['license_file_observed']).lower()}`")
-          print(f"- risk_codes: `{','.join(x['code'] for x in risks) or 'NONE'}`")
-          print('- repository_code_executed: `false`')
-          print('- security_certification: `false`')
-          print('- legal_opinion: `false`')
-          print('\nThe complete machine-readable audit is preserved in the Market delivery receipt/state.')
-          print(f"\n<!-- REPO_AUDIT_RETURNED:{r['service_request_id']} -->")
+          issue="$(python - <<'PY'
+          import json, os
+          from runtime.r2_repo_audit_reconcile import require_request_id, verify_packet
+
+          rid=require_request_id(os.environ['REQUEST_ID'])
+          packet=json.load(open('runtime/repo-audit-reconcile/packet.json'))
+          if not verify_packet(packet) or packet['service_request']['request_id'] != rid:
+              raise SystemExit('REPO_AUDIT_RESULT_RETURN_PACKET_INVALID')
+          issue=packet['return_route']['source_issue_number']
+          if not isinstance(issue,int) or isinstance(issue,bool) or issue <= 0:
+              raise SystemExit('REPO_AUDIT_SOURCE_ISSUE_INVALID')
+          print(issue)
           PY
-          marker="REPO_AUDIT_RETURNED:${{ steps.select.outputs.request_id }}"
+          )"
+          marker="REPO_AUDIT_RETURNED:$REQUEST_ID"
           existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
           if printf '%s' "$existing" | grep -Fq "$marker"; then
             echo 'REPO_AUDIT_RESULT_COMMENT_ALREADY_PRESENT=TRUE'
           else
-            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/repo-audit-comment.md")" >/dev/null
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" \
+              -f body="$(cat runtime/repo-audit-reconcile/result-comment.md)" >/dev/null
             echo 'REPO_AUDIT_RESULT_RETURNED=PASS'
           fi
 

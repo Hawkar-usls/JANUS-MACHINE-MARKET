@@ -6,7 +6,7 @@
   "required": ["schema", "request_id", "sku", "buyer_actor_id", "repository", "ref", "audit_scope", "bounds", "read_only", "execute_repository_code", "command_authority_granted", "external_effect_authorized", "request_hash"],
   "properties": {
     "schema": {"const": "janus.market_service.repo_audit_request.v1"},
-    "request_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "pattern": "^ra-shadow-[0-9a-f]{48}$"},
     "sku": {"const": "JANUS.REPO_AUDIT"},
     "buyer_actor_id": {"type": "string", "minLength": 1},
     "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},

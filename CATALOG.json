@@ -44,7 +44,7 @@
       "sku": "JANUS.REPO_AUDIT",
       "title": "JANUS Repository Audit",
       "class": "repository_analysis",
-      "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+      "status": "BLOCKED_P1_HARDENED_ROUNDTRIP_PENDING",
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.REPO_AUDIT.json"
