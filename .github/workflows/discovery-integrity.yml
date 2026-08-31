@@ -1,0 +1,50 @@
+name: JANUS Machine Market Discovery Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'BEACON.json'
+      - 'AGENT_MARKET.json'
+      - 'CATALOG.json'
+      - '.well-known/agent-market.json'
+      - 'llms.txt'
+      - 'discovery/**'
+      - 'tools/validate_discovery.py'
+      - '.github/workflows/discovery-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'BEACON.json'
+      - 'AGENT_MARKET.json'
+      - 'CATALOG.json'
+      - '.well-known/agent-market.json'
+      - 'llms.txt'
+      - 'discovery/**'
+      - 'tools/validate_discovery.py'
+      - '.github/workflows/discovery-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discovery-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact snapshot
+        uses: actions/checkout@v4
+
+      - name: Validate discovery JSON syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m json.tool BEACON.json >/dev/null
+          python -m json.tool AGENT_MARKET.json >/dev/null
+          python -m json.tool CATALOG.json >/dev/null
+          python -m json.tool .well-known/agent-market.json >/dev/null
+          for f in discovery/*.json; do python -m json.tool "$f" >/dev/null; done
+
+      - name: Enforce fail-closed discovery truth
+        run: python tools/validate_discovery.py
