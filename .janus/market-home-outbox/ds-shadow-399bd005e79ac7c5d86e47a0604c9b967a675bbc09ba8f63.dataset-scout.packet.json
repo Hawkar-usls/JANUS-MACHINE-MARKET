@@ -1,0 +1,72 @@
+{
+  "command_authority_granted": false,
+  "commerce_mode": "ZERO_PRICE_SHADOW",
+  "created_at": "2026-08-31T14:47:51Z",
+  "dataset_payload_download_authorized": false,
+  "external_effect_authorized": false,
+  "home_repository": "Hawkar-usls/Hawkar-usls",
+  "market_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "money_enabled": false,
+  "packet_hash": "4d227d580d917c9dba8833725e30d8e92493097078a28be296ce76dd004a1792",
+  "packet_id": "dsp-shadow-37891ac48ff997bf5c2504c9b60ac8de7f1ac61175982a19",
+  "payment_reference": null,
+  "purchase_grant": {
+    "execution_authority_granted": false,
+    "purchase_id": "pur-ds-shadow-e3f4d51e9f1873b7b67ad9eabfbff21a",
+    "reasons": [
+      "ZERO_PRICE_SHADOW_SERVICE_TEST",
+      "PAYMENT_NOT_REQUIRED",
+      "HOME_ADMISSION_REQUIRED"
+    ],
+    "schema": "janus.machine_market.purchase_grant.v1",
+    "service_entitlement": {
+      "bounds": {
+        "max_catalogs": 2,
+        "max_results": 5,
+        "per_catalog_timeout_seconds": 8
+      },
+      "dataset_payload_download_authorized": false,
+      "read_only": true,
+      "redistribution_authority_granted": false,
+      "request_id": "ds-shadow-399bd005e79ac7c5d86e47a0604c9b967a675bbc09ba8f63",
+      "service": "JANUS.DATASET_SCOUT"
+    },
+    "sku": "JANUS.DATASET_SCOUT",
+    "status": "PURCHASE_ELIGIBLE"
+  },
+  "purchase_grant_hash": "6c0cfe7290ba102ff84c913e1f092847c32864930c442725aba338d0c6a66357",
+  "redistribution_authority_granted": false,
+  "return_route": {
+    "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "source_issue_id": 5301515121,
+    "source_issue_number": 19
+  },
+  "schema": "janus.machine_market.home_dataset_scout_packet.v1",
+  "service_request": {
+    "bounds": {
+      "max_catalogs": 2,
+      "max_results": 5,
+      "per_catalog_timeout_seconds": 8
+    },
+    "buyer_actor_id": "github:Hawkar-usls",
+    "command_authority_granted": false,
+    "dataset_payload_download_authorized": false,
+    "date_range": null,
+    "domain": "earth science",
+    "external_effect_authorized": false,
+    "format_preferences": [
+      "csv",
+      "parquet"
+    ],
+    "license_preferences": [],
+    "query": "climate",
+    "read_only": true,
+    "redistribution_authority_granted": false,
+    "request_hash": "a10df731fc190721a551333b827d398929902f53aaacb7ca268cc62e4baa04c4",
+    "request_id": "ds-shadow-399bd005e79ac7c5d86e47a0604c9b967a675bbc09ba8f63",
+    "schema": "janus.market_service.dataset_scout_request.v1",
+    "sku": "JANUS.DATASET_SCOUT"
+  },
+  "service_request_hash": "a10df731fc190721a551333b827d398929902f53aaacb7ca268cc62e4baa04c4",
+  "sku": "JANUS.DATASET_SCOUT"
+}
