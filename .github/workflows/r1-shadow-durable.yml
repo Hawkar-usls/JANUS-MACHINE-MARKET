@@ -21,18 +21,15 @@ permissions:
 
 jobs:
   contract:
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout exact snapshot
-        uses: actions/checkout@v4
-      - name: Compile durable engine
-        run: python -m py_compile runtime/r1_shadow_search.py
-      - name: Verify R1 constitution remains fail-closed
+      - uses: actions/checkout@v4
+      - name: Validate fail-closed R1 runtime
         shell: bash
         run: |
           set -euo pipefail
+          python -m py_compile runtime/r1_shadow_search.py
           python - <<'PY'
           import json
           c=json.load(open('runtime/R1_SHADOW_SEARCH_CONSTITUTION.json', encoding='utf-8'))
@@ -43,6 +40,7 @@ jobs:
           PY
 
   durable-roundtrip:
+    needs: contract
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && startsWith(github.event.issue.title, '[JANUS SEARCH SHADOW]') && github.event.issue.user.login == github.repository_owner)
@@ -61,7 +59,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Materialize exact request from bounded machine ingress
+      - name: Materialize bounded machine request
         env:
           DISPATCH_REQUEST_JSON: ${{ inputs.request_json }}
         shell: bash
@@ -70,7 +68,6 @@ jobs:
           python - <<'PY'
           import json, os, pathlib
           event=os.environ['GITHUB_EVENT_NAME']
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'r1-request.json'
           if event == 'workflow_dispatch':
               raw=os.environ.get('DISPATCH_REQUEST_JSON','')
               origin='MANUAL_WORKFLOW_SHADOW'
@@ -79,8 +76,7 @@ jobs:
               body=str(payload.get('issue',{}).get('body') or '')
               a='<!-- JANUS_MACHINE_REQUEST_JSON'
               b='JANUS_MACHINE_REQUEST_JSON -->'
-              start=body.find(a)
-              end=body.find(b)
+              start, end=body.find(a), body.find(b)
               if start < 0 or end < 0 or end <= start:
                   raise SystemExit('ISSUE_MACHINE_REQUEST_MARKER_MISSING')
               raw=body[start+len(a):end].strip()
@@ -88,13 +84,14 @@ jobs:
           else:
               raise SystemExit('UNSUPPORTED_INGRESS')
           req=json.loads(raw)
-          out.write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
-          pathlib.Path(os.environ['RUNNER_TEMP']+'/r1-origin.txt').write_text(origin, encoding='utf-8')
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          (root/'r1-request.json').write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          (root/'r1-origin.txt').write_text(origin, encoding='utf-8')
           print(f'R1_REQUEST_ORIGIN={origin}')
           PY
           python -m json.tool "$RUNNER_TEMP/r1-request.json" >/dev/null
 
-      - name: Mount persistent market state branch
+      - name: Mount persistent market state
         shell: bash
         run: |
           set -euo pipefail
@@ -105,7 +102,7 @@ jobs:
           git worktree add -B janus/market-state "$state" origin/janus/market-state
           echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
 
-      - name: Execute bounded zero-price shadow request against persistent state
+      - name: Execute against durable state
         shell: bash
         run: |
           set -euo pipefail
@@ -113,18 +110,15 @@ jobs:
           python runtime/r1_shadow_search.py \
             --request "$RUNNER_TEMP/r1-request.json" \
             --state "$MARKET_STATE/state/r1-shadow/market.sqlite3" \
-            --catalog CATALOG.json \
-            --products-dir products \
+            --catalog CATALOG.json --products-dir products \
             --output "$RUNNER_TEMP/r1-first.json"
           python - "$MARKET_STATE/state/r1-shadow/market.sqlite3" <<'PY'
           import sqlite3, sys
-          db=sqlite3.connect(sys.argv[1])
-          db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
-          db.close()
+          db=sqlite3.connect(sys.argv[1]); db.execute('PRAGMA wal_checkpoint(TRUNCATE)'); db.close()
           print('R1_SQLITE_CHECKPOINT=PASS')
           PY
 
-      - name: Persist purchase result witness without rewriting execution identity
+      - name: Freeze persistent witness
         shell: bash
         run: |
           set -euo pipefail
@@ -152,21 +146,14 @@ jobs:
           if path.exists() and path.read_text(encoding='utf-8') != text:
               raise SystemExit('PERSISTENT_WITNESS_IMMUTABILITY_CONFLICT')
           path.write_text(text, encoding='utf-8')
-          (root/'HEAD.json').write_text(json.dumps({
-            'schema':'janus.machine_market.r1_state_head.v1',
-            'purchase_id':pid,
-            'request_hash':env['request_hash'],
-            'execution_id':env['execution_id'],
-            'result_sha256':env['result_sha256'],
-            'request_origin':origin,
-            'foreign_agent_witness':False
-          }, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          (root/'HEAD.json').write_text(json.dumps({k:witness[k] for k in (
+            'schema','purchase_id','request_hash','execution_id','result_sha256','request_origin','foreign_agent_witness'
+          )}, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
           print(f'R1_PURCHASE_ID={pid}')
           print(f'R1_EXECUTION_ID={env["execution_id"]}')
-          print(f'R1_FIRST_CALL_REPLAYED={str(env["replayed"]).upper()}')
           PY
 
-      - name: Commit only persistent state delta
+      - name: Commit only state delta
         shell: bash
         run: |
           set -euo pipefail
@@ -179,7 +166,7 @@ jobs:
             echo 'R1_STATE_PERSISTED=PASS'
           fi
 
-      - name: Fresh-checkout replay proves no second execution
+      - name: Fresh-checkout replay
         shell: bash
         run: |
           set -euo pipefail
@@ -189,15 +176,12 @@ jobs:
           python runtime/r1_shadow_search.py \
             --request "$RUNNER_TEMP/r1-request.json" \
             --state "$replay/state/r1-shadow/market.sqlite3" \
-            --catalog CATALOG.json \
-            --products-dir products \
+            --catalog CATALOG.json --products-dir products \
             --output "$RUNNER_TEMP/r1-replay.json"
           python - "$RUNNER_TEMP/r1-first.json" "$RUNNER_TEMP/r1-replay.json" <<'PY'
-          import json, sys
-          a=json.load(open(sys.argv[1], encoding='utf-8'))
-          b=json.load(open(sys.argv[2], encoding='utf-8'))
-          assert b['replayed'] is True
-          assert b['billable_execution_delta'] == 0
+          import json, os, sys
+          a=json.load(open(sys.argv[1], encoding='utf-8')); b=json.load(open(sys.argv[2], encoding='utf-8'))
+          assert b['replayed'] is True and b['billable_execution_delta'] == 0
           assert b['execution_count_for_purchase'] == 1
           assert a['request_hash'] == b['request_hash']
           assert a['execution_id'] == b['execution_id']
@@ -207,13 +191,13 @@ jobs:
           print('R1_DURABLE_STATE_BRANCH=PASS')
           print('R1_FRESH_CHECKOUT_REPLAY=PASS')
           print('R1_EXACT_RETRY_NO_SECOND_EXECUTION=PASS')
-          print('R1_MACHINE_INGRESS=PASS' if os.environ.get('GITHUB_EVENT_NAME') == 'issues' else 'R1_MACHINE_INGRESS=MANUAL')
+          print('R1_MACHINE_INGRESS=PASS' if os.environ['GITHUB_EVENT_NAME']=='issues' else 'R1_MACHINE_INGRESS=MANUAL')
           print('R1_FOREIGN_AGENT_WITNESS=PENDING')
           print('R1_PRODUCTION_ACTIVATOR_BINDING=PENDING')
           print('R1_GREEN=FALSE')
           PY
 
-      - name: Return compact receipt to self-issued GitHub machine request
+      - name: Return receipt to self-issued GitHub request
         if: github.event_name == 'issues'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -224,16 +208,12 @@ jobs:
           python - "$RUNNER_TEMP/r1-first.json" > "$RUNNER_TEMP/r1-comment.md" <<'PY'
           import json, sys
           e=json.load(open(sys.argv[1], encoding='utf-8'))
-          print('## JANUS.SEARCH · R1 zero-price shadow result')
-          print()
+          print('## JANUS.SEARCH · R1 zero-price shadow result\n')
           print(f"- purchase_id: `{e['purchase_grant']['purchase_id']}`")
           print(f"- request_hash: `{e['request_hash']}`")
           print(f"- execution_id: `{e['execution_id']}`")
           print(f"- result_sha256: `{e['result_sha256']}`")
-          print(f"- replayed: `{str(e['replayed']).lower()}`")
-          print(f"- execution_authority_granted_by_purchase: `false`")
-          print(f"- production_activator_authority: `false`")
-          print()
+          print(f"- replayed: `{str(e['replayed']).lower()}`\n")
           print('`SELF_OWNER_ISSUE_SHADOW != FOREIGN_AGENT_WITNESS`')
           PY
           gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/r1-comment.md")" >/dev/null
