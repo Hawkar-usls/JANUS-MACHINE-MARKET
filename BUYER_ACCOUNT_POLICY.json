@@ -1,0 +1,79 @@
+{
+  "schema": "janus.machine_market.buyer_account_policy.v1",
+  "status": "ACCOUNT_LEDGER_PREPARED",
+  "purpose": "Maintain durable buyer memory for humans and machine agents across purchases, service delivery, quota, JANUS Coin rewards, reviews and compensation without storing secrets in the public market repository.",
+  "identity": {
+    "primary_buyer_actor_id": true,
+    "github_actor_supported": true,
+    "machine_agent_actor_supported": true,
+    "profile_id_rule": "buyer- + sha256(buyer_actor_id)",
+    "secret_credentials_in_profile": false,
+    "payment_private_keys_in_profile": false,
+    "opt_in_freeform_personal_memory": false
+  },
+  "event_types": [
+    "ACCOUNT_OPENED",
+    "MARKET_TEST_CREDIT_MINTED",
+    "MARKET_TEST_CREDIT_SPENT",
+    "PURCHASE_ADMITTED",
+    "SERVICE_DEBT_OPENED",
+    "SERVICE_DELIVERED",
+    "SERVICE_COMPENSATION_CREDITED",
+    "JANUS_COIN_MINTED",
+    "JANUS_COIN_SPENT_GM_SHOP",
+    "REVIEW_CAPABILITY_ISSUED",
+    "REVIEW_PUBLISHED"
+  ],
+  "balances": {
+    "MARKET_TEST_CREDIT": {
+      "cash_value": false,
+      "production_payment_proof": false,
+      "self_test_only": true
+    },
+    "JANUS_COIN": {
+      "cash_value_defined_by_market": false,
+      "gm_shop_spend": "FUTURE_GM_SHOP_CONTRACT",
+      "transferability_policy": "PERMITTED_IN_PRINCIPLE",
+      "transfer_protocol_status": "NOT_IMPLEMENTED",
+      "peer_to_peer_transfer_live": false,
+      "secondary_market_live": false
+    },
+    "SERVICE_CREDIT": {
+      "cash_value": false,
+      "purpose": "Compensation or promotional bounded service entitlement"
+    }
+  },
+  "profile_projection": {
+    "fields": [
+      "profile_id",
+      "buyer_actor_id",
+      "first_seen_at",
+      "last_seen_at",
+      "order_count",
+      "fulfilled_count",
+      "open_service_debt_count",
+      "sku_order_counts",
+      "balances",
+      "janus_coin_earned_total",
+      "janus_coin_spent_total",
+      "review_count",
+      "last_event_hash"
+    ],
+    "rebuildable_from_ledger": true,
+    "head_is_source_of_truth": false
+  },
+  "human_cabinet": {
+    "status": "READ_ONLY_ACCOUNT_VIEW_CONTRACT_PREPARED",
+    "public_view_must_exclude_secrets": true,
+    "authenticated_private_view": "FUTURE_BACKEND_GATE",
+    "machine_readable_profile": true
+  },
+  "laws": [
+    "ACCOUNT MEMORY != COMMAND AUTHORITY",
+    "PROFILE HEAD IS REBUILDABLE CACHE NOT SOURCE OF TRUTH",
+    "TEST CREDIT != MONEY",
+    "TEST CREDIT != PAYMENT PROOF",
+    "JANUS COIN TRANSFER NOT FORBIDDEN BUT NOT IMPLEMENTED",
+    "SERVICE DEBT REMAINS OPEN UNTIL DELIVERY OR EXPLICIT COMPENSATION RESOLUTION"
+  ]
+}
