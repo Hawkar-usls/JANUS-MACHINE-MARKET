@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>JANUS MACHINE MARKET</title>
+  <meta name="description" content="Agent-native marketplace for machine-readable research, data, AI services, technology licensing and bounded JANUS capabilities.">
+  <meta name="theme-color" content="#070b10">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="alternate" type="application/json" href="BEACON.json">
+  <link rel="alternate" type="application/json" href="CATALOG.json">
+  <link rel="alternate" type="application/json" href="AGENT_MARKET.json">
+  <link rel="alternate" type="application/json" href="GM_SHOP.json">
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="nav shell">
+    <button class="brand" data-view="market" aria-label="JANUS Machine Market home">
+      <span class="brand-seal">Ⅱ</span>
+      <span><b>JANUS</b><small>MACHINE MARKET</small></span>
+    </button>
+    <nav class="nav-links" aria-label="Primary">
+      <button class="nav-link active" data-view="market">MARKET</button>
+      <button class="nav-link" data-view="gmshop">JANUS GM SHOP</button>
+      <button class="nav-link" data-view="machine">MACHINE SURFACES</button>
+      <button class="nav-link" data-view="status">STATUS</button>
+    </nav>
+    <a class="beacon" href="BEACON.json">BEACON.json ↗</a>
+  </header>
+
+  <main class="shell">
+    <section id="market" class="view active-view">
+      <div class="hero panel">
+        <div class="hero-copy">
+          <p class="eyebrow">DISCOVER · CONFIGURE · REVIEW · VERIFY</p>
+          <h1><span>JANUS</span> MACHINE MARKET</h1>
+          <p class="lead">A human storefront and machine-readable catalog for bounded JANUS research, data, audit and technology services.</p>
+          <div class="need-box">
+            <input id="needInput" placeholder="Tell JANUS what you need…" aria-label="Describe what you need">
+            <button id="needButton" class="gold-btn">FIND SERVICE</button>
+          </div>
+          <div id="recommendation" class="recommendation" hidden></div>
+        </div>
+        <div class="hero-glyph" aria-hidden="true">
+          <div class="door door-left"></div>
+          <div class="door-light"></div>
+          <div class="door door-right"></div>
+          <div class="janus-word">I&nbsp;&nbsp;ANVS</div>
+        </div>
+      </div>
+
+      <div class="truthbar" id="truthbar">
+        <span class="truth live">DISCOVERY <b>LIVE</b></span>
+        <span class="truth r1">SEARCH SHADOW <b>R1</b></span>
+        <span class="truth locked">PAYMENTS <b>LOCKED</b></span>
+        <span class="truth prep">A2A <b>PREPARED</b></span>
+        <span class="truth prep">MCP <b>PREPARED</b></span>
+        <span class="truth prep">x402 <b>PREPARED</b></span>
+        <span class="truth closed">INFERENCE <b>CLOSED</b></span>
+        <span class="truth closed">COMPUTE <b>CLOSED</b></span>
+      </div>
+
+      <div class="market-layout">
+        <section>
+          <div class="section-title">
+            <div><p class="eyebrow">GM-SHOP LOGIC · MACHINE SERVICES</p><h2>Choose your capabilities</h2></div>
+            <div class="filters"><input id="catalogSearch" placeholder="Search catalog"><select id="catalogFilter"><option value="all">All</option><option value="open">Discoverable</option><option value="closed">Closed</option><option value="tech">Technology</option></select></div>
+          </div>
+          <div id="catalog" class="catalog"></div>
+        </section>
+
+        <aside class="loadout panel">
+          <div class="loadout-head"><div><p class="eyebrow">YOUR INVENTORY</p><h2>Loadout</h2></div><button id="clearLoadout" class="tiny-btn">CLEAR</button></div>
+          <div id="loadoutList" class="loadout-list empty">Add services from the catalog.</div>
+          <div class="quote-lines">
+            <div><span>Mode</span><b>R1 SHADOW</b></div>
+            <div><span>Live price</span><b>NOT PUBLISHED</b></div>
+            <div><span>Payments</span><b class="amber">LOCKED</b></div>
+            <div><span>Autonomous purchase</span><b>OFF</b></div>
+          </div>
+          <button id="reviewTrade" class="gold-btn wide">REVIEW TRADE</button>
+          <p class="micro">The interface previews the final commerce UX. Current public transaction authority remains closed.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="gmshop" class="view">
+      <div class="gm-hero panel">
+        <div>
+          <p class="eyebrow">JANUS GM SHOP · BONUS INVENTORY</p>
+          <h1 class="gm-title">The Gate rewards the agent.</h1>
+          <p class="lead">Planned rule: purchased quota stays guaranteed. An equivalent amount of non-transferable <b>JANUS COIN play credit</b> is granted separately for the bonus layer. No cash-out. No purchased quota is wagered.</p>
+          <div class="gm-policy-row">
+            <span>PURCHASED QUOTA ≠ PLAY CREDIT</span>
+            <span>NO CASH VALUE</span>
+            <span>NON-TRANSFERABLE</span>
+            <span>PREVIEW / SHADOW</span>
+          </div>
+        </div>
+        <div class="coin-chip"><span>JANUS COIN</span><b id="playBalance">100</b><small>DEMO PLAY CREDIT</small></div>
+      </div>
+
+      <div class="gm-grid">
+        <section class="bonus-stage panel" id="bonusStage">
+          <div class="camera-label" id="cameraLabel">FRONT CAMERA</div>
+          <div class="scene-camera">
+            <div class="arch-model" aria-label="Janus Arch portal model">
+              <div class="arch-roof"><span>IANUS VIAS SERVAT</span></div>
+              <div class="arch-pier pier-left"><i></i><i></i></div>
+              <div class="arch-pier pier-right"><i></i><i></i></div>
+              <div class="arch-vault"></div>
+              <div class="portal-core"><span class="crossroad"></span></div>
+              <div class="arch-side side-left"></div><div class="arch-side side-right"></div>
+            </div>
+            <div class="axle" id="axle" aria-label="Animated Janus axle">
+              <i class="gear-teeth"></i><i class="ring ring-a"></i><i class="ring ring-b"></i><i class="ring ring-c"></i>
+              <span class="coin-face"><em>IANVS</em><b>Ⅱ</b><small>CUSTOS PORTARVM</small></span>
+            </div>
+          </div>
+          <div class="stage-vignette"></div>
+          <div class="stage-copy">
+            <p class="eyebrow">BONUS FORGE</p>
+            <h2>Enter through the arch.</h2>
+            <p>The portal ignites, the Oculus/Axle accelerates, and the camera tilts into a true top-down activation view.</p>
+          </div>
+        </section>
+
+        <aside class="reward-panel panel">
+          <p class="eyebrow">BUFF INVENTORY</p>
+          <h2>Possible bonus rewards</h2>
+          <div id="rewardList" class="reward-list"></div>
+          <div class="bet-row">
+            <div><span>PLAY CREDIT</span><div class="stepper"><button id="betDown">−</button><b id="betValue">10</b><button id="betUp">+</button></div></div>
+            <button id="activateBonus" class="cyan-btn">ACTIVATE BONUS</button>
+          </div>
+          <div id="bonusResult" class="bonus-result">Ready. Preview credits have no monetary value.</div>
+        </aside>
+      </div>
+
+      <section class="artifact-strip panel">
+        <div class="archive-seal"><b>ARCHIVE</b><span>RECOVERED</span></div>
+        <div><p class="eyebrow">PHYSICAL → DIGITAL · CANONICAL ASSETS FOUND</p><h2>The page is bound to the real Janus artifact family.</h2><p><code>JANUS_ARCH_QNAP_A1_ECO_READY.3mf</code> · SHA-256 <code>7de66876…4353bc</code><br><code>JANUS_Coin(4).3mf</code> · SHA-256 <code>69487a52…e1346</code><br><code>JANUS_AXLE_COIN_TWO_SIDED_LAUREL_A1_v2.6_ADHESION_ROTATION_REPAIR(1).3mf</code> · SHA-256 <code>f5a63254…a3cc8</code></p><a class="archive-link" href="https://github.com/Hawkar-usls/janus-meta-registry/blob/main/data/JANUS-PHYSICAL-ARCH-OCULUS-ASSET-MANIFEST-2026-08-17.json">OPEN CANONICAL ASSET MANIFEST ↗</a></div>
+      </section>
+    </section>
+
+    <section id="machine" class="view">
+      <div class="section-title"><div><p class="eyebrow">FOR AGENTS</p><h1>Machine-readable surfaces</h1><p class="lead">The pretty storefront and the machine contract point to the same catalog.</p></div></div>
+      <div class="surface-grid" id="surfaceGrid"></div>
+    </section>
+
+    <section id="status" class="view">
+      <div class="status-grid">
+        <article class="panel"><p class="eyebrow">CURRENT GATE</p><h2>FOREIGN_AGENT_WITNESS</h2><p>Pending a real independent external machine discovery/request persistent receipt.</p><b class="status-big amber">PENDING</b></article>
+        <article class="panel"><p class="eyebrow">COMMERCE</p><h2>Payments</h2><p>No general transaction endpoint is established. Unsolicited payment grants nothing.</p><b class="status-big red">LOCKED</b></article>
+        <article class="panel"><p class="eyebrow">RUNTIME</p><h2>Inference / Compute</h2><p>Both remain closed until the required target execution witness exists.</p><b class="status-big red">CLOSED</b></article>
+        <article class="panel"><p class="eyebrow">DISCOVERY</p><h2>Repository beacon</h2><p>GitHub, llms.txt and JANUS-native machine discovery are public now.</p><b class="status-big cyan">LIVE</b></article>
+      </div>
+      <div class="laws panel"><p class="eyebrow">JANUS LAWS</p><div><span>DISCOVERY ≠ PURCHASE</span><span>PAYMENT ≠ AUTHORITY</span><span>UNSOLICITED PAYMENT GRANTS NOTHING</span><span>SELF REQUEST ≠ FOREIGN WITNESS</span></div></div>
+    </section>
+  </main>
+
+  <div class="trade-modal" id="tradeModal" aria-hidden="true">
+    <div class="trade-card panel">
+      <button class="close" id="closeTrade" aria-label="Close">×</button>
+      <p class="eyebrow">LINEAGE-STYLE TWO-SIDED CONFIRMATION</p>
+      <h2>JANUS TRADE WINDOW</h2>
+      <div class="trade-cols">
+        <section><h3>BUYER</h3><div id="buyerTradeItems" class="trade-items"></div><div class="confirm-box pending"><span>BUYER SETTLEMENT</span><b>PAYMENTS LOCKED</b></div></section>
+        <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>SHADOW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WAITING FOR FUTURE COMMERCE GATE</b></div></section>
+      </div>
+      <div class="trade-rule">TRADE COMPLETE requires both sides confirmed. Current R1 interface never converts this preview into payment or execution authority.</div>
+      <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SHADOW ISSUE</button></div>
+    </div>
+  </div>
+
+  <footer class="shell footer"><span>JANUS MACHINE MARKET · Human storefront + machine discovery</span><span>Apache-2.0 applies to marketplace implementation only.</span></footer>
+  <script src="assets/site.js"></script>
+</body>
+</html>
