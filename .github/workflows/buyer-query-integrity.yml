@@ -9,6 +9,8 @@ on:
       - 'schemas/buyer-query.schema.json'
       - 'schemas/buyer-query-receipt.schema.json'
       - 'products/JANUS.SEARCH.json'
+      - 'runtime/buyer_query_envelope.py'
+      - 'tests/test_buyer_query_envelope.py'
       - 'tools/validate_buyer_query_plane.py'
       - '.github/workflows/buyer-query-integrity.yml'
   push:
@@ -19,6 +21,8 @@ on:
       - 'schemas/buyer-query.schema.json'
       - 'schemas/buyer-query-receipt.schema.json'
       - 'products/JANUS.SEARCH.json'
+      - 'runtime/buyer_query_envelope.py'
+      - 'tests/test_buyer_query_envelope.py'
       - 'tools/validate_buyer_query_plane.py'
       - '.github/workflows/buyer-query-integrity.yml'
   workflow_dispatch:
@@ -41,5 +45,11 @@ jobs:
           python -m json.tool schemas/buyer-query.schema.json >/dev/null
           python -m json.tool schemas/buyer-query-receipt.schema.json >/dev/null
           python -m json.tool products/JANUS.SEARCH.json >/dev/null
+      - name: Compile buyer query envelope
+        run: python -m py_compile runtime/buyer_query_envelope.py tests/test_buyer_query_envelope.py
+      - name: Run buyer query adversarial tests
+        env:
+          PYTHONPATH: .
+        run: python -m unittest -v tests.test_buyer_query_envelope
       - name: Enforce fail-closed post-purchase query law
         run: python tools/validate_buyer_query_plane.py
