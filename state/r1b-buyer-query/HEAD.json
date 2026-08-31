@@ -1,0 +1,18 @@
+{
+  "execution_identity": "tr-a156909094f9b0b71bf85f91dc8ef15ae06e596f2b2d50059efbf0c7d3e89019",
+  "external_effect_authorized": false,
+  "file_fabric_digest": "6b45f0f503a886df155b26344ce2e2b0622940a91aa5f4d824bb6fc97484acf4",
+  "foreign_buyer_witness": false,
+  "home_response_hash": "d68601dbf063a25e345177dc0c426440c93a03afe5a749d0903150d6fe1e0235",
+  "model_digest": "9f1e19336fb6a88f083192b1a2b90a54d669ee108af55d96d2c9fa1aa4cd2d91",
+  "money_enabled": false,
+  "production_purchase": false,
+  "purchase_grant_hash": "856d64f0099e423ef4c36f1317914bf457a4635aec73603aef38103ea973add4",
+  "purchase_id": "pur-bq-shadow-7a178b4d7783dc3fe0d2ffe8884927d2",
+  "query_hash": "492ad5671eccb3e69a9ec53dd428ab61b397b9d2b1c1a1899c0e78db31b1a6d4",
+  "query_id": "bq-99d0577af26c5d3fc1add7b8cf9aec9a6b3143b389bc1dbf6d1b74855aa4843c",
+  "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+  "response_hash": "1933c571f9b806bfb4c3a83074d745f6083ed7f133499caec01676a331bfc6f7",
+  "schema": "janus.machine_market.r1b_buyer_query_head.v1",
+  "status": "R1B_ZERO_PRICE_HOME_RESPONSE_RECONCILED"
+}
