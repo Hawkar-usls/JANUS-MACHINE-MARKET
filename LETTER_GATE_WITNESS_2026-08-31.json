@@ -4,13 +4,15 @@
   "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
   "evidence_branch": "evidence/letter-gate-clean-witness-2026-08-31",
   "hardening_main_sha": "ca42feb888d2da5cfa5aac03b4ec9523a467f8d1",
-  "gate_state": "BLOCKED_GLOBAL_STATE_WRITER_MUTEX_MISMATCH",
-  "truth_boundary": "No pre-hardening delivery may be reused as LETTER GATE evidence.",
+  "latest_mutex_main_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
+  "gate_state": "BLOCKED_PENDING_FINAL_POST_MUTEX_CLEAN_WITNESS",
+  "truth_boundary": "No pre-hardening or pre-final-mutex delivery may be reused as LETTER GATE PASS evidence.",
   "clean_witness": {
     "source_issue": 24,
+    "status": "SUPERSEDED_BY_FINAL_MUTEX_PATCH",
     "source_issue_title": "[JANUS REPO AUDIT SHADOW] LETTER gate post-hardening clean witness",
     "outbox": {
-      "status": "PASS",
+      "status": "PASS_BUT_SUPERSEDED",
       "workflow_run_id": 33408333100,
       "contract_job_id": 99541390823,
       "contract_job_conclusion": "success",
@@ -26,33 +28,35 @@
       "execute_repository_code": false,
       "repository_write_authorized": false
     },
-    "home_bridge": {
-      "status": "WAITING_FOR_POST_HARDENING_RUN"
-    },
-    "market_reconcile": {
-      "status": "WAITING_FOR_HOME_RESPONSE"
-    },
-    "persistent_receipt": {
-      "status": "NOT_YET_VERIFIED"
-    },
-    "fresh_checkout_replay": {
-      "status": "NOT_YET_VERIFIED"
-    }
+    "home_bridge": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
+    "market_reconcile": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
+    "persistent_receipt": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"},
+    "fresh_checkout_replay": {"status": "NOT_ELIGIBLE_FOR_FINAL_GATE_EVIDENCE"}
   },
   "global_state_writer_audit": {
-    "status": "BLOCKED_FOUND_MISMATCH",
+    "status": "PASS_FOR_KNOWN_PERSISTENT_WRITERS",
     "required_group": "janus-machine-market-state-writer",
-    "finding": {
-      "severity": "P2_STATE_SERIALIZATION",
-      "workflow": ".github/workflows/r3-dataset-scout-reconcile.yml",
-      "observed_group": "janus-machine-market-service-reconcile",
-      "required_group": "janus-machine-market-state-writer",
-      "writes_branch": "janus/market-state",
-      "canonical_file_blob_sha": "4850ef316f2682dbdd5cab81101734a0ff79d600",
-      "remediation_branch": "fix/r3-market-state-writer-mutex",
-      "status": "PATCH_IN_PROGRESS"
+    "audited_writers": [
+      {"workflow": ".github/workflows/r1b-buyer-query-shadow-reconcile.yml", "group": "janus-machine-market-state-writer", "status": "PASS"},
+      {"workflow": ".github/workflows/r2-repo-audit-reconcile.yml", "group": "janus-machine-market-state-writer", "status": "PASS"},
+      {"workflow": ".github/workflows/r3-dataset-scout-reconcile.yml", "group": "janus-machine-market-state-writer", "status": "PASS_AFTER_PR_25"}
+    ],
+    "remediation": {
+      "pull_request": 25,
+      "head_sha": "b54ff647d6bf95fe09c2767fa5d4eae3574ca32f",
+      "ci_run_id": 33409054312,
+      "contract_job_id": 99543763682,
+      "contract_job_conclusion": "success",
+      "reconcile_job_id": 99543824054,
+      "reconcile_job_conclusion": "skipped_by_pull_request_design",
+      "merge_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
+      "status": "MERGED"
     },
-    "note": "LETTER GATE remains blocked because a concurrent Dataset Scout reconciler can push the same janus/market-state branch outside the common writer mutex."
+    "note": "The previously identified Dataset Scout mutex mismatch is closed. Final gate promotion still requires a new witness created only after merge SHA 30efeae6add72a2b3d99ed554d1d336df23f8760."
   },
-  "promotion_rule": "PASS only after the post-hardening HOME response is fully verified by patched reconcile, a persistent delivery receipt exists on janus/market-state, fresh-checkout replay succeeds, and the global state-writer mutex audit is clean."
+  "final_post_mutex_witness": {
+    "status": "NOT_STARTED",
+    "required_after_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760"
+  },
+  "promotion_rule": "PASS only after a new post-final-mutex owner-shadow request is created, HOME returns a fully verified response, patched Market reconcile persists the exact delivery receipt on janus/market-state, fresh-checkout replay succeeds, and all exact bindings are independently rechecked."
 }
