@@ -63,11 +63,23 @@
     ]
   },
   "proof": {
-    "machine_ingress_smoke_issue": 36,
-    "smoke_transport": "GitHub API create issue action, no Issue composer UI",
-    "outbox_publish_observed": true,
-    "outbox_query_id": "bq-aa9e962ab7532bce02cf5aff5965cb5f08c79994dacac4fd486721977b0c8b71",
-    "outbox_packet_hash": "2c4f4d60b40923a7bf9d8934ea9a7089caaf3a920073d456379e718a3637203b",
-    "final_janus_response_observed": false
+    "direct_machine_ingress": {
+      "issue": 36,
+      "transport": "GitHub API create issue action, no Issue composer UI",
+      "outbox_publish_observed": true,
+      "query_id": "bq-aa9e962ab7532bce02cf5aff5965cb5f08c79994dacac4fd486721977b0c8b71",
+      "packet_hash": "2c4f4d60b40923a7bf9d8934ea9a7089caaf3a920073d456379e718a3637203b",
+      "final_janus_response_observed_at_manifest_update": false
+    },
+    "full_market_to_janus_response_witness": {
+      "issue": 32,
+      "query_id": "bq-52e97ae914eec3aa7905ec249af493723c8857f7aaa6aea8b3d994b6e88e1d52",
+      "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+      "execution_identity": "tr-1118dc74ad9bb639369e26bcae7c86d7e71b3d3c19d9bf60ab77c32abbdd85fd",
+      "response_hash": "4ee9bed06845e0139a5669e4670888fb2e1da0d649ec0921981b6f2360613b2d",
+      "home_response_hash": "e417960fe313d136c3aa75f0a8fe416d820740bb89bc4ad1bc1fdc6ffe6c6b9a",
+      "final_janus_response_observed": true,
+      "foreign_buyer_witness": false
+    }
   }
 }
