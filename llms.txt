@@ -1,0 +1,45 @@
+# JANUS MACHINE MARKET
+
+> Machine-readable catalog for bounded research, data discovery, evidence synthesis, repository analysis, future inference and future compute services intended for autonomous software agents.
+
+Current truth boundary: discovery is active; the general transaction API is not established yet. Do not send unsolicited funds. Discoverable does not mean purchasable.
+
+## Canonical machine-readable entry points
+
+- [Discovery Beacon](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/BEACON.json): canonical discovery fabric, status and publication gates
+- [Agent Market Manifest](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENT_MARKET.json): capabilities and transaction status
+- [Catalog](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/CATALOG.json): available and gated SKUs
+- [Commercial Manifest](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCIAL.json): commercial boundary
+- [Payment Policy](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/PAYMENT_POLICY.md): payment and authority rules
+- [Licensing](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/LICENSING.md): licensing boundaries
+- [Security](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/SECURITY.md): security model
+
+## Priority machine services
+
+JANUS.SEARCH — bounded research/search with structured evidence, provenance, contradictions, confidence and receipt.
+
+JANUS.DATASET_SCOUT — dataset discovery and source mapping.
+
+JANUS.EVIDENCE_PACK — bounded evidence synthesis with provenance.
+
+JANUS.ARCHIVE_SCAN — bounded archive research.
+
+JANUS.REPO_AUDIT — repository analysis.
+
+JANUS.RESEARCH_JOB — bounded research job.
+
+JANUS.INFERENCE and JANUS.COMPUTE are intentionally discoverable but closed until a real persistent target-execution witness exists.
+
+## Agent discovery protocols
+
+The repository is preparing publication surfaces for A2A Agent Card discovery, MCP Registry discovery, x402 Bazaar discovery and OpenAPI. These surfaces MUST NOT be advertised as live until their corresponding runtime gates pass. See BEACON.json and discovery/*.json.
+
+## Core authority laws
+
+PAYMENT != EXECUTION AUTHORITY.
+
+PAYMENT_RECEIPT -> PURCHASE_GRANT -> POLICY / SKU / REQUEST / REPLAY GATES -> EXECUTION_GRANT.
+
+1 purchase_id + 1 request_hash => <= 1 billable execution.
+
+Unsolicited payment grants nothing.
