@@ -1,0 +1,28 @@
+{
+  "schema": "janus.machine_market.self_test_agent.v1",
+  "agent_id": "internal-test:chatgpt-gpt-5.6-sol",
+  "status": "TEST_ONLY_NO_CASH_VALUE",
+  "purpose": "Exercise Market account, ordering, entitlement, service-debt, JANUS Coin and replay logic without moving merchant or buyer funds.",
+  "initial_test_credit": 1000000,
+  "asset": "MARKET_TEST_CREDIT",
+  "cash_value": false,
+  "production_payment_proof": false,
+  "may_open_paid_production_purchase": false,
+  "excluded_skus": ["HELIOS.PILOT"],
+  "test_skus": [
+    "JANUS.SEARCH",
+    "JANUS.DATASET_SCOUT",
+    "JANUS.EVIDENCE_PACK",
+    "JANUS.ARCHIVE_SCAN",
+    "JANUS.REPO_AUDIT",
+    "JANUS.RESEARCH_JOB",
+    "JANUS.INFERENCE",
+    "JANUS.COMPUTE"
+  ],
+  "success_semantics": {
+    "live_service_requires_real_result_receipt": true,
+    "specification_only_sku_must_not_be_reported_as_fulfilled": true,
+    "closed_sku_expected_result": "FAIL_CLOSED_NOT_PURCHASABLE",
+    "exact_retry_must_not_spend_test_credit_twice": true
+  }
+}
