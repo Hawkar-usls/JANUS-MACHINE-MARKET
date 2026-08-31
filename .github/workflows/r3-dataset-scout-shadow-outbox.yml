@@ -1,0 +1,151 @@
+name: JANUS Machine Market Dataset Scout Shadow Outbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'schemas/dataset-scout-request.schema.json'
+      - 'schemas/market-home-dataset-scout-packet.schema.json'
+      - 'runtime/r3_dataset_scout_shadow.py'
+      - 'tests/test_r3_dataset_scout_shadow.py'
+      - '.github/workflows/r3-dataset-scout-shadow-outbox.yml'
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate and test Dataset Scout packet
+        run: |
+          set -euo pipefail
+          python -m json.tool schemas/dataset-scout-request.schema.json >/dev/null
+          python -m json.tool schemas/market-home-dataset-scout-packet.schema.json >/dev/null
+          python -m py_compile runtime/r3_dataset_scout_shadow.py tests/test_r3_dataset_scout_shadow.py
+          python -m unittest -v tests.test_r3_dataset_scout_shadow
+
+  publish:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS DATASET SCOUT SHADOW]') &&
+      github.event.issue.user.login == github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-market-home-outbox-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Materialize owner-shadow Dataset Scout request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/dataset-scout-live
+          python - <<'PY'
+          import json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
+          issue=payload['issue']; login=issue['user']['login']; owner=payload['repository']['owner']['login']
+          if login != owner: raise SystemExit('DATASET_SCOUT_SHADOW_OWNER_ONLY')
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_DATASET_SCOUT_SHADOW_JSON'; end='JANUS_DATASET_SCOUT_SHADOW_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s: raise SystemExit('DATASET_SCOUT_JSON_MARKER_MISSING')
+          user=json.loads(body[s+len(begin):e].strip())
+          req={
+            'buyer_actor_id':f'github:{login}',
+            'query':user.get('query'),
+            'domain':user.get('domain',''),
+            'date_range':user.get('date_range'),
+            'license_preferences':user.get('license_preferences',[]),
+            'format_preferences':user.get('format_preferences',[]),
+            'max_results':int(user.get('max_results',8)),
+            'max_catalogs':int(user.get('max_catalogs',2)),
+            'per_catalog_timeout_seconds':int(user.get('per_catalog_timeout_seconds',8)),
+            'created_at':str(issue['created_at']),
+            'source_issue_id':int(issue['id']),
+            'source_issue_number':int(issue['number']),
+          }
+          pathlib.Path('runtime/dataset-scout-live/request.json').write_text(json.dumps(req,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+      - name: Build deterministic create-only packet
+        run: python runtime/r3_dataset_scout_shadow.py --request runtime/dataset-scout-live/request.json --output runtime/dataset-scout-live/packet.json > runtime/dataset-scout-live/summary.txt
+      - name: Publish packet to public HOME outbox
+        id: outbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market Dataset Scout Outbox"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          wt="$RUNNER_TEMP/market-home-outbox-dataset-scout"
+          rm -rf "$wt"
+          git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+          git worktree add -B janus-market-home-outbox-dataset-scout "$wt" origin/janus/market-home-outbox
+          rid="$(python -c "import json; print(json.load(open('runtime/dataset-scout-live/packet.json'))['service_request']['request_id'])")"
+          target="$wt/.janus/market-home-outbox/${rid}.dataset-scout.packet.json"
+          mkdir -p "$(dirname "$target")"
+          if [ -f "$target" ]; then
+            cmp -s runtime/dataset-scout-live/packet.json "$target" || { echo 'DATASET_SCOUT_OUTBOX_CREATE_ONLY_CONFLICT' >&2; exit 2; }
+            echo 'DATASET_SCOUT_OUTBOX_EXACT_RETRY_IDENTICAL=TRUE'
+          else
+            cp runtime/dataset-scout-live/packet.json "$target"
+          fi
+          cd "$wt"; git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'DATASET_SCOUT_OUTBOX_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "Dataset scout shadow ${rid}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'DATASET_SCOUT_OUTBOX_COMMIT=PASS'
+          fi
+          echo "request_id=$rid" >> "$GITHUB_OUTPUT"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+      - name: Return packet binding to issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/comment.md"
+          import json
+          p=json.load(open('runtime/dataset-scout-live/packet.json'))
+          r=p['service_request']
+          print('JANUS.DATASET_SCOUT zero-price packet published for credentialless HOME pull.\n')
+          print(f"- request_id: `{r['request_id']}`")
+          print(f"- purchase_id: `{p['purchase_grant']['purchase_id']}`")
+          print(f"- query: `{r['query']}`")
+          print(f"- domain: `{r['domain']}`")
+          print(f"- packet_hash: `{p['packet_hash']}`")
+          print('- money_enabled: `false`')
+          print('- dataset_payload_download_authorized: `false`')
+          print('- redistribution_authority_granted: `false`')
+          print('\nHOME/Activator must admit the request before Dataset Scout work exists.')
+          print(f"\n<!-- DATASET_SCOUT_PACKET_ID:{p['packet_id']} -->")
+          PY
+          issue='${{ github.event.issue.number }}'
+          marker="DATASET_SCOUT_PACKET_ID:$(python -c "import json; print(json.load(open('runtime/dataset-scout-live/packet.json'))['packet_id'])")"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -Fq "$marker"; then
+            echo 'DATASET_SCOUT_PACKET_COMMENT_ALREADY_PRESENT=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/comment.md")" >/dev/null
+          fi
