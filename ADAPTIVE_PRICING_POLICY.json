@@ -1,0 +1,60 @@
+{
+  "schema": "janus.machine_market.adaptive_pricing_policy.v1",
+  "status": "SHADOW_GOVERNOR_READY_NOT_YET_PUBLISHING_LIVE_PRICES",
+  "purpose": "Continuously rebalance JANUS service prices from internal demand and comparable market prices while actively promoting underused services and avoiding unnecessary promotion of already-demanded services.",
+  "currency": "USDT",
+  "rules": {
+    "issued_quote_is_immutable": true,
+    "price_change_applies_only_to_future_quotes": true,
+    "automatic_raise_requires_fresh_market_benchmark": true,
+    "automatic_decrease_allowed_when_market_benchmark_is_stale": true,
+    "never_raise_above_competitive_ceiling": true,
+    "competitive_ceiling_fraction_of_lowest_comparable_market_price": 0.85,
+    "max_raise_fraction_per_rebalance": 0.05,
+    "max_drop_fraction_per_rebalance": 0.10,
+    "rebalance_interval_hours": 6,
+    "market_benchmark_max_age_hours": 72,
+    "demand_window_hours": 168,
+    "demand_target_orders_per_window": 100,
+    "failure_rate_raise_freeze_threshold": 0.05,
+    "open_fulfillment_debt_raise_freeze": true
+  },
+  "demand_response": {
+    "zero_orders_multiplier": 0.90,
+    "below_25_percent_target_multiplier": 0.94,
+    "below_target_multiplier": 0.98,
+    "at_target_multiplier": 1.00,
+    "above_150_percent_target_multiplier": 1.02,
+    "above_300_percent_target_multiplier": 1.05
+  },
+  "promotion_policy": {
+    "rank_underused_services_higher": true,
+    "rank_popular_services_lower": true,
+    "promotion_score_uses_inverse_demand": true,
+    "promotion_score_uses_days_since_last_order": true,
+    "promotion_score_uses_available_capacity": true,
+    "promotion_must_not_claim_unavailable_service": true,
+    "closed_products_never_promoted_as_purchasable": true
+  },
+  "market_competition": {
+    "benchmark_manifest": "pricing/MARKET_BENCHMARKS.json",
+    "goal": "TARGET_BELOW_LOWEST_REASONABLY_COMPARABLE_PUBLISHED_MARKET_PRICE",
+    "comparability_required": true,
+    "stale_or_unparseable_market_data": "FREEZE_RAISES_PRESERVE_LAST_SAFE_CAP",
+    "cost_floor_above_competitive_ceiling": "HOLD_FOR_OPERATOR_DO_NOT_SELL_AT_KNOWN_LOSS"
+  },
+  "authority": {
+    "pricing_governor_can_issue_execution_grant": false,
+    "pricing_governor_can_change_existing_quote": false,
+    "pricing_governor_can_enable_closed_sku": false,
+    "pricing_governor_can_spend_merchant_funds": false
+  },
+  "laws": [
+    "POPULARITY MAY RAISE FUTURE PRICE BUT NEVER EXISTING QUOTE",
+    "NEGLECTED SERVICE MAY GET CHEAPER AND MORE PROMOTION",
+    "STALE MARKET DATA MAY NOT JUSTIFY A PRICE RAISE",
+    "LOWER PRICE MUST NOT OVERRIDE SERVICE AVAILABILITY",
+    "PRICE != EXECUTION AUTHORITY",
+    "MARKETING != SERVICE WITNESS"
+  ]
+}
