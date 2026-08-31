@@ -5,26 +5,21 @@
   "autonomous_purchase_declared": false,
   "reason": "FOREIGN_AGENT_WITNESS.json remains false; live payment acceptance must stay fail-closed until the independent requester persistent receipt exists.",
   "payment_rail": {
-    "network": "ethereum-mainnet",
-    "chain_id": 1,
-    "asset": "USDT",
-    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    "decimals": 6,
+    "network": "ethereum-mainnet", "chain_id": 1, "asset": "USDT",
+    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7", "decimals": 6,
     "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
-    "state": "DECLARED_NOT_CHECKOUT",
-    "required_confirmations": 12,
-    "payment_identity": "transaction_hash + ERC20_log_index",
-    "unsolicited_payment_grants": "NOTHING"
+    "state": "DECLARED_NOT_CHECKOUT", "required_confirmations": 12,
+    "payment_identity": "transaction_hash + ERC20_log_index", "unsolicited_payment_grants": "NOTHING"
   },
-  "authority_chain": [
-    "OFFER", "REQUEST", "QUOTE", "PAYMENT_RECEIPT", "PURCHASE_GRANT",
-    "POLICY_SCOPE_GATES", "EXECUTION_GRANT", "RESULT", "RESULT_RECEIPT"
-  ],
+  "authority_chain": ["OFFER", "REQUEST", "QUOTE", "PAYMENT_RECEIPT", "PURCHASE_GRANT", "POLICY_SCOPE_GATES", "EXECUTION_GRANT", "RESULT", "RESULT_RECEIPT"],
   "prepared_components": {
     "quote_and_purchase_authority": "runtime/commerce_authority.py",
     "ethereum_usdt_observer": "runtime/ethereum_usdt_observer.py",
-    "persistent_purchase_ledger": "runtime/purchase_ledger.py",
+    "persistent_purchase_and_execution_ledger": "runtime/purchase_ledger.py",
     "payment_receipt_schema": "schemas/payment-receipt.schema.json",
+    "purchase_grant_schema": "schemas/grant.schema.json",
+    "bounded_search_execution_grant_schema": "schemas/execution-grant.schema.json",
+    "bounded_search_execution_bridge": "runtime/commerce_search_executor.py",
     "order_execution_matrix": "ORDER_EXECUTION_MATRIX.json"
   },
   "required_live_gates": {
@@ -34,12 +29,14 @@
     "transaction_endpoint": "NOT_ESTABLISHED",
     "payment_observer": "IMPLEMENTED_NOT_SCHEDULED",
     "persistent_purchase_ledger": "IMPLEMENTED_REQUIRES_MARKET_STATE_MOUNT_AND_SHARED_MUTEX",
-    "execution_grant_bridge": "REQUIRED",
-    "result_receipt_replay": "REQUIRED"
+    "execution_grant_bridge": "JANUS.SEARCH_IMPLEMENTED_NOT_CONNECTED_TO_LIVE_ACTIVATOR",
+    "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE",
+    "fresh_checkout_replay": "REQUIRED"
   },
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
     "1 transaction_hash + 1 ERC20_log_index => <= 1 accepted purchase grant",
+    "purchase grant never equals execution authority",
     "exact retry returns prior state/result and creates no second charge"
   ],
   "closed_skus": {

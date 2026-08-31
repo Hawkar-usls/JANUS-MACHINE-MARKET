@@ -9,10 +9,14 @@ on:
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
+      - 'runtime/commerce_search_executor.py'
+      - 'schemas/grant.schema.json'
+      - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
       - 'tests/test_commerce_authority.py'
       - 'tests/test_ethereum_usdt_observer.py'
       - 'tests/test_purchase_ledger.py'
+      - 'tests/test_commerce_search_executor.py'
       - '.github/workflows/commerce-integrity.yml'
   push:
     branches: [main]
@@ -23,10 +27,14 @@ on:
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
+      - 'runtime/commerce_search_executor.py'
+      - 'schemas/grant.schema.json'
+      - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
       - 'tests/test_commerce_authority.py'
       - 'tests/test_ethereum_usdt_observer.py'
       - 'tests/test_purchase_ledger.py'
+      - 'tests/test_commerce_search_executor.py'
       - '.github/workflows/commerce-integrity.yml'
 
 permissions:
@@ -43,14 +51,16 @@ jobs:
       - name: Install test dependency
         run: python -m pip install --disable-pip-version-check pytest
       - name: Compile commerce runtime
-        run: python -m py_compile runtime/commerce_authority.py runtime/ethereum_usdt_observer.py runtime/purchase_ledger.py
+        run: python -m py_compile runtime/commerce_authority.py runtime/ethereum_usdt_observer.py runtime/purchase_ledger.py runtime/commerce_search_executor.py
       - name: JSON syntax
         run: |
           python -m json.tool COMMERCE_READINESS.json >/dev/null
           python -m json.tool ORDER_EXECUTION_MATRIX.json >/dev/null
+          python -m json.tool schemas/grant.schema.json >/dev/null
+          python -m json.tool schemas/execution-grant.schema.json >/dev/null
           python -m json.tool schemas/payment-receipt.schema.json >/dev/null
       - name: Commerce adversarial tests
-        run: python -m pytest -q tests/test_commerce_authority.py tests/test_ethereum_usdt_observer.py tests/test_purchase_ledger.py
+        run: python -m pytest -q tests/test_commerce_authority.py tests/test_ethereum_usdt_observer.py tests/test_purchase_ledger.py tests/test_commerce_search_executor.py
       - name: Fail-closed canonical truth
         run: |
           python - <<'PY'
@@ -62,5 +72,7 @@ jobs:
           assert readiness['autonomous_purchase_declared'] is False
           assert readiness['status']=='PREPARED_BLOCKED_BY_FOREIGN_AGENT_WITNESS'
           assert readiness['payment_rail']['required_confirmations'] >= 12
-          print('PASS: payment observation and ledger are prepared while live money remains fail-closed.')
+          assert readiness['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
+          assert readiness['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
+          print('PASS: observer, purchase ledger and bounded search execution bridge are prepared while live money remains fail-closed.')
           PY

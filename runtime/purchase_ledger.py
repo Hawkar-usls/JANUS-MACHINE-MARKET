@@ -1,4 +1,4 @@
-"""Create-only persistent purchase ledger for JANUS MACHINE MARKET.
+"""Create-only persistent commerce ledger for JANUS MACHINE MARKET.
 
 Designed for a mounted `janus/market-state` worktree protected by the shared
 `janus-machine-market-state-writer` workflow concurrency group. Local filesystem
@@ -12,11 +12,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-from runtime.commerce_authority import CommerceInvalid, canonical_json, digest, receipt_payment_reference
+from runtime.commerce_authority import CommerceInvalid, digest, receipt_payment_reference
 
 
-class LedgerConflict(RuntimeError):
-    pass
+class LedgerConflict(RuntimeError): pass
 
 
 def _pretty(value: Any) -> bytes:
@@ -24,90 +23,81 @@ def _pretty(value: Any) -> bytes:
 
 
 def _create_only(path: Path, value: Any) -> str:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    payload = _pretty(value)
-    try:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    path.parent.mkdir(parents=True, exist_ok=True); payload = _pretty(value)
+    try: fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
-        existing = path.read_bytes()
-        if existing == payload:
-            return "IDEMPOTENT_REPLAY"
+        if path.read_bytes() == payload: return "IDEMPOTENT_REPLAY"
         raise LedgerConflict(f"conflicting create-only record: {path}")
     try:
         with os.fdopen(fd, "wb") as fh:
-            fh.write(payload)
-            fh.flush()
-            os.fsync(fh.fileno())
+            fh.write(payload); fh.flush(); os.fsync(fh.fileno())
     except Exception:
-        try:
-            path.unlink(missing_ok=True)
-        finally:
-            raise
+        try: path.unlink(missing_ok=True)
+        finally: raise
     return "CREATED"
 
 
-def payment_key(payment_reference: str) -> str:
-    return digest({"payment_reference": str(payment_reference).lower()})
+def payment_key(payment_reference: str) -> str: return digest({"payment_reference": str(payment_reference).lower()})
+def purchase_key(purchase_id: str) -> str: return digest({"purchase_id": str(purchase_id)})
 
 
 def persist_purchase(state_root: str | Path, payment_receipt: dict[str, Any], purchase_grant: dict[str, Any]) -> dict[str, str]:
-    state_root = Path(state_root)
-    ref = receipt_payment_reference(payment_receipt)
-    if purchase_grant.get("payment_reference") != ref:
-        raise CommerceInvalid("purchase grant/payment receipt reference mismatch")
-    if not purchase_grant.get("purchase_id"):
-        raise CommerceInvalid("purchase grant missing purchase_id")
-    if purchase_grant.get("execution_authority") is not False:
-        raise CommerceInvalid("purchase ledger refuses a grant that claims execution authority")
+    state_root = Path(state_root); ref = receipt_payment_reference(payment_receipt)
+    if purchase_grant.get("payment_reference") != ref: raise CommerceInvalid("purchase grant/payment receipt reference mismatch")
+    if not purchase_grant.get("purchase_id"): raise CommerceInvalid("purchase grant missing purchase_id")
+    if purchase_grant.get("execution_authority_granted") is not False: raise CommerceInvalid("purchase ledger refuses a grant that claims execution authority")
+    if purchase_grant.get("status") != "PURCHASE_SETTLED": raise CommerceInvalid("purchase ledger requires settled purchase grant")
 
-    payment_record = {
-        "schema": "janus.machine_market.payment_ledger_record.v1",
-        "payment_reference": ref,
-        "payment_receipt": payment_receipt,
-        "purchase_id": purchase_grant["purchase_id"],
-        "purchase_grant_hash": purchase_grant.get("grant_hash"),
-    }
-    purchase_record = {
-        "schema": "janus.machine_market.purchase_ledger_record.v1",
-        "purchase_id": purchase_grant["purchase_id"],
-        "payment_reference": ref,
-        "purchase_grant": purchase_grant,
-        "execution_receipt": None,
-        "billable_execution_identity": None,
-    }
-
+    payment_record = {"schema":"janus.machine_market.payment_ledger_record.v1","payment_reference":ref,"payment_receipt":payment_receipt,"purchase_id":purchase_grant["purchase_id"],"purchase_grant_hash":purchase_grant.get("grant_hash")}
+    purchase_record = {"schema":"janus.machine_market.purchase_ledger_record.v1","purchase_id":purchase_grant["purchase_id"],"payment_reference":ref,"purchase_grant":purchase_grant}
     payment_path = state_root / "state/commerce/payments" / f"{payment_key(ref)}.json"
     purchase_path = state_root / "state/commerce/purchases" / f"{purchase_grant['purchase_id']}.json"
-
     payment_status = _create_only(payment_path, payment_record)
-    try:
-        purchase_status = _create_only(purchase_path, purchase_record)
+    try: purchase_status = _create_only(purchase_path, purchase_record)
     except Exception:
-        # If payment record was newly created in this call but purchase failed,
-        # roll it back. Exact pre-existing replay records are never removed.
-        if payment_status == "CREATED":
-            payment_path.unlink(missing_ok=True)
+        if payment_status == "CREATED": payment_path.unlink(missing_ok=True)
         raise
+    return {"payment":payment_status,"purchase":purchase_status,"payment_path":str(payment_path),"purchase_path":str(purchase_path)}
 
-    return {
-        "payment": payment_status,
-        "purchase": purchase_status,
-        "payment_path": str(payment_path),
-        "purchase_path": str(purchase_path),
-    }
+
+def persist_execution_result(state_root: str | Path, result_receipt: dict[str, Any]) -> dict[str, str]:
+    """Persist one immutable billable execution identity per purchase.
+
+    The purchase->execution index is written first. A second different execution
+    identity for the same purchase therefore conflicts before a result can be
+    recorded. Exact retry of the same result is idempotent.
+    """
+    state_root = Path(state_root)
+    if result_receipt.get("schema") != "janus.machine_market.result_receipt.v1" or result_receipt.get("status") != "DELIVERED":
+        raise CommerceInvalid("delivered result receipt required")
+    purchase_id = str(result_receipt.get("purchase_id") or "")
+    execution = result_receipt.get("execution_receipt")
+    if not purchase_id or not isinstance(execution, dict): raise CommerceInvalid("result receipt missing purchase/execution identity")
+    execution_id = str(execution.get("execution_id") or "")
+    if not execution_id: raise CommerceInvalid("execution receipt missing execution_id")
+    if execution.get("purchase_id") != purchase_id: raise CommerceInvalid("execution receipt purchase mismatch")
+    if execution.get("request_hash") != result_receipt.get("request_sha256"): raise CommerceInvalid("execution/result request hash mismatch")
+    if execution.get("result_sha256") != result_receipt.get("result_sha256"): raise CommerceInvalid("execution/result hash mismatch")
+    if execution.get("external_effects") is not False: raise CommerceInvalid("commerce ledger refuses external-effect execution receipt")
+
+    index_record = {"schema":"janus.machine_market.execution_by_purchase.v1","purchase_id":purchase_id,"execution_id":execution_id,"result_sha256":result_receipt["result_sha256"]}
+    execution_record = {"schema":"janus.machine_market.execution_ledger_record.v1","purchase_id":purchase_id,"execution_id":execution_id,"result_receipt":result_receipt}
+    index_path = state_root / "state/commerce/execution-by-purchase" / f"{purchase_key(purchase_id)}.json"
+    execution_path = state_root / "state/commerce/executions" / f"{execution_id}.json"
+    index_status = _create_only(index_path, index_record)
+    try: execution_status = _create_only(execution_path, execution_record)
+    except Exception:
+        if index_status == "CREATED": index_path.unlink(missing_ok=True)
+        raise
+    return {"purchase_execution_index":index_status,"execution":execution_status,"index_path":str(index_path),"execution_path":str(execution_path)}
 
 
 def consumed_payment_references(state_root: str | Path) -> set[str]:
-    root = Path(state_root) / "state/commerce/payments"
-    refs: set[str] = set()
-    if not root.is_dir():
-        return refs
+    root = Path(state_root) / "state/commerce/payments"; refs: set[str] = set()
+    if not root.is_dir(): return refs
     for path in root.glob("*.json"):
         try:
-            row = json.loads(path.read_text(encoding="utf-8"))
-            ref = str(row.get("payment_reference") or "").lower()
-            if ref:
-                refs.add(ref)
-        except Exception as exc:
-            raise LedgerConflict(f"invalid persistent payment ledger record: {path}") from exc
+            row=json.loads(path.read_text(encoding="utf-8")); ref=str(row.get("payment_reference") or "").lower()
+            if ref: refs.add(ref)
+        except Exception as exc: raise LedgerConflict(f"invalid persistent payment ledger record: {path}") from exc
     return refs
