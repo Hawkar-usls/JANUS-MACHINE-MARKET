@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/buyer-query.schema.json",
+  "title": "JANUS MACHINE MARKET Post-Purchase Buyer Query",
+  "type": "object",
+  "required": [
+    "schema",
+    "purchase_id",
+    "purchase_grant_hash",
+    "sku",
+    "buyer_actor_id",
+    "conversation_id",
+    "turn_index",
+    "entitlement_nonce",
+    "message_text",
+    "message_hash",
+    "query_id",
+    "query_hash"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.buyer_query.v1"},
+    "purchase_id": {"type": "string", "minLength": 1},
+    "purchase_grant_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sku": {"type": "string", "minLength": 1},
+    "buyer_actor_id": {"type": "string", "minLength": 1},
+    "conversation_id": {"type": "string", "minLength": 1},
+    "turn_index": {"type": "integer", "minimum": 0},
+    "entitlement_nonce": {"type": "string", "minLength": 16},
+    "message_text": {"type": "string", "minLength": 1, "maxLength": 8000},
+    "message_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "query_id": {"type": "string", "pattern": "^bq-[0-9a-f]{64}$"},
+    "query_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "conversation_history": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {"enum": ["buyer", "janus"]},
+          "content": {"type": "string", "maxLength": 12000}
+        },
+        "additionalProperties": false
+      }
+    },
+    "requested_output": {"type": ["object", "null"]},
+    "created_at": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}
