@@ -1,0 +1,66 @@
+{
+  "command_authority_granted": false,
+  "commerce_mode": "ZERO_PRICE_SHADOW",
+  "created_at": "2026-08-31T15:25:15Z",
+  "execute_repository_code": false,
+  "external_effect_authorized": false,
+  "home_repository": "Hawkar-usls/Hawkar-usls",
+  "market_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "money_enabled": false,
+  "packet_hash": "622e93fa26a6e7714d27f9b02bff4790f51739f8e88a0d1e49e748478f506363",
+  "packet_id": "rap-shadow-9ac96abd332524a4f792d848cc6511f7f14fe7a865b43d60",
+  "payment_reference": null,
+  "purchase_grant": {
+    "execution_authority_granted": false,
+    "purchase_id": "pur-ra-shadow-0e8d6b5adec5c9a50ef521ad47d21eaf",
+    "reasons": [
+      "ZERO_PRICE_SHADOW_SERVICE_TEST",
+      "PAYMENT_NOT_REQUIRED",
+      "HOME_ADMISSION_REQUIRED"
+    ],
+    "schema": "janus.machine_market.purchase_grant.v1",
+    "service_entitlement": {
+      "bounds": {
+        "max_blob_files": 24,
+        "max_total_blob_bytes": 750000,
+        "max_tree_entries": 5000
+      },
+      "execute_repository_code": false,
+      "read_only": true,
+      "ref": "main",
+      "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+      "service": "JANUS.REPO_AUDIT"
+    },
+    "sku": "JANUS.REPO_AUDIT",
+    "status": "PURCHASE_ELIGIBLE"
+  },
+  "purchase_grant_hash": "2aece27fd1cafdee141c0daaad55d2d1892b6deac87cdf9332ff1e9e8c499a3a",
+  "repository_write_authorized": false,
+  "return_route": {
+    "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "source_issue_id": 5301875980,
+    "source_issue_number": 24
+  },
+  "schema": "janus.machine_market.home_repo_audit_packet.v1",
+  "service_request": {
+    "audit_scope": "BOUNDED_STATIC_REPOSITORY_SURFACE",
+    "bounds": {
+      "max_blob_files": 24,
+      "max_total_blob_bytes": 750000,
+      "max_tree_entries": 5000
+    },
+    "buyer_actor_id": "github:Hawkar-usls",
+    "command_authority_granted": false,
+    "execute_repository_code": false,
+    "external_effect_authorized": false,
+    "read_only": true,
+    "ref": "main",
+    "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "request_hash": "ada7df43ebc3b437b5c4cdf49021609f31177738b81c0684965ea128a8b57d0e",
+    "request_id": "ra-shadow-d7ac2c3f0d408fc39bb8df8dbfe6963c5b6c4df9c7719213",
+    "schema": "janus.market_service.repo_audit_request.v1",
+    "sku": "JANUS.REPO_AUDIT"
+  },
+  "service_request_hash": "ada7df43ebc3b437b5c4cdf49021609f31177738b81c0684965ea128a8b57d0e",
+  "sku": "JANUS.REPO_AUDIT"
+}
