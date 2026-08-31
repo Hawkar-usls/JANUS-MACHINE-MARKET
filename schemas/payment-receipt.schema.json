@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/payment-receipt.schema.json",
+  "title": "JANUS MACHINE MARKET Verified ERC20 Payment Receipt",
+  "type": "object",
+  "required": [
+    "schema", "route_id", "chain_id", "asset", "token_contract", "tx_hash",
+    "block_hash", "block_number", "log_index", "from_address", "to_address",
+    "amount_atomic", "confirmations", "rpc_quorum", "verification_status", "payment_reference"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.payment_receipt.v1"},
+    "route_id": {"type": "string", "minLength": 1},
+    "chain_id": {"const": 1},
+    "asset": {"const": "USDT"},
+    "token_contract": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+    "tx_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "block_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "block_number": {"type": "integer", "minimum": 1},
+    "log_index": {"type": "integer", "minimum": 0},
+    "from_address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+    "to_address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+    "amount_atomic": {"type": "integer", "minimum": 1},
+    "confirmations": {"type": "integer", "minimum": 1},
+    "rpc_quorum": {"type": "integer", "minimum": 1},
+    "rpc_provider_count": {"type": "integer", "minimum": 1},
+    "verification_status": {"const": "VERIFIED_EXACT_ERC20_TRANSFER"},
+    "payment_reference": {"type": "string", "minLength": 1},
+    "receipt_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}
