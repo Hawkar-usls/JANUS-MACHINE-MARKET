@@ -1,0 +1,151 @@
+name: JANUS Machine Market R2 Quote
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'PURCHASE_PROTOCOL.json'
+      - 'PAYMENT_ROUTE.json'
+      - 'pricing/JANUS.SEARCH.json'
+      - 'schemas/quote-request.schema.json'
+      - 'runtime/r2_quote.py'
+      - 'tests/test_r2_quote.py'
+      - '.github/workflows/r2-quote.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'PURCHASE_PROTOCOL.json'
+      - 'PAYMENT_ROUTE.json'
+      - 'pricing/JANUS.SEARCH.json'
+      - 'schemas/quote-request.schema.json'
+      - 'runtime/r2_quote.py'
+      - 'tests/test_r2_quote.py'
+      - '.github/workflows/r2-quote.yml'
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate and test quote protocol
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python -m json.tool PURCHASE_PROTOCOL.json >/dev/null
+          python -m json.tool schemas/quote-request.schema.json >/dev/null
+          python -m py_compile runtime/r2_quote.py tests/test_r2_quote.py
+          python -m unittest -v tests.test_r2_quote
+      - name: Enforce quote authority boundary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('PURCHASE_PROTOCOL.json'))
+          assert p['quote']['quote_is_payment'] is False
+          assert p['quote']['quote_is_purchase_grant'] is False
+          assert p['quote']['quote_is_execution_authority'] is False
+          print('R2_QUOTE_AUTHORITY_FIREWALL=PASS')
+          PY
+
+  quote:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS QUOTE]')
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Materialize quote request from machine issue
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/r2-quote-live
+          python - <<'PY'
+          import json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          issue=payload['issue']
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_QUOTE_REQUEST_JSON'
+          end='JANUS_QUOTE_REQUEST_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('R2_QUOTE_JSON_MARKER_MISSING')
+          req=json.loads(body[s+len(begin):e].strip())
+          if req.get('schema') != 'janus.machine_market.quote_request.v1':
+              raise SystemExit('R2_QUOTE_REQUEST_SCHEMA_INVALID')
+          login=issue['user']['login']
+          req['sku']='JANUS.SEARCH'
+          req['buyer_actor_id']=f'github:{login}'
+          req['request_id']=f"github-issue-id:{issue['id']}"
+          req['created_at']=str(issue['created_at'])
+          pathlib.Path('runtime/r2-quote-live/request.json').write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          PY
+      - name: Build deterministic quote or truthful unavailable response
+        run: |
+          python runtime/r2_quote.py \
+            --request runtime/r2-quote-live/request.json \
+            --price pricing/JANUS.SEARCH.json \
+            --route PAYMENT_ROUTE.json \
+            --output runtime/r2-quote-live/quote.json
+      - name: Return machine-readable quote
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/r2-quote-comment.md"
+          import json
+          q=json.load(open('runtime/r2-quote-live/quote.json'))
+          print('JANUS Machine Market quote response.\n')
+          print(f"- quote_id: `{q['quote_id']}`")
+          print(f"- status: `{q['status']}`")
+          print(f"- request_hash: `{q['request_hash']}`")
+          if q['status'] == 'QUOTED':
+              p=q['payment_challenge']
+              print(f"- amount_atomic: `{p['amount_atomic']}`")
+              print(f"- asset: `{p['asset']}`")
+              print(f"- chain_id: `{p['chain_id']}`")
+              print(f"- token_contract: `{p['token_contract']}`")
+              print(f"- to_address: `{p['to_address']}`")
+              print(f"- minimum_confirmations: `{p['minimum_confirmations']}`")
+              print('\nAfter payment submit the transaction hash through `[JANUS PAID SEARCH]` using the paid buyer-query schema.')
+          else:
+              print('- payment_available: `false`')
+              print('- reasons: `' + ','.join(q['reasons']) + '`')
+              print('\nNo payment should be sent while the quote is unavailable.')
+          print('\n```json')
+          print(json.dumps(q, ensure_ascii=False, indent=2, sort_keys=True))
+          print('```')
+          print(f"\n<!-- R2_QUOTE_ID:{q['quote_id']} -->")
+          PY
+          issue='${{ github.event.issue.number }}'
+          qid="$(python -c "import json; print(json.load(open('runtime/r2-quote-live/quote.json'))['quote_id'])")"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -Fq "R2_QUOTE_ID:${qid}"; then
+            echo 'R2_QUOTE_ALREADY_RETURNED=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/r2-quote-comment.md")" >/dev/null
+            echo 'R2_QUOTE_RETURNED=PASS'
+          fi
