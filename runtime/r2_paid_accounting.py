@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,15 @@ class PaidAccountingError(ValueError):
 def require(condition: bool, code: str) -> None:
     if not condition:
         raise PaidAccountingError(code)
+
+
+def _canonical(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _digest(value: Any) -> str:
+    text = value if isinstance(value, str) else _canonical(value)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _read_events(path: Path) -> list[dict[str, Any]]:
@@ -44,8 +54,6 @@ def _append_account_event(
         payload=payload,
         previous_event_hash=previous,
     )
-    # If this event_id is already present, rebuild the exact originally stored
-    # event so retry remains idempotent even though the ledger head advanced.
     match = next((row for row in existing if row.get("event_id") == event_id), None)
     if match is not None:
         require(match.get("buyer_actor_id") == buyer_actor_id, "PAID_ACCOUNT_EVENT_BUYER_CONFLICT")
@@ -61,6 +69,19 @@ def _account_paths(state_root: Path, buyer_actor_id: str) -> tuple[Path, Path]:
     return base / "ledger.jsonl", base / "HEAD.json"
 
 
+def _write_create_only_json(path: Path, value: dict[str, Any], conflict_code: str) -> None:
+    encoded = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        require(path.read_text(encoding="utf-8") == encoded, conflict_code)
+    else:
+        path.write_text(encoded, encoding="utf-8")
+
+
+def account_binding_path(state_root: Path, purchase_id: str) -> Path:
+    return state_root / "state/r2-paid/account-bindings" / f"{purchase_id}.json"
+
+
 def admit_paid_purchase(*, packet: dict[str, Any], state_root: Path) -> dict[str, Any]:
     require(packet.get("schema") == "janus.machine_market.home_paid_buyer_query_packet.v1", "PAID_ACCOUNT_PACKET_SCHEMA_INVALID")
     require(packet.get("mode") == "PAID_ERC20", "PAID_ACCOUNT_PACKET_MODE_INVALID")
@@ -73,7 +94,11 @@ def admit_paid_purchase(*, packet: dict[str, Any], state_root: Path) -> dict[str
     query_id = str(packet.get("query_id") or "").strip()
     created_at = str(query.get("created_at") or "").strip()
     sku = str(query.get("sku") or "").strip()
-    require(all((actor, purchase_id, query_id, created_at, sku)), "PAID_ACCOUNT_BINDING_MISSING")
+    payment_reference = str(payment.get("payment_reference") or "").strip()
+    payment_receipt_hash = str(packet.get("payment_receipt_hash") or "").strip()
+    packet_hash = str(packet.get("packet_hash") or "").strip()
+    require(all((actor, purchase_id, query_id, created_at, sku, payment_reference)), "PAID_ACCOUNT_BINDING_MISSING")
+    require(len(payment_receipt_hash) == 64 and len(packet_hash) == 64, "PAID_ACCOUNT_HASH_BINDING_INVALID")
     amount_atomic = payment.get("amount_atomic")
     require(isinstance(amount_atomic, int) and not isinstance(amount_atomic, bool) and amount_atomic > 0, "PAID_ACCOUNT_AMOUNT_INVALID")
 
@@ -100,8 +125,8 @@ def admit_paid_purchase(*, packet: dict[str, Any], state_root: Path) -> dict[str
             "sku": sku,
             "purchase_id": purchase_id,
             "query_id": query_id,
-            "payment_reference": payment.get("payment_reference"),
-            "payment_receipt_hash": packet.get("payment_receipt_hash"),
+            "payment_reference": payment_reference,
+            "payment_receipt_hash": payment_receipt_hash,
             "amount_atomic": amount_atomic,
             "asset": "USDT",
         },
@@ -125,6 +150,30 @@ def admit_paid_purchase(*, packet: dict[str, Any], state_root: Path) -> dict[str
     else:
         debt_path.write_text(json.dumps(debt, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    binding = {
+        "schema": "janus.machine_market.r2_paid_account_binding.v1",
+        "profile_id": profile_id(actor),
+        "buyer_actor_id": actor,
+        "purchase_id": purchase_id,
+        "query_id": query_id,
+        "sku": sku,
+        "amount_atomic": amount_atomic,
+        "asset": "USDT",
+        "payment_reference": payment_reference,
+        "payment_receipt_hash": payment_receipt_hash,
+        "packet_hash": packet_hash,
+        "service_debt_id": debt["service_debt_id"],
+        "source_issue_number": (packet.get("return_route") or {}).get("source_issue_number"),
+        "source_issue_id": (packet.get("return_route") or {}).get("source_issue_id"),
+        "created_at": created_at,
+    }
+    binding["binding_hash"] = _digest(binding)
+    _write_create_only_json(
+        account_binding_path(state_root, purchase_id),
+        binding,
+        "PAID_ACCOUNT_BINDING_CREATE_ONLY_CONFLICT",
+    )
+
     head = _append_account_event(
         ledger=ledger,
         buyer_actor_id=actor,
@@ -147,6 +196,7 @@ def admit_paid_purchase(*, packet: dict[str, Any], state_root: Path) -> dict[str
         "query_id": query_id,
         "service_debt_id": debt["service_debt_id"],
         "service_debt_state": debt["state"],
+        "account_binding_hash": binding["binding_hash"],
         "account_head_hash": head["head_hash"],
         "open_service_debt_count": head["open_service_debt_count"],
         "payment_is_command": False,
@@ -166,6 +216,18 @@ def mark_outbox_published(*, state_root: Path, service_debt_id: str, packet_hash
     return debt
 
 
+def _load_account_binding(state_root: Path, purchase_id: str) -> dict[str, Any]:
+    path = account_binding_path(state_root, purchase_id)
+    require(path.exists(), "PAID_DELIVERY_ACCOUNT_BINDING_MISSING")
+    binding = json.loads(path.read_text(encoding="utf-8"))
+    require(binding.get("schema") == "janus.machine_market.r2_paid_account_binding.v1", "PAID_DELIVERY_ACCOUNT_BINDING_SCHEMA_INVALID")
+    body = dict(binding)
+    claimed = str(body.pop("binding_hash", ""))
+    require(len(claimed) == 64 and _digest(body) == claimed, "PAID_DELIVERY_ACCOUNT_BINDING_HASH_INVALID")
+    require(binding.get("purchase_id") == purchase_id, "PAID_DELIVERY_ACCOUNT_BINDING_PURCHASE_MISMATCH")
+    return binding
+
+
 def reconcile_delivery(
     *,
     response: dict[str, Any],
@@ -178,16 +240,24 @@ def reconcile_delivery(
     purchase_id = str(response.get("purchase_id") or "")
     payment_reference = str(response.get("payment_reference") or "")
     require(all((qid, purchase_id, payment_reference, buyer_delivery_receipt_hash, delivered_at)), "PAID_DELIVERY_BINDING_MISSING")
-    claim_key = __import__("hashlib").sha256(payment_reference.encode("utf-8")).hexdigest()
+
+    claim_key = hashlib.sha256(payment_reference.encode("utf-8")).hexdigest()
     claim_path = state_root / "state/r2-paid/payment-claims" / f"{claim_key}.json"
     require(claim_path.exists(), "PAID_DELIVERY_PAYMENT_CLAIM_MISSING")
     claim = json.loads(claim_path.read_text(encoding="utf-8"))
-    actor = str(claim.get("buyer_actor_id") or "").strip()
-    amount_atomic = claim.get("amount_atomic")
-    sku = str(claim.get("sku") or "JANUS.SEARCH")
-    service_debt_id = str(claim.get("service_debt_id") or "").strip()
-    require(actor and service_debt_id, "PAID_DELIVERY_ACCOUNT_BINDING_MISSING")
+    require(claim.get("payment_reference") == payment_reference, "PAID_DELIVERY_PAYMENT_REFERENCE_MISMATCH")
     require(claim.get("purchase_id") == purchase_id and claim.get("query_id") == qid, "PAID_DELIVERY_CLAIM_IDENTITY_MISMATCH")
+
+    binding = _load_account_binding(state_root, purchase_id)
+    require(binding.get("payment_reference") == payment_reference, "PAID_DELIVERY_ACCOUNT_PAYMENT_MISMATCH")
+    require(binding.get("query_id") == qid, "PAID_DELIVERY_ACCOUNT_QUERY_MISMATCH")
+    require(binding.get("payment_receipt_hash") == claim.get("payment_receipt_hash"), "PAID_DELIVERY_ACCOUNT_RECEIPT_MISMATCH")
+    require(binding.get("packet_hash") == claim.get("packet_hash"), "PAID_DELIVERY_ACCOUNT_PACKET_MISMATCH")
+
+    actor = str(binding["buyer_actor_id"])
+    amount_atomic = binding["amount_atomic"]
+    sku = str(binding["sku"])
+    service_debt_id = str(binding["service_debt_id"])
     require(isinstance(amount_atomic, int) and amount_atomic > 0, "PAID_DELIVERY_AMOUNT_INVALID")
 
     debt_path = state_root / "state/r2-paid/service-debts" / f"{service_debt_id}.json"
@@ -195,6 +265,7 @@ def reconcile_delivery(
     debt = json.loads(debt_path.read_text(encoding="utf-8"))
     result_identity = str((response.get("buyer_query_receipt") or {}).get("execution_identity") or "")
     market_receipt_hash = str(response.get("home_response_hash") or "")
+    require(result_identity and len(market_receipt_hash) == 64, "PAID_DELIVERY_RESULT_BINDING_INVALID")
     if debt.get("closed") is not True:
         if debt["state"] == "OUTBOX_PUBLISHED":
             debt = transition(debt, event="HOME_ACCEPTED", at=delivered_at)
@@ -223,6 +294,7 @@ def reconcile_delivery(
         },
     )
     reward = reward_policy.get("production_purchase_reward") or {}
+    require(reward.get("mint_trigger") in (None, "VERIFIED_BUYER_DELIVERY"), "JANUS_COIN_MINT_TRIGGER_INVALID")
     divisor = int(reward.get("usdt_atomic_per_coin", 1000))
     require(divisor > 0, "JANUS_COIN_REWARD_DIVISOR_INVALID")
     coins = amount_atomic // divisor
@@ -282,7 +354,14 @@ def main() -> int:
     if args.cmd == "admit":
         result = admit_paid_purchase(packet=json.loads(Path(args.packet).read_text(encoding="utf-8")), state_root=Path(args.state_root))
     elif args.cmd == "outbox":
-        result = mark_outbox_published(state_root=Path(args.state_root), service_debt_id=args.service_debt_id, packet_hash=args.packet_hash, at=args.at)
+        debt = mark_outbox_published(state_root=Path(args.state_root), service_debt_id=args.service_debt_id, packet_hash=args.packet_hash, at=args.at)
+        result = {
+            "schema": "janus.machine_market.r2_paid_outbox_accounting.v1",
+            "service_debt_id": debt["service_debt_id"],
+            "state": debt["state"],
+            "packet_hash": debt["outbox_packet_hash"],
+            "closed": debt["closed"],
+        }
     else:
         result = reconcile_delivery(
             response=json.loads(Path(args.response).read_text(encoding="utf-8")),
