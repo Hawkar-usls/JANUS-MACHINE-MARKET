@@ -3,18 +3,23 @@
   "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/grant.schema.json",
   "title": "JANUS MACHINE MARKET Purchase Grant",
   "type": "object",
-  "required": ["schema", "purchase_id", "sku", "offer_hash", "request_hash", "status", "execution_authority_granted"],
+  "required": ["schema", "purchase_id", "sku", "request_hash", "status", "execution_authority_granted"],
   "properties": {
     "schema": {"const": "janus.machine_market.purchase_grant.v1"},
     "purchase_id": {"type": "string", "minLength": 1},
     "sku": {"type": "string", "minLength": 1},
-    "offer_hash": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "offer_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
+    "quote_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
     "request_hash": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
     "terms_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
     "payment_reference": {"type": ["string", "null"]},
-    "status": {"enum": ["PURCHASE_ELIGIBLE", "PURCHASE_BLOCKED", "PURCHASE_EXPIRED", "PURCHASE_ALREADY_RECONCILED"]},
+    "amount_usdt_micros": {"type": ["integer", "null"], "minimum": 0},
+    "policy_version": {"type": ["string", "null"]},
+    "status": {"enum": ["PURCHASE_ELIGIBLE", "PURCHASE_SETTLED", "PURCHASE_BLOCKED", "PURCHASE_EXPIRED", "PURCHASE_ALREADY_RECONCILED"]},
     "execution_authority_granted": {"const": false},
     "allowed_operation": {"type": ["string", "null"]},
+    "next_gate": {"type": ["string", "null"]},
+    "grant_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
     "authority_ceiling": {"type": ["object", "null"]},
     "buyer_query_entitlement": {
       "type": ["object", "null"],
@@ -35,5 +40,9 @@
     "expires_at": {"type": ["string", "null"]},
     "reasons": {"type": "array", "items": {"type": "string"}}
   },
+  "anyOf": [
+    {"required": ["offer_hash"]},
+    {"required": ["quote_hash"]}
+  ],
   "additionalProperties": false
 }
