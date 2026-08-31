@@ -16,6 +16,7 @@ on:
       - 'runtime/buyer_accounts.py'
       - 'runtime/fulfillment_debt.py'
       - 'runtime/selftest_portfolio.py'
+      - 'runtime/selftest_checkout.py'
       - 'runtime/live_beacon.py'
       - 'runtime/refresh_market_benchmarks.py'
       - 'runtime/r2_paid_accounting.py'
@@ -23,6 +24,7 @@ on:
       - 'tests/test_buyer_accounts.py'
       - 'tests/test_fulfillment_debt.py'
       - 'tests/test_selftest_portfolio.py'
+      - 'tests/test_selftest_checkout.py'
       - 'tests/test_selftest_account_balance.py'
       - 'tests/test_live_beacon.py'
       - 'tests/test_market_benchmark_refresh.py'
@@ -43,6 +45,7 @@ on:
       - 'runtime/buyer_accounts.py'
       - 'runtime/fulfillment_debt.py'
       - 'runtime/selftest_portfolio.py'
+      - 'runtime/selftest_checkout.py'
       - 'runtime/live_beacon.py'
       - 'runtime/refresh_market_benchmarks.py'
       - 'runtime/r2_paid_accounting.py'
@@ -50,6 +53,7 @@ on:
       - 'tests/test_buyer_accounts.py'
       - 'tests/test_fulfillment_debt.py'
       - 'tests/test_selftest_portfolio.py'
+      - 'tests/test_selftest_checkout.py'
       - 'tests/test_selftest_account_balance.py'
       - 'tests/test_live_beacon.py'
       - 'tests/test_market_benchmark_refresh.py'
@@ -84,6 +88,7 @@ jobs:
             runtime/buyer_accounts.py \
             runtime/fulfillment_debt.py \
             runtime/selftest_portfolio.py \
+            runtime/selftest_checkout.py \
             runtime/live_beacon.py \
             runtime/refresh_market_benchmarks.py \
             runtime/r2_paid_accounting.py
@@ -96,6 +101,7 @@ jobs:
             tests.test_buyer_accounts \
             tests.test_fulfillment_debt \
             tests.test_selftest_portfolio \
+            tests.test_selftest_checkout \
             tests.test_selftest_account_balance \
             tests.test_live_beacon \
             tests.test_market_benchmark_refresh \
@@ -128,6 +134,7 @@ jobs:
           print('BUYER_MEMORY_EVENT_SOURCED=PASS')
           print('FULFILLMENT_DEBT_DURABLE=PASS')
           print('SELF_TEST_HELIOS_EXCLUDED=PASS')
+          print('SELF_TEST_PORTFOLIO_CHECKOUT=PASS')
           print('BEACON_MARKETING_REQUIRES_WITNESS=PASS')
           print('JANUS_COIN_MINT_AFTER_VERIFIED_DELIVERY=PASS')
           PY
