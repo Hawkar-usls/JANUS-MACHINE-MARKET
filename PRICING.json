@@ -1,0 +1,79 @@
+{
+  "schema": "janus.machine_market.pricing.v1",
+  "version": "2026-08-31-preview-1",
+  "status": "PREVIEW_RATECARD_NOT_LIVE",
+  "currency": "USDT",
+  "decimals": 6,
+  "network": "ethereum-mainnet",
+  "chain_id": 1,
+  "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
+  "quote_ttl_seconds": 900,
+  "pricing_law": "Displayed browser totals are deterministic preview calculations from this public ratecard. A payable invoice must be frozen and admitted by the trusted JANUS Commerce Authority. PAYMENT != EXECUTION_AUTHORITY.",
+  "quantity_discounts": [
+    {"min_quantity": 1, "discount_bps": 0},
+    {"min_quantity": 5, "discount_bps": 500},
+    {"min_quantity": 10, "discount_bps": 1000},
+    {"min_quantity": 25, "discount_bps": 1500}
+  ],
+  "products": {
+    "JANUS.SEARCH": {
+      "billing_unit": "request",
+      "base_unit_usdt_micros": 50000,
+      "modes": {
+        "FAST": {"multiplier_bps": 10000},
+        "STANDARD": {"multiplier_bps": 16000},
+        "DEEP": {"multiplier_bps": 30000}
+      }
+    },
+    "JANUS.DATASET_SCOUT": {
+      "billing_unit": "job",
+      "base_unit_usdt_micros": 250000,
+      "modes": {
+        "DISCOVERY": {"multiplier_bps": 10000},
+        "LICENSE-DEEP": {"multiplier_bps": 20000}
+      }
+    },
+    "JANUS.EVIDENCE_PACK": {
+      "billing_unit": "pack",
+      "base_unit_usdt_micros": 500000,
+      "modes": {
+        "STANDARD": {"multiplier_bps": 10000},
+        "DEEP": {"multiplier_bps": 20000}
+      }
+    },
+    "JANUS.ARCHIVE_SCAN": {
+      "billing_unit": "scan",
+      "base_unit_usdt_micros": 250000,
+      "modes": {
+        "OPEN-ARCHIVE": {"multiplier_bps": 10000},
+        "PUBLIC-MIX": {"multiplier_bps": 20000}
+      }
+    },
+    "JANUS.REPO_AUDIT": {
+      "billing_unit": "audit",
+      "base_unit_usdt_micros": 1000000,
+      "modes": {
+        "ARCHITECTURE": {"multiplier_bps": 10000},
+        "CLAIMS": {"multiplier_bps": 12500},
+        "DEPENDENCIES": {"multiplier_bps": 15000}
+      }
+    },
+    "JANUS.RESEARCH_JOB": {
+      "billing_unit": "job",
+      "base_unit_usdt_micros": 1000000,
+      "modes": {
+        "SHORT": {"multiplier_bps": 10000},
+        "STANDARD": {"multiplier_bps": 20000},
+        "DEEP": {"multiplier_bps": 40000}
+      }
+    },
+    "HELIOS.PILOT": {
+      "billing_unit": "pilot",
+      "authority": "DELEGATED_TO_JANUS_HELIOS",
+      "local_price": null
+    },
+    "JANUS.INFERENCE": {"status": "CLOSED", "local_price": null},
+    "JANUS.COMPUTE": {"status": "CLOSED", "local_price": null}
+  }
+}
