@@ -1,0 +1,106 @@
+{
+  "schema": "janus.letter_gate.hardening_checkpoint.v1",
+  "created_at": "2026-08-31",
+  "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "base_branch": "main",
+  "base_sha": "0318c817833218802cc9d4908224346422b834df",
+  "working_branch": "security/letter-gate-repo-audit-hardening-v1",
+  "scope": "JANUS.REPO_AUDIT Market reconciliation path required before LETTER GATE promotion",
+  "gate_state": "BLOCKED_PENDING_VERIFICATION",
+  "security_findings": [
+    {
+      "id": "P1_SHELL_SOURCE_INTERPOLATION",
+      "severity": "P1",
+      "source": "Hawkar-usls/JANUS-MACHINE-MARKET#14",
+      "status": "PATCHED_PENDING_CI",
+      "requirement": "Untrusted service_request_id must never be interpolated into generated shell source and must be filename-safe before path construction."
+    },
+    {
+      "id": "P1_VERIFY_BEFORE_SELECT",
+      "severity": "P1",
+      "source": "Hawkar-usls/JANUS-MACHINE-MARKET#14",
+      "status": "PATCHED_PENDING_CI",
+      "requirement": "Every HOME candidate response must be packet-bound and fully verified before selection; invalid candidates must be quarantined and must not block later valid responses."
+    },
+    {
+      "id": "P1_RESULT_RETURN_FIELDS",
+      "severity": "P1",
+      "source": "Hawkar-usls/JANUS-MACHINE-MARKET#14",
+      "status": "PATCHED_PENDING_CI",
+      "requirement": "All fields consumed by the source-issue result-return step must be validated before a delivery receipt can be created or committed."
+    },
+    {
+      "id": "P2_SHARED_STATE_WRITER_MUTEX",
+      "severity": "P2",
+      "source": "Hawkar-usls/JANUS-MACHINE-MARKET#14",
+      "status": "PATCHED_PENDING_CI",
+      "requirement": "Repository-audit reconcile must use the common janus-machine-market-state-writer concurrency group."
+    }
+  ],
+  "implemented_changes": [
+    {
+      "path": "runtime/r2_repo_audit_reconcile.py",
+      "commit": "b5f2aab4d3d6e956b7a78981ac6f10600339d8f9",
+      "changes": [
+        "filename-safe service request identifier validation",
+        "packet validation before identity-dependent path use",
+        "nested audit result hash and request/target binding validation",
+        "mandatory result-return structure/type validation",
+        "HOME source commit/blob/path binding validation before receipt creation"
+      ]
+    },
+    {
+      "path": "tests/test_r2_repo_audit_reconcile.py",
+      "commit": "ad7c3633524eec7fdccdc781e11da56a6df03752",
+      "changes": [
+        "path traversal and shell metacharacter identifier cases",
+        "missing result-return field cases",
+        "wrong result field type cases",
+        "nested-result tamper case",
+        "response-path binding case"
+      ]
+    },
+    {
+      "path": ".github/workflows/r2-repo-audit-reconcile.yml",
+      "commit": "5528f70453714a850752ee95dd55a94467bb970d",
+      "changes": [
+        "verify-before-select candidate loop",
+        "hash-addressed quarantine records for malformed or invalid HOME responses",
+        "no untrusted GitHub expression interpolation into shell source",
+        "shared janus-machine-market-state-writer mutex",
+        "fresh-checkout verification preserved"
+      ]
+    }
+  ],
+  "required_adversarial_tests": {
+    "status": "PENDING_CI",
+    "cases": [
+      "../ traversal request id",
+      "absolute-path request id",
+      "single-quote shell source escape",
+      "command substitution request id",
+      "backtick request id",
+      "newline request id",
+      "oversized request id",
+      "malformed response JSON",
+      "valid outer envelope with invalid nested audit",
+      "wrong request/target binding",
+      "missing architecture_map/license_observations/risk_register/bounds",
+      "invalid result-return field types",
+      "wrong HOME response path binding",
+      "invalid candidate before valid candidate"
+    ]
+  },
+  "ci": {
+    "status": "NOT_RUN_YET"
+  },
+  "clean_roundtrip": {
+    "status": "NOT_RUN_YET",
+    "required_path": "clean HOME -> Market -> persistent verified delivery receipt"
+  },
+  "fresh_checkout_replay": {
+    "status": "NOT_RUN_YET"
+  },
+  "promotion_rule": "LETTER_GATE may become PASS only after patched CI is green, a new clean HOME->Market delivery is persisted, and a fresh checkout independently verifies the exact receipt/response bindings.",
+  "next_action": "Open hardening PR, run contract/adversarial CI, fix any failures, then perform a new clean owner-shadow repo-audit roundtrip and fresh-checkout replay."
+}
