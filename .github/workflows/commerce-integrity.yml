@@ -1,0 +1,50 @@
+name: JANUS Commerce Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'COMMERCE_READINESS.json'
+      - 'PAYMENT_POLICY.md'
+      - 'runtime/commerce_authority.py'
+      - 'schemas/payment-receipt.schema.json'
+      - 'tests/test_commerce_authority.py'
+      - '.github/workflows/commerce-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'COMMERCE_READINESS.json'
+      - 'PAYMENT_POLICY.md'
+      - 'runtime/commerce_authority.py'
+      - 'schemas/payment-receipt.schema.json'
+      - 'tests/test_commerce_authority.py'
+      - '.github/workflows/commerce-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: JSON syntax
+        run: python -m json.tool COMMERCE_READINESS.json >/dev/null && python -m json.tool schemas/payment-receipt.schema.json >/dev/null
+      - name: Commerce authority tests
+        run: python -m pytest -q tests/test_commerce_authority.py
+      - name: Fail-closed canonical truth
+        run: |
+          python - <<'PY'
+          import json
+          readiness=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
+          witness=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          assert witness['foreign_agent_witness'] is False, 'Update this rule only after a real persistent foreign-agent witness.'
+          assert readiness['money_enabled'] is False
+          assert readiness['autonomous_purchase_declared'] is False
+          assert readiness['status']=='PREPARED_BLOCKED_BY_FOREIGN_AGENT_WITNESS'
+          print('PASS: commerce is prepared but money remains fail-closed.')
+          PY
