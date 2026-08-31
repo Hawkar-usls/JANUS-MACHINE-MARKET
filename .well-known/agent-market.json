@@ -1,9 +1,18 @@
 {
-  "schema": "janus.machine_market.discovery_pointer.v1",
+  "schema": "janus.machine_market.discovery_pointer.v2",
   "market": "JANUS MACHINE MARKET",
   "canonical_repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+  "beacon": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/BEACON.json",
   "commercial": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCIAL.json",
   "agent_manifest": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENT_MARKET.json",
   "catalog": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/CATALOG.json",
-  "transaction_api_status": "NOT_ESTABLISHED"
+  "llm_index": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/llms.txt",
+  "transaction_api_status": "NOT_ESTABLISHED",
+  "standard_discovery_status": {
+    "a2a": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
+    "mcp": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
+    "x402_bazaar": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
+    "openapi": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API"
+  },
+  "warning": "Discoverable does not mean purchasable. Unsolicited payment grants nothing."
 }

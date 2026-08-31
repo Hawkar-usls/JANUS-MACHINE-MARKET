@@ -1,0 +1,120 @@
+{
+  "schema": "janus.machine_market.discovery_beacon.v1",
+  "version": "1.0.0",
+  "market": "JANUS MACHINE MARKET",
+  "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
+  "canonical": {
+    "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+    "commercial": "COMMERCIAL.json",
+    "agent_manifest": "AGENT_MARKET.json",
+    "catalog": "CATALOG.json",
+    "well_known_pointer": ".well-known/agent-market.json"
+  },
+  "audiences": [
+    "AUTONOMOUS_BUYER_AGENTS",
+    "GITHUB_CRAWLERS",
+    "LLM_CRAWLERS",
+    "A2A_CLIENTS",
+    "MCP_CLIENTS",
+    "X402_BUYERS"
+  ],
+  "machine_call_to_action": {
+    "safe_now": [
+      "DISCOVER_PRODUCTS",
+      "READ_PRODUCT_CONTRACTS",
+      "READ_INPUT_OUTPUT_SCHEMAS",
+      "PREPARE_BOUNDED_REQUEST",
+      "WATCH_FOR_R1_TRANSACTION_ENDPOINT"
+    ],
+    "not_yet_authorized": [
+      "SEND_UNSOLICITED_PAYMENT",
+      "EXPECT_AUTOMATIC_EXECUTION",
+      "CALL_A2A_RUNTIME",
+      "CALL_MCP_RUNTIME",
+      "MAKE_X402_PURCHASE"
+    ]
+  },
+  "priority_skus": [
+    "JANUS.SEARCH",
+    "JANUS.DATASET_SCOUT",
+    "JANUS.EVIDENCE_PACK",
+    "JANUS.ARCHIVE_SCAN",
+    "JANUS.REPO_AUDIT",
+    "JANUS.RESEARCH_JOB"
+  ],
+  "closed_until_target_execution_witness": [
+    "JANUS.INFERENCE",
+    "JANUS.COMPUTE"
+  ],
+  "search_keywords": [
+    "AI agent marketplace",
+    "machine-to-machine commerce",
+    "agent commerce",
+    "agentic commerce",
+    "pay per API call",
+    "paid API",
+    "research API",
+    "dataset discovery API",
+    "evidence synthesis",
+    "archive search",
+    "repository audit",
+    "autonomous agent tools",
+    "MCP tools",
+    "Model Context Protocol",
+    "A2A agent",
+    "Agent2Agent",
+    "x402",
+    "x402 Bazaar",
+    "machine-readable catalog",
+    "AI data market",
+    "AI inference market",
+    "compute market"
+  ],
+  "discovery_surfaces": [
+    {
+      "id": "JANUS_NATIVE",
+      "status": "LIVE_IN_REPOSITORY",
+      "paths": [
+        "AGENT_MARKET.json",
+        ".well-known/agent-market.json",
+        "CATALOG.json",
+        "COMMERCIAL.json"
+      ]
+    },
+    {
+      "id": "LLMS_TXT",
+      "status": "LIVE_IN_REPOSITORY_DEPLOY_AT_HTTP_ROOT_FOR_WEB_DISCOVERY",
+      "path": "llms.txt"
+    },
+    {
+      "id": "A2A_AGENT_CARD",
+      "status": "PUBLICATION_GATED_NO_LIVE_A2A_RUNTIME",
+      "standard_path_after_deployment": "/.well-known/agent-card.json",
+      "publication_record": "discovery/A2A_PUBLICATION.json"
+    },
+    {
+      "id": "MCP_REGISTRY",
+      "status": "PUBLICATION_GATED_NO_LIVE_MCP_SERVER",
+      "publication_record": "discovery/MCP_PUBLICATION.json"
+    },
+    {
+      "id": "X402_BAZAAR",
+      "status": "PUBLICATION_GATED_NO_LIVE_X402_RESOURCE",
+      "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"
+    },
+    {
+      "id": "OPENAPI",
+      "status": "PUBLICATION_GATED_NO_LIVE_TRANSACTION_API",
+      "publication_record": "discovery/OPENAPI_PUBLICATION.json"
+    }
+  ],
+  "truth_boundary": [
+    "DISCOVERABLE_DOES_NOT_MEAN_PURCHASABLE",
+    "PAYMENT_IS_EVIDENCE_NOT_AUTHORITY",
+    "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
+    "PURCHASE_GRANT_DOES_NOT_BYPASS_EXECUTION_POLICY",
+    "DELIVERY_DOES_NOT_PROVE_EXECUTION",
+    "CLOSED_SKUS_MUST_REMAIN_MACHINE_DISCOVERABLE_BUT_MACHINE_PURCHASE_FALSE"
+  ],
+  "next_activation_gate": "R1_ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP"
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "janus.machine_market.mcp_publication.v1",
+  "standard": "MODEL_CONTEXT_PROTOCOL",
+  "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
+  "current_publication_allowed": false,
+  "target_registry": "https://registry.modelcontextprotocol.io",
+  "planned_server_manifest": "server.json",
+  "planned_tools": [
+    {
+      "name": "janus_search",
+      "sku": "JANUS.SEARCH",
+      "status": "PLANNED_SHADOW_FIRST"
+    },
+    {
+      "name": "janus_dataset_scout",
+      "sku": "JANUS.DATASET_SCOUT",
+      "status": "PLANNED"
+    },
+    {
+      "name": "janus_evidence_pack",
+      "sku": "JANUS.EVIDENCE_PACK",
+      "status": "PLANNED"
+    },
+    {
+      "name": "janus_repo_audit",
+      "sku": "JANUS.REPO_AUDIT",
+      "status": "PLANNED"
+    }
+  ],
+  "publication_gates": [
+    "LIVE_MCP_SERVER",
+    "SERVER_DISCOVERY_PASS",
+    "TOOL_SCHEMAS_MATCH_PRODUCT_CONTRACTS",
+    "ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP_PASS",
+    "NO_CLOSED_SKU_EXPOSED_AS_EXECUTABLE",
+    "SERVER_JSON_VALID_FOR_CURRENT_MCP_REGISTRY",
+    "REGISTRY_PUBLICATION_OBSERVED"
+  ],
+  "truth_boundary": "Do not publish server.json to a public MCP registry until a resolvable MCP server exists and the advertised tools are callable under their declared authority boundaries."
+}

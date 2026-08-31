@@ -1,0 +1,27 @@
+{
+  "schema": "janus.machine_market.openapi_publication.v1",
+  "standard": "OPENAPI",
+  "target_version": "3.1.x_or_newer_runtime_supported",
+  "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API",
+  "current_publication_allowed": false,
+  "planned_first_paths": [
+    "GET /catalog",
+    "POST /quote",
+    "POST /purchase",
+    "GET /purchases/{purchase_id}",
+    "POST /jobs/search",
+    "GET /jobs/{job_id}",
+    "GET /receipts/{receipt_id}"
+  ],
+  "publication_gates": [
+    "LIVE_PUBLIC_HTTPS_API",
+    "ZERO_PRICE_SHADOW_MODE_ACTIVE",
+    "REQUEST_SCHEMA_BOUND",
+    "QUOTE_SCHEMA_BOUND",
+    "PURCHASE_GRANT_SCHEMA_BOUND",
+    "RESULT_RECEIPT_SCHEMA_BOUND",
+    "IDEMPOTENCY_AND_REPLAY_TESTS_PASS",
+    "NO_PAYMENT_ROUTE_ADVERTISED_BEFORE_AUTHORITY_GREEN"
+  ],
+  "truth_boundary": "An OpenAPI document must describe the deployed behavior, not future behavior. Publish only after the shadow endpoint exists and the documented routes pass contract tests."
+}
