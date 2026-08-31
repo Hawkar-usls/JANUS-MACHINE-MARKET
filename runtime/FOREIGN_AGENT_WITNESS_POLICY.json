@@ -1,0 +1,99 @@
+{
+  "schema": "janus.machine_market.foreign_agent_witness_policy.v1",
+  "status": "PREPARED_PENDING_REAL_EXTERNAL_REQUEST",
+  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface, while keeping payment, autonomous purchase, JANUS.INFERENCE, and JANUS.COMPUTE closed.",
+  "owner": {
+    "login": "Hawkar-usls",
+    "github_user_id": 242020399
+  },
+  "accepted_ingress": {
+    "event": "issues.opened|issues.edited|issues.reopened",
+    "title_prefix": "[JANUS FOREIGN MACHINE REQUEST]",
+    "request_marker": "JANUS_MACHINE_REQUEST_JSON",
+    "discovery_marker": "JANUS_DISCOVERY_WITNESS_JSON"
+  },
+  "independence_gate": {
+    "requester_login_must_differ_from_owner": true,
+    "requester_numeric_id_must_differ_from_owner": true,
+    "requester_type_must_not_be_bot": true,
+    "accepted_author_association": [
+      "NONE",
+      "FIRST_TIMER",
+      "FIRST_TIME_CONTRIBUTOR"
+    ],
+    "owner_or_collaborator_association_rejected": true,
+    "requester_attests_not_owner_controlled": true,
+    "scope_note": "This proves an external GitHub principal under observable platform identity/association signals. It does not claim metaphysical proof that two accounts can never share an ultimate controller."
+  },
+  "required_discovery_claim": {
+    "schema": "janus.machine_market.foreign_discovery_claim.v1",
+    "allowed_surfaces": [
+      "GITHUB_PAGES",
+      "GITHUB_REPOSITORY",
+      "LLMS_TXT",
+      "BEACON_JSON",
+      "AGENT_MARKET_JSON",
+      "CATALOG_JSON"
+    ],
+    "independent_from_owner": true,
+    "machine_client": true
+  },
+  "execution": {
+    "sku": "JANUS.SEARCH",
+    "price": 0,
+    "currency": "NONE",
+    "money_enabled": false,
+    "autonomous_purchase_declared": false,
+    "external_effects": false,
+    "repository_write_by_buyer": false,
+    "arbitrary_shell": false,
+    "secret_access": false,
+    "same_bounded_r1_runtime": true,
+    "persistent_state_branch": "janus/market-state"
+  },
+  "persistent_receipt": {
+    "schema": "janus.machine_market.foreign_agent_witness_receipt.v1",
+    "path_template": "state/r1-foreign/receipts/{witness_id}.json",
+    "immutable": true,
+    "binds": [
+      "repository_id",
+      "issue_id",
+      "issue_number",
+      "requester_login",
+      "requester_github_user_id",
+      "author_association",
+      "discovery_claim_hash",
+      "request_hash",
+      "purchase_id",
+      "purchase_grant_hash",
+      "execution_id",
+      "result_sha256",
+      "result_receipt"
+    ]
+  },
+  "promotion_law": {
+    "FOREIGN_AGENT_WITNESS": "PENDING_UNTIL_PERSISTENT_EXTERNAL_RECEIPT",
+    "owner_self_request_can_promote": false,
+    "workflow_dispatch_can_promote": false,
+    "synthetic_fixture_can_promote": false,
+    "payment_can_promote": false,
+    "only_qualifying_external_issue_roundtrip_can_promote": true
+  },
+  "closed_skus": {
+    "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+  },
+  "laws": [
+    "DISCOVERY != PURCHASE",
+    "REQUEST != PURCHASE",
+    "PAYMENT != AUTHORITY",
+    "NO_PAYMENT_BEFORE_FOREIGN_AGENT_WITNESS",
+    "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL",
+    "SELF_OWNER_REQUEST != FOREIGN_AGENT_WITNESS",
+    "SYNTHETIC_REQUEST != FOREIGN_AGENT_WITNESS",
+    "ONE_REQUEST_IDENTITY <= ONE_EXECUTION_IDENTITY",
+    "JANUS.INFERENCE_REMAINS_CLOSED",
+    "JANUS.COMPUTE_REMAINS_CLOSED"
+  ],
+  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT"
+}
