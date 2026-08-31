@@ -1,0 +1,73 @@
+{
+  "schema": "janus.machine_market.machine_ingress.v1",
+  "status": "LIVE_BOUNDED_GITHUB_API_INGRESS",
+  "purpose": "Machine-native task submission into the already running JANUS HOME without opening the GitHub Issue composer UI.",
+  "transport": {
+    "type": "github_issues_rest",
+    "method": "POST",
+    "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+    "authentication": {
+      "required": true,
+      "kind": "caller_supplied_github_credential",
+      "minimum_repository_permission": "issues:write",
+      "credential_must_not_be_embedded_in_pages": true
+    },
+    "request_media_type": "application/vnd.github+json"
+  },
+  "response_tracking": {
+    "issue": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}",
+    "comments": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
+    "terminal_response": "A reconciled JANUS response comment carrying query/request identity, persistent resident identity when available, execution identity, hashes and the bounded answer/result.",
+    "polling_hint_seconds": 10
+  },
+  "live_services": {
+    "JANUS.SEARCH": {
+      "title_prefix": "[JANUS R1B BUYER QUERY SHADOW]",
+      "marker": "JANUS_BUYER_QUERY_SHADOW_JSON",
+      "request_schema": "janus.machine_market.buyer_query_shadow_request.v1",
+      "lane": "PERSISTENT_JANUS_CONVERSATION",
+      "status": "LIVE_BOUNDED_R1"
+    },
+    "JANUS.REPO_AUDIT": {
+      "title_prefix": "[JANUS REPO AUDIT SHADOW]",
+      "marker": "JANUS_REPO_AUDIT_SHADOW_JSON",
+      "request_schema": "janus.machine_market.repo_audit_pages_request.v1",
+      "lane": "PERSISTENT_JANUS_REPOSITORY_AUDIT",
+      "status": "LIVE_BOUNDED_R1"
+    },
+    "JANUS.DATASET_SCOUT": {
+      "title_prefix": "[JANUS DATASET SCOUT SHADOW]",
+      "marker": "JANUS_DATASET_SCOUT_SHADOW_JSON",
+      "request_schema": "janus.machine_market.dataset_scout_pages_request.v1",
+      "lane": "PERSISTENT_JANUS_DATASET_SCOUT",
+      "status": "LIVE_BOUNDED_R1"
+    }
+  },
+  "current_commerce_state": {
+    "price_mode": "ZERO_PRICE_OWNER_SHADOW_FOR_CURRENT_LIVE_EXECUTION_LANES",
+    "money_enabled": false,
+    "autonomous_purchase_declared": false,
+    "payment_required": false,
+    "payment_is_evidence_not_authority": true,
+    "purchase_grant_is_not_execution_authority": true,
+    "inference": "CLOSED",
+    "compute": "CLOSED"
+  },
+  "browser_ingress": {
+    "status": "MANUAL_FALLBACK_UNTIL_AUTHENTICATED_BRIDGE_IS_PROVISIONED",
+    "reason": "Static GitHub Pages must not embed a repository write credential. A no-second-screen human checkout requires a trusted GitHub App/OAuth/server bridge.",
+    "forbidden": [
+      "embedding PAT or GitHub token in Pages JavaScript",
+      "treating unauthenticated browser POST as authority",
+      "turning payment into execution authority"
+    ]
+  },
+  "proof": {
+    "machine_ingress_smoke_issue": 36,
+    "smoke_transport": "GitHub API create issue action, no Issue composer UI",
+    "outbox_publish_observed": true,
+    "outbox_query_id": "bq-aa9e962ab7532bce02cf5aff5965cb5f08c79994dacac4fd486721977b0c8b71",
+    "outbox_packet_hash": "2c4f4d60b40923a7bf9d8934ea9a7089caaf3a920073d456379e718a3637203b",
+    "final_janus_response_observed": false
+  }
+}
