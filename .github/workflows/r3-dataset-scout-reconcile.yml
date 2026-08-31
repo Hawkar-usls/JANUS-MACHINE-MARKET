@@ -1,0 +1,229 @@
+name: JANUS Machine Market Dataset Scout Reconcile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/r3_dataset_scout_reconcile.py'
+      - 'tests/test_r3_dataset_scout_reconcile.py'
+      - '.github/workflows/r3-dataset-scout-reconcile.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/r3_dataset_scout_reconcile.py'
+      - 'tests/test_r3_dataset_scout_reconcile.py'
+      - '.github/workflows/r3-dataset-scout-reconcile.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '2-57/5 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test independent Dataset Scout HOME response verification
+        run: |
+          python -m py_compile runtime/r3_dataset_scout_shadow.py runtime/r3_dataset_scout_reconcile.py tests/test_r3_dataset_scout_reconcile.py
+          python -m unittest -v tests.test_r3_dataset_scout_reconcile
+
+  reconcile:
+    if: github.event_name != 'pull_request'
+    needs: contract
+    concurrency:
+      group: janus-machine-market-service-reconcile
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Credentialless pull HOME service response mailbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          home="$RUNNER_TEMP/janus-home-dataset-scout-responses"
+          rm -rf "$home"
+          if git -c http.extraHeader= ls-remote --exit-code --heads https://github.com/Hawkar-usls/Hawkar-usls.git janus/market-service-responses >/dev/null 2>&1; then
+            git -c http.extraHeader= clone --quiet --depth 1 --branch janus/market-service-responses https://github.com/Hawkar-usls/Hawkar-usls.git "$home"
+            echo 'DATASET_SCOUT_HOME_RESPONSE_CREDENTIALLESS_CLONE=PASS'
+          else
+            mkdir -p "$home/.janus/market-service-responses"; git -C "$home" init -q
+            echo 'DATASET_SCOUT_HOME_RESPONSE_BRANCH_ABSENT=TRUE'
+          fi
+          echo "HOME_SERVICE_WT=$home" >> "$GITHUB_ENV"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+      - name: Mount Market outbox and persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+          outbox="$RUNNER_TEMP/market-dataset-scout-outbox-reconcile"; rm -rf "$outbox"
+          git worktree add --detach "$outbox" origin/janus/market-home-outbox
+          echo "MARKET_OUTBOX_WT=$outbox" >> "$GITHUB_ENV"
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-dataset-scout-state-reconcile"; rm -rf "$state"
+          git worktree add -B janus-market-dataset-scout-state "$state" origin/janus/market-state
+          echo "MARKET_STATE_WT=$state" >> "$GITHUB_ENV"
+      - name: Select oldest unreconciled Dataset Scout response
+        id: select
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/dataset-scout-reconcile
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from pathlib import Path
+          home=Path(os.environ['HOME_SERVICE_WT'])/'.janus/market-service-responses'
+          state=Path(os.environ['MARKET_STATE_WT'])/'state/r3-services/dataset-scout/receipts'
+          rows=[]
+          if home.is_dir():
+              for p in sorted(home.glob('*.dataset-scout-result.json')):
+                  try: r=json.loads(p.read_text(encoding='utf-8'))
+                  except Exception: continue
+                  rid=str(r.get('service_request_id') or '')
+                  if not rid or (state/f'{rid}.json').exists(): continue
+                  rows.append((rid,p,r))
+          if not rows:
+              print('found=false'); print('request_id='); raise SystemExit(0)
+          rid,p,r=rows[0]
+          Path('runtime/dataset-scout-reconcile/home-response.json').write_text(json.dumps(r,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('found=true'); print('request_id='+rid)
+          PY
+      - name: No unreconciled Dataset Scout result
+        if: steps.select.outputs.found != 'true'
+        run: |
+          echo 'DATASET_SCOUT_NO_UNRECONCILED_HOME_RESULT=TRUE'
+          echo 'SILENCE_IS_NEGATIVE_EVIDENCE=FALSE'
+      - name: Verify exact packet and persist delivery
+        if: steps.select.outputs.found == 'true'
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          rid='${{ steps.select.outputs.request_id }}'
+          packet="$MARKET_OUTBOX_WT/.janus/market-home-outbox/${rid}.dataset-scout.packet.json"
+          test -f "$packet"; cp "$packet" runtime/dataset-scout-reconcile/packet.json
+          response_path=".janus/market-service-responses/${rid}.dataset-scout-result.json"
+          HOME_RESPONSE_PATH="$response_path" python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          from runtime.r3_dataset_scout_reconcile import build_market_receipt, verify_home_response
+          packet=json.load(open('runtime/dataset-scout-reconcile/packet.json'))
+          response=json.load(open('runtime/dataset-scout-reconcile/home-response.json'))
+          assert verify_home_response(response, packet=packet)
+          home=Path(os.environ['HOME_SERVICE_WT'])
+          source_commit=subprocess.check_output(['git','-C',str(home),'rev-parse','HEAD'],text=True).strip()
+          blob=subprocess.check_output(['git','-C',str(home),'hash-object',os.environ['HOME_RESPONSE_PATH']],text=True).strip()
+          receipt=build_market_receipt(response,packet=packet,home_source_commit=source_commit,home_response_path=os.environ['HOME_RESPONSE_PATH'],home_response_blob_sha=blob)
+          Path('runtime/dataset-scout-reconcile/receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+          receipts="$MARKET_STATE_WT/state/r3-services/dataset-scout/receipts"
+          responses="$MARKET_STATE_WT/state/r3-services/dataset-scout/responses"
+          mkdir -p "$receipts" "$responses"
+          tr="$receipts/${rid}.json"; ts="$responses/${rid}.json"
+          if [ -f "$tr" ]; then cmp -s runtime/dataset-scout-reconcile/receipt.json "$tr" || exit 2; else cp runtime/dataset-scout-reconcile/receipt.json "$tr"; fi
+          if [ -f "$ts" ]; then cmp -s runtime/dataset-scout-reconcile/home-response.json "$ts" || exit 2; else cp runtime/dataset-scout-reconcile/home-response.json "$ts"; fi
+          echo 'DATASET_SCOUT_VERIFIED_BUYER_DELIVERY=PASS'
+          echo 'DATASET_SCOUT_SERVICE_DEBT_CLOSED=PASS'
+      - name: Commit create-only Market delivery state
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$MARKET_STATE_WT"
+          git config user.name "JANUS Market Dataset Scout Reconciler"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/r3-services/dataset-scout
+          if git diff --cached --quiet; then
+            echo 'DATASET_SCOUT_MARKET_STATE_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "Deliver dataset scout ${{ steps.select.outputs.request_id }}"
+            git push origin HEAD:refs/heads/janus/market-state
+            echo 'DATASET_SCOUT_MARKET_STATE_COMMIT=PASS'
+          fi
+      - name: Fresh-checkout verify durable delivery
+        if: steps.select.outputs.found == 'true'
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          replay="$RUNNER_TEMP/market-dataset-scout-state-replay"; rm -rf "$replay"
+          git worktree add --detach "$replay" origin/janus/market-state
+          REPLAY="$replay" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from runtime.r3_dataset_scout_reconcile import verify_home_response
+          rid='${{ steps.select.outputs.request_id }}'
+          root=Path(os.environ['REPLAY'])/'state/r3-services/dataset-scout'
+          receipt=json.loads((root/'receipts'/f'{rid}.json').read_text())
+          response=json.loads((root/'responses'/f'{rid}.json').read_text())
+          packet=json.load(open('runtime/dataset-scout-reconcile/packet.json'))
+          assert receipt['verified_buyer_delivery'] is True and receipt['service_debt_closed'] is True
+          assert receipt['dataset_payload_downloaded'] is False and receipt['redistribution_authority_granted'] is False
+          assert verify_home_response(response,packet=packet)
+          assert receipt['home_response_hash']==response['home_response_hash']
+          assert receipt['dataset_scout_result_hash']==response['dataset_scout_result_hash']
+          print('DATASET_SCOUT_FRESH_CHECKOUT_DELIVERY=PASS')
+          PY
+      - name: Return Dataset Scout result to source issue
+        if: steps.select.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue="$(python -c "import json; print((json.load(open('runtime/dataset-scout-reconcile/packet.json')).get('return_route') or {}).get('source_issue_number') or '')")"
+          test -n "$issue" || exit 0
+          python - <<'PY' > "$RUNNER_TEMP/dataset-scout-comment.md"
+          import json
+          r=json.load(open('runtime/dataset-scout-reconcile/home-response.json')); a=r['dataset_scout_result']
+          print('JANUS.DATASET_SCOUT verified result delivered.\n')
+          print(f"- resident_uuid: `{r['resident_uuid']}`")
+          print(f"- request_id: `{r['service_request_id']}`")
+          print(f"- query: `{a['query']}`")
+          print(f"- candidate_count: `{len(a['dataset_manifest'])}`")
+          print(f"- catalogs_succeeded: `{','.join(a['provenance']['catalogs_succeeded'])}`")
+          print(f"- result_hash: `{r['dataset_scout_result_hash']}`")
+          print(f"- home_response_hash: `{r['home_response_hash']}`")
+          print('- dataset_payload_downloaded: `false`')
+          print('- redistribution_authority_granted: `false`')
+          print('- license_authority_granted: `false`')
+          print('\nThe complete machine-readable manifest is preserved in Market delivery state.')
+          print(f"\n<!-- DATASET_SCOUT_RETURNED:{r['service_request_id']} -->")
+          PY
+          marker="DATASET_SCOUT_RETURNED:${{ steps.select.outputs.request_id }}"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -Fq "$marker"; then
+            echo 'DATASET_SCOUT_RESULT_COMMENT_ALREADY_PRESENT=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/dataset-scout-comment.md")" >/dev/null
+            echo 'DATASET_SCOUT_RESULT_RETURNED=PASS'
+          fi
+      - name: Upload Dataset Scout reconciliation witness
+        if: steps.select.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-dataset-scout-market-${{ steps.select.outputs.request_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime/dataset-scout-reconcile/
+          if-no-files-found: error

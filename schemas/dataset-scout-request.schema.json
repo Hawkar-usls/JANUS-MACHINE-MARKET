@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/dataset-scout-request.schema.json",
+  "title": "JANUS Dataset Scout Request",
+  "type": "object",
+  "required": ["schema", "request_id", "request_hash", "sku", "buyer_actor_id", "query", "domain", "license_preferences", "format_preferences", "bounds", "read_only", "dataset_payload_download_authorized", "redistribution_authority_granted", "command_authority_granted", "external_effect_authorized"],
+  "properties": {
+    "schema": {"const": "janus.market_service.dataset_scout_request.v1"},
+    "request_id": {"type": "string", "pattern": "^ds-shadow-[0-9a-f]{48}$"},
+    "request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sku": {"const": "JANUS.DATASET_SCOUT"},
+    "buyer_actor_id": {"type": "string", "minLength": 1},
+    "query": {"type": "string", "minLength": 1, "maxLength": 500},
+    "domain": {"type": "string", "maxLength": 200},
+    "date_range": {},
+    "license_preferences": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 120}},
+    "format_preferences": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 80}},
+    "bounds": {
+      "type": "object",
+      "required": ["max_results", "max_catalogs", "per_catalog_timeout_seconds"],
+      "properties": {
+        "max_results": {"type": "integer", "minimum": 1, "maximum": 20},
+        "max_catalogs": {"type": "integer", "minimum": 1, "maximum": 2},
+        "per_catalog_timeout_seconds": {"type": "integer", "minimum": 2, "maximum": 15}
+      },
+      "additionalProperties": false
+    },
+    "read_only": {"const": true},
+    "dataset_payload_download_authorized": {"const": false},
+    "redistribution_authority_granted": {"const": false},
+    "command_authority_granted": {"const": false},
+    "external_effect_authorized": {"const": false}
+  },
+  "additionalProperties": false
+}
