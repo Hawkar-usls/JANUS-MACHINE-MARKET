@@ -35,6 +35,20 @@ def _is_hex64(value: Any) -> bool:
     return isinstance(value, str) and HEX64_RE.fullmatch(value) is not None
 
 
+def prevalidate_home_response_identity(response: Any) -> str | None:
+    """Validate schema + identity syntax before any identity-derived filesystem path exists."""
+    if not isinstance(response, Mapping):
+        return None
+    if response.get("schema") != HOME_RESPONSE_SCHEMA or response.get("sku") != "JANUS.REPO_AUDIT":
+        return None
+    request_id = response.get("service_request_id")
+    if not is_safe_identifier(request_id):
+        return None
+    if not _is_hex64(response.get("service_request_hash")) or not _is_hex64(response.get("packet_hash")):
+        return None
+    return request_id
+
+
 def _valid_result_return_fields(audit: Mapping[str, Any]) -> bool:
     """Validate every structure consumed by the result-return step before delivery is persisted."""
     architecture = audit.get("architecture_map")
@@ -109,19 +123,15 @@ def verify_packet(packet: Mapping[str, Any]) -> bool:
 
 
 def verify_home_response(response: Mapping[str, Any], *, packet: Mapping[str, Any]) -> bool:
-    if not verify_packet(packet) or not isinstance(response, Mapping):
+    if not verify_packet(packet) or prevalidate_home_response_identity(response) is None:
         return False
     value = dict(response)
     claimed = value.pop("home_response_hash", "")
     if not _is_hex64(claimed) or digest(value) != claimed:
         return False
-    if value.get("schema") != HOME_RESPONSE_SCHEMA or value.get("sku") != "JANUS.REPO_AUDIT":
-        return False
 
     request = packet["service_request"]
     grant = packet["purchase_grant"]
-    if not is_safe_identifier(value.get("service_request_id")):
-        return False
     if value.get("packet_id") != packet.get("packet_id") or value.get("packet_hash") != packet.get("packet_hash"):
         return False
     if value.get("purchase_id") != grant.get("purchase_id") or value.get("purchase_grant_hash") != packet.get("purchase_grant_hash"):
@@ -236,6 +246,7 @@ __all__ = [
     "build_market_receipt",
     "digest",
     "is_safe_identifier",
+    "prevalidate_home_response_identity",
     "verify_home_response",
     "verify_packet",
 ]
