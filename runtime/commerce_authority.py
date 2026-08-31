@@ -59,15 +59,26 @@ def quote_hash(quote_without_hash: dict[str, Any]) -> str:
     return digest(quote_without_hash)
 
 
+def receipt_payment_reference(receipt: dict[str, Any]) -> str:
+    tx_hash = str(receipt.get("tx_hash") or "").lower()
+    if not (tx_hash.startswith("0x") and len(tx_hash) == 66):
+        raise CommerceInvalid("invalid transaction hash")
+    try:
+        log_index = int(receipt["log_index"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CommerceInvalid("payment receipt requires ERC20 log_index") from exc
+    if log_index < 0:
+        raise CommerceInvalid("invalid ERC20 log_index")
+    expected = f"{tx_hash}:{log_index}"
+    supplied = str(receipt.get("payment_reference") or "").lower()
+    if supplied != expected:
+        raise CommerceInvalid("payment reference mismatch")
+    return expected
+
+
 def build_quote(
-    *,
-    request: dict[str, Any],
-    sku: str,
-    amount_usdt_micros: int,
-    receiving_address: str,
-    expires_at: str,
-    nonce: str,
-    policy_version: str,
+    *, request: dict[str, Any], sku: str, amount_usdt_micros: int,
+    receiving_address: str, expires_at: str, nonce: str, policy_version: str,
 ) -> dict[str, Any]:
     if amount_usdt_micros < 0:
         raise CommerceInvalid("amount must be non-negative")
@@ -109,16 +120,9 @@ def verify_quote(quote: dict[str, Any], request: dict[str, Any], *, now: datetim
         raise CommerceInvalid("quote expired")
 
 
-def verify_payment_receipt(
-    quote: dict[str, Any],
-    receipt: dict[str, Any],
-    *,
-    consumed_payment_refs: Iterable[str] = (),
-) -> None:
-    tx_hash = str(receipt.get("tx_hash") or "").lower()
-    if not (tx_hash.startswith("0x") and len(tx_hash) == 66):
-        raise CommerceInvalid("invalid transaction hash")
-    if tx_hash in {str(x).lower() for x in consumed_payment_refs}:
+def verify_payment_receipt(quote: dict[str, Any], receipt: dict[str, Any], *, consumed_payment_refs: Iterable[str] = ()) -> None:
+    ref = receipt_payment_reference(receipt)
+    if ref in {str(x).lower() for x in consumed_payment_refs}:
         raise CommerceInvalid("payment reference already consumed")
     if receipt.get("status") != "CONFIRMED":
         raise CommerceInvalid("payment is not confirmed")
@@ -130,6 +134,8 @@ def verify_payment_receipt(
         raise CommerceInvalid("payment recipient mismatch")
     if int(receipt.get("amount_usdt_micros", -1)) != int(quote["amount_usdt_micros"]):
         raise CommerceInvalid("payment amount mismatch")
+    if receipt.get("quote_hash") != quote.get("quote_hash"):
+        raise CommerceInvalid("payment receipt quote binding mismatch")
     declared_threshold = int(receipt.get("required_confirmations", 0))
     if declared_threshold < MIN_CONFIRMATIONS:
         raise CommerceInvalid("payment receipt weakens confirmation policy")
@@ -138,21 +144,11 @@ def verify_payment_receipt(
 
 
 def admit_purchase(
-    *,
-    readiness: dict[str, Any],
-    foreign_witness: dict[str, Any],
-    product: dict[str, Any],
-    request: dict[str, Any],
-    quote: dict[str, Any],
-    payment_receipt: dict[str, Any],
-    consumed_payment_refs: Iterable[str] = (),
-    now: datetime | None = None,
+    *, readiness: dict[str, Any], foreign_witness: dict[str, Any], product: dict[str, Any],
+    request: dict[str, Any], quote: dict[str, Any], payment_receipt: dict[str, Any],
+    consumed_payment_refs: Iterable[str] = (), now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Return a deterministic PURCHASE_GRANT or fail closed.
-
-    This does not create an EXECUTION_GRANT. Payment remains evidence, not command
-    authority, and downstream JANUS policy/scope gates still have to admit work.
-    """
+    """Return deterministic PURCHASE_GRANT, never EXECUTION_GRANT."""
     if readiness.get("money_enabled") is not True:
         raise CommerceBlocked("money_enabled is false")
     if readiness.get("autonomous_purchase_declared") is not True:
@@ -166,12 +162,10 @@ def admit_purchase(
 
     verify_quote(quote, request, now=now)
     verify_payment_receipt(quote, payment_receipt, consumed_payment_refs=consumed_payment_refs)
-
+    payment_ref = receipt_payment_reference(payment_receipt)
     seed = {
-        "quote_hash": quote["quote_hash"],
-        "request_hash": quote["request_hash"],
-        "sku": quote["sku"],
-        "payment_reference": payment_receipt["tx_hash"].lower(),
+        "quote_hash": quote["quote_hash"], "request_hash": quote["request_hash"],
+        "sku": quote["sku"], "payment_reference": payment_ref,
         "policy_version": quote["policy_version"],
     }
     purchase_id = "jp-" + digest(seed)[:40]
@@ -181,7 +175,7 @@ def admit_purchase(
         "sku": quote["sku"],
         "request_hash": quote["request_hash"],
         "quote_hash": quote["quote_hash"],
-        "payment_reference": payment_receipt["tx_hash"].lower(),
+        "payment_reference": payment_ref,
         "amount_usdt_micros": quote["amount_usdt_micros"],
         "policy_version": quote["policy_version"],
         "execution_authority": False,
