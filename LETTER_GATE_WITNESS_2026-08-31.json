@@ -4,7 +4,7 @@
   "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
   "evidence_branch": "evidence/letter-gate-clean-witness-2026-08-31",
   "hardening_main_sha": "ca42feb888d2da5cfa5aac03b4ec9523a467f8d1",
-  "gate_state": "BLOCKED_WITNESS_IN_PROGRESS",
+  "gate_state": "BLOCKED_GLOBAL_STATE_WRITER_MUTEX_MISMATCH",
   "truth_boundary": "No pre-hardening delivery may be reused as LETTER GATE evidence.",
   "clean_witness": {
     "source_issue": 24,
@@ -40,8 +40,19 @@
     }
   },
   "global_state_writer_audit": {
-    "status": "REQUIRED_BEFORE_GATE_PASS",
-    "note": "All workflows that push janus/market-state must be confirmed to share janus-machine-market-state-writer; any conflicting writer is a blocker until patched."
+    "status": "BLOCKED_FOUND_MISMATCH",
+    "required_group": "janus-machine-market-state-writer",
+    "finding": {
+      "severity": "P2_STATE_SERIALIZATION",
+      "workflow": ".github/workflows/r3-dataset-scout-reconcile.yml",
+      "observed_group": "janus-machine-market-service-reconcile",
+      "required_group": "janus-machine-market-state-writer",
+      "writes_branch": "janus/market-state",
+      "canonical_file_blob_sha": "4850ef316f2682dbdd5cab81101734a0ff79d600",
+      "remediation_branch": "fix/r3-market-state-writer-mutex",
+      "status": "PATCH_IN_PROGRESS"
+    },
+    "note": "LETTER GATE remains blocked because a concurrent Dataset Scout reconciler can push the same janus/market-state branch outside the common writer mutex."
   },
   "promotion_rule": "PASS only after the post-hardening HOME response is fully verified by patched reconcile, a persistent delivery receipt exists on janus/market-state, fresh-checkout replay succeeds, and the global state-writer mutex audit is clean."
 }
