@@ -1,0 +1,311 @@
+name: JANUS Machine Market R2 Paid Buyer Query
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'PAYMENT_ROUTE.json'
+      - 'pricing/JANUS.SEARCH.json'
+      - 'schemas/payment-receipt.schema.json'
+      - 'schemas/market-home-paid-buyer-query-packet.schema.json'
+      - 'runtime/r2_erc20_payment.py'
+      - 'runtime/r2_paid_buyer_query.py'
+      - 'tests/test_r2_paid_commerce.py'
+      - '.github/workflows/r2-paid-buyer-query.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'PAYMENT_ROUTE.json'
+      - 'pricing/JANUS.SEARCH.json'
+      - 'schemas/payment-receipt.schema.json'
+      - 'schemas/market-home-paid-buyer-query-packet.schema.json'
+      - 'runtime/r2_erc20_payment.py'
+      - 'runtime/r2_paid_buyer_query.py'
+      - 'tests/test_r2_paid_commerce.py'
+      - '.github/workflows/r2-paid-buyer-query.yml'
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate JSON and compile
+        run: |
+          set -euo pipefail
+          python -m json.tool PAYMENT_ROUTE.json >/dev/null
+          python -m json.tool pricing/JANUS.SEARCH.json >/dev/null
+          python -m json.tool schemas/payment-receipt.schema.json >/dev/null
+          python -m json.tool schemas/market-home-paid-buyer-query-packet.schema.json >/dev/null
+          python -m py_compile runtime/r2_erc20_payment.py runtime/r2_paid_buyer_query.py tests/test_r2_paid_commerce.py
+      - name: Run paid-commerce adversarial tests
+        env:
+          PYTHONPATH: .
+        run: python -m unittest -v tests.test_r2_paid_commerce
+      - name: Enforce current live-price gate
+        run: |
+          python - <<'PY'
+          import json
+          route=json.load(open('PAYMENT_ROUTE.json'))
+          price=json.load(open('pricing/JANUS.SEARCH.json'))
+          assert route['authority']['payment_is_command'] is False
+          assert route['authority']['payment_is_execution_authority'] is False
+          if price['machine_purchase_enabled']:
+              assert price['status'] == 'PUBLISHED'
+              assert isinstance(price['amount_atomic'], int) and price['amount_atomic'] > 0
+              assert route['live_payment_enabled'] is True
+              print('R2_LIVE_PRICE_GATE=OPEN')
+          else:
+              assert price['status'] == 'PRICE_NOT_PUBLISHED'
+              assert price['amount_atomic'] is None
+              assert route['live_payment_enabled'] is False
+              print('R2_LIVE_PRICE_GATE=CLOSED_FAIL_CLOSED')
+          print('PAYMENT_IS_EXECUTION_AUTHORITY=FALSE')
+          PY
+
+  paid-purchase:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS PAID SEARCH]')
+    needs: contract
+    concurrency:
+      group: janus-machine-market-paid-purchase
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      issues: write
+    env:
+      JANUS_ETH_RPC_URLS: ${{ secrets.JANUS_ETH_RPC_URLS }}
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse machine purchase request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/r2-live
+          python - <<'PY'
+          import json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          issue=payload['issue']
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_PAID_BUYER_QUERY_JSON'
+          end='JANUS_PAID_BUYER_QUERY_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('R2_PAID_QUERY_JSON_MARKER_MISSING')
+          req=json.loads(body[s+len(begin):e].strip())
+          if req.get('schema') != 'janus.machine_market.paid_buyer_query_request.v1':
+              raise SystemExit('R2_PAID_QUERY_SCHEMA_INVALID')
+          login=issue['user']['login']
+          req['request_id']=f"github-issue-id:{issue['id']}"
+          req['buyer_actor_id']=f"github:{login}"
+          req['conversation_id']=str(req.get('conversation_id') or f"market-paid-{issue['id']}")
+          req['turn_index']=int(req.get('turn_index', 0))
+          req['created_at']=str(issue['created_at'])
+          req['source_issue_number']=int(issue['number'])
+          req['source_issue_id']=int(issue['id'])
+          req['request_origin']='OWNER_PURCHASE' if login == payload['repository']['owner']['login'] else 'FOREIGN_MACHINE_PURCHASE'
+          pathlib.Path('runtime/r2-live/request.json').write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          print('R2_PAID_MACHINE_REQUEST_PARSED=PASS')
+          PY
+
+      - name: Fail closed unless merchant price and route are explicitly live
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          route=json.load(open('PAYMENT_ROUTE.json'))
+          price=json.load(open('pricing/JANUS.SEARCH.json'))
+          if route.get('live_payment_enabled') is not True:
+              raise SystemExit('R2_PAYMENT_ROUTE_NOT_LIVE')
+          if price.get('status') != 'PUBLISHED' or price.get('machine_purchase_enabled') is not True:
+              raise SystemExit('R2_PRICE_NOT_LIVE')
+          amount=price.get('amount_atomic')
+          if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
+              raise SystemExit('R2_PRICE_AMOUNT_INVALID')
+          print('R2_PRICE_AND_ROUTE_LIVE=PASS')
+          PY
+          test -n "${JANUS_ETH_RPC_URLS:-}" || { echo 'R2_RPC_URLS_NOT_CONFIGURED' >&2; exit 2; }
+
+      - name: Verify exact confirmed USDT payment
+        shell: bash
+        run: |
+          set -euo pipefail
+          tx="$(python -c "import json; print(json.load(open('runtime/r2-live/request.json'))['tx_hash'])")"
+          amount="$(python -c "import json; print(json.load(open('pricing/JANUS.SEARCH.json'))['amount_atomic'])")"
+          python runtime/r2_erc20_payment.py \
+            --tx-hash "$tx" \
+            --route PAYMENT_ROUTE.json \
+            --amount-atomic "$amount" \
+            --output runtime/r2-live/payment-receipt.json
+
+      - name: Build deterministic paid purchase grant and HOME packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python runtime/r2_paid_buyer_query.py \
+            --request runtime/r2-live/request.json \
+            --price pricing/JANUS.SEARCH.json \
+            --route PAYMENT_ROUTE.json \
+            --payment-receipt runtime/r2-live/payment-receipt.json \
+            --output runtime/r2-live/packet.json
+
+      - name: Claim payment reference create-only in persistent Market state
+        id: claim
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-state-r2-paid"
+          rm -rf "$state"
+          git worktree add -B janus-market-state-r2-paid "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+          STATE="$state" python - <<'PY' > runtime/r2-live/claim-status.json
+          import hashlib, json, os
+          from pathlib import Path
+          packet=json.load(open('runtime/r2-live/packet.json'))
+          payment=packet['payment_receipt']
+          ref=payment['payment_reference']
+          key=hashlib.sha256(ref.encode()).hexdigest()
+          root=Path(os.environ['STATE'])/'state/r2-paid/payment-claims'
+          root.mkdir(parents=True, exist_ok=True)
+          target=root/f'{key}.json'
+          claim={
+              'schema':'janus.machine_market.r2_payment_claim.v1',
+              'payment_reference':ref,
+              'payment_receipt_hash':packet['payment_receipt_hash'],
+              'purchase_id':packet['purchase_grant']['purchase_id'],
+              'purchase_grant_hash':packet['purchase_grant_hash'],
+              'query_id':packet['query_id'],
+              'query_hash':packet['query_hash'],
+              'packet_hash':packet['packet_hash'],
+              'source_issue_number':(packet.get('return_route') or {}).get('source_issue_number'),
+          }
+          encoded=json.dumps(claim, ensure_ascii=False, indent=2, sort_keys=True)+'\n'
+          new=False
+          if target.exists():
+              if target.read_text(encoding='utf-8') != encoded:
+                  raise SystemExit('R2_PAYMENT_REFERENCE_ALREADY_CLAIMED_FOR_DIFFERENT_PURCHASE')
+          else:
+              target.write_text(encoded, encoding='utf-8')
+              new=True
+          print(json.dumps({'new':new,'path':str(target),'key':key,'purchase_id':claim['purchase_id'],'query_id':claim['query_id']}, sort_keys=True))
+          PY
+          cd "$state"
+          git config user.name "JANUS Machine Market Commerce Authority"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/r2-paid/payment-claims
+          if git diff --cached --quiet; then
+            echo 'R2_PAYMENT_CLAIM_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "R2 claim verified payment $(python -c "import json; print(json.load(open('$GITHUB_WORKSPACE/runtime/r2-live/claim-status.json'))['purchase_id'])")"
+            git push origin HEAD:refs/heads/janus/market-state
+            echo 'R2_PAYMENT_CLAIM_COMMIT=PASS'
+          fi
+          cd "$GITHUB_WORKSPACE"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          s=json.load(open('runtime/r2-live/claim-status.json'))
+          print('new=' + ('true' if s['new'] else 'false'))
+          print('purchase_id=' + s['purchase_id'])
+          print('query_id=' + s['query_id'])
+          PY
+
+      - name: Publish create-only paid packet to credentialless HOME outbox
+        id: outbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market Paid Outbox"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          outbox="$RUNNER_TEMP/market-home-outbox-r2"
+          rm -rf "$outbox"
+          git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+          git worktree add -B janus-market-home-outbox-r2 "$outbox" origin/janus/market-home-outbox
+          qid="$(python -c "import json; print(json.load(open('runtime/r2-live/packet.json'))['query_id'])")"
+          target="$outbox/.janus/market-home-outbox/${qid}.paid.packet.json"
+          mkdir -p "$(dirname "$target")"
+          if [ -f "$target" ]; then
+            cmp -s runtime/r2-live/packet.json "$target" || { echo 'R2_PAID_OUTBOX_CREATE_ONLY_CONFLICT' >&2; exit 2; }
+            echo 'R2_PAID_OUTBOX_EXACT_RETRY_IDENTICAL=TRUE'
+          else
+            cp runtime/r2-live/packet.json "$target"
+          fi
+          cd "$outbox"
+          git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'R2_PAID_OUTBOX_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "R2 paid buyer query ${qid}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'R2_PAID_OUTBOX_COMMIT=PASS'
+          fi
+          echo "query_id=$qid" >> "$GITHUB_OUTPUT"
+          echo "outbox_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+
+      - name: Return paid purchase binding to source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/r2-paid-comment.md"
+          import json
+          p=json.load(open('runtime/r2-live/packet.json'))
+          pay=p['payment_receipt']
+          print('JANUS R2 paid purchase admitted by Commerce Authority.\n')
+          print(f"- purchase_id: `{p['purchase_grant']['purchase_id']}`")
+          print(f"- query_id: `{p['query_id']}`")
+          print(f"- payment_reference: `{pay['payment_reference']}`")
+          print(f"- payment_receipt_hash: `{p['payment_receipt_hash']}`")
+          print(f"- confirmations: `{pay['confirmations']}`")
+          print(f"- outbox_commit: `${{ steps.outbox.outputs.outbox_commit }}`")
+          print('- execution_authority_granted: `false`')
+          print('- external_effect_authorized: `false`')
+          print('\nPayment has created a bounded PURCHASE_GRANT only. HOME/Activator must still admit and execute the read-only JANUS service request.')
+          print(f"\n<!-- R2_PAID_PURCHASE_ID:{p['purchase_grant']['purchase_id']} -->")
+          PY
+          issue="${{ github.event.issue.number }}"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" --paginate --jq '.[].body' || true)"
+          marker="R2_PAID_PURCHASE_ID:${{ steps.claim.outputs.purchase_id }}"
+          if printf '%s' "$existing" | grep -Fq "$marker"; then
+            echo 'R2_PAID_PURCHASE_COMMENT_ALREADY_PRESENT=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${issue}/comments" -f body="$(cat "$RUNNER_TEMP/r2-paid-comment.md")" >/dev/null
+            echo 'R2_PAID_PURCHASE_BINDING_RETURNED=PASS'
+          fi
+
+      - name: Upload paid-commerce witness
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-market-r2-paid-${{ steps.claim.outputs.purchase_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            runtime/r2-live/request.json
+            runtime/r2-live/payment-receipt.json
+            runtime/r2-live/packet.json
+            runtime/r2-live/claim-status.json
+          if-no-files-found: error
