@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/market-home-buyer-query-packet.schema.json",
+  "title": "JANUS Machine Market -> HOME Buyer Query Packet",
+  "type": "object",
+  "required": [
+    "schema", "market_repository", "home_repository", "transport_mode", "mode",
+    "request_id", "request_hash", "offer", "offer_hash", "purchase_grant",
+    "purchase_grant_hash", "buyer_query", "query_id", "query_hash", "return_route",
+    "money_enabled", "payment_required", "production_purchase",
+    "execution_authority_granted", "command_authority_granted",
+    "external_effect_authorized", "physical_runtime_effect_authorized",
+    "scientific_evidence_authority_granted", "world_truth_authority_granted",
+    "laws", "packet_hash"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.home_buyer_query_packet.v1"},
+    "market_repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
+    "home_repository": {"const": "Hawkar-usls/Hawkar-usls"},
+    "transport_mode": {"const": "PHYSARIUS_CREDENTIALLESS_PULL"},
+    "mode": {"const": "ZERO_PRICE_SHADOW"},
+    "request_origin": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "offer": {"type": "object"},
+    "offer_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "purchase_grant": {"type": "object"},
+    "purchase_grant_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "buyer_query": {"type": "object"},
+    "query_id": {"type": "string", "pattern": "^bq-[0-9a-f]{64}$"},
+    "query_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "return_route": {
+      "type": "object",
+      "required": ["repository", "source_issue_number", "source_issue_id"],
+      "properties": {
+        "repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
+        "source_issue_number": {"type": ["integer", "null"]},
+        "source_issue_id": {"type": ["integer", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "money_enabled": {"const": false},
+    "payment_required": {"const": false},
+    "production_purchase": {"const": false},
+    "execution_authority_granted": {"const": false},
+    "command_authority_granted": {"const": false},
+    "external_effect_authorized": {"const": false},
+    "physical_runtime_effect_authorized": {"const": false},
+    "scientific_evidence_authority_granted": {"const": false},
+    "world_truth_authority_granted": {"const": false},
+    "laws": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "packet_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}
