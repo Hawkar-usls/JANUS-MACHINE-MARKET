@@ -53,7 +53,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: python -m unittest -v tests.test_r2_paid_commerce
-      - name: Enforce current live-price gate
+      - name: Enforce current live-price and RPC quorum gate
         run: |
           python - <<'PY'
           import json
@@ -61,6 +61,10 @@ jobs:
           price=json.load(open('pricing/JANUS.SEARCH.json'))
           assert route['authority']['payment_is_command'] is False
           assert route['authority']['payment_is_execution_authority'] is False
+          v=route['verification']
+          assert v['rpc_quorum'] >= 2
+          assert len(v.get('public_rpc_urls') or []) >= v['rpc_quorum']
+          assert len(set(v.get('public_rpc_provider_independence') or [])) >= v['rpc_quorum']
           if price['machine_purchase_enabled']:
               assert price['status'] == 'PUBLISHED'
               assert isinstance(price['amount_atomic'], int) and price['amount_atomic'] > 0
@@ -71,6 +75,7 @@ jobs:
               assert price['amount_atomic'] is None
               assert route['live_payment_enabled'] is False
               print('R2_LIVE_PRICE_GATE=CLOSED_FAIL_CLOSED')
+          print('R2_PUBLIC_RPC_QUORUM_PREPARED=PASS')
           print('PAYMENT_IS_EXECUTION_AUTHORITY=FALSE')
           PY
 
@@ -136,7 +141,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json, os
           route=json.load(open('PAYMENT_ROUTE.json'))
           price=json.load(open('pricing/JANUS.SEARCH.json'))
           if route.get('live_payment_enabled') is not True:
@@ -146,9 +151,15 @@ jobs:
           amount=price.get('amount_atomic')
           if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
               raise SystemExit('R2_PRICE_AMOUNT_INVALID')
+          v=route.get('verification') or {}
+          override=[x for x in os.environ.get('JANUS_ETH_RPC_URLS','').split(',') if x.strip()]
+          defaults=v.get('public_rpc_urls') or []
+          candidates=override or defaults
+          if len(candidates) < int(v.get('rpc_quorum',2)):
+              raise SystemExit('R2_RPC_QUORUM_NOT_CONFIGURED')
           print('R2_PRICE_AND_ROUTE_LIVE=PASS')
+          print('R2_RPC_QUORUM_AVAILABLE=PASS')
           PY
-          test -n "${JANUS_ETH_RPC_URLS:-}" || { echo 'R2_RPC_URLS_NOT_CONFIGURED' >&2; exit 2; }
 
       - name: Verify exact confirmed USDT payment
         shell: bash
