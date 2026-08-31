@@ -1,0 +1,9 @@
+{
+  "schema": "janus.machine_market.discovery_pointer.v1",
+  "market": "JANUS MACHINE MARKET",
+  "canonical_repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+  "commercial": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCIAL.json",
+  "agent_manifest": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENT_MARKET.json",
+  "catalog": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/CATALOG.json",
+  "transaction_api_status": "NOT_ESTABLISHED"
+}
