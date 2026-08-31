@@ -1,0 +1,216 @@
+name: JANUS Machine Market R1B HOME Buyer Query Outbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/r1b_shadow_buyer_query.py'
+      - 'tests/test_r1b_shadow_buyer_query.py'
+      - 'schemas/market-home-buyer-query-packet.schema.json'
+      - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate contracts
+        run: |
+          set -euo pipefail
+          python -m json.tool schemas/market-home-buyer-query-packet.schema.json >/dev/null
+          python -m py_compile runtime/r1b_shadow_buyer_query.py tests/test_r1b_shadow_buyer_query.py
+          PYTHONPATH=. python -m unittest -v tests.test_r1b_shadow_buyer_query
+      - name: Assert shadow-only authority ceiling
+        run: |
+          python - <<'PY'
+          from runtime.r1b_shadow_buyer_query import build_shadow_packet, verify_shadow_packet
+          r={
+            'schema':'janus.machine_market.buyer_query_shadow_request.v1',
+            'request_id':'contract',
+            'sku':'JANUS.SEARCH',
+            'buyer_actor_id':'github:contract',
+            'conversation_id':'contract',
+            'turn_index':0,
+            'message_text':'contract test',
+            'created_at':'2026-08-31T00:00:00Z',
+            'source_issue_number':None,
+            'source_issue_id':None,
+            'request_origin':'CONTRACT_TEST'
+          }
+          p=build_shadow_packet(r)
+          assert verify_shadow_packet(p)
+          assert p['money_enabled'] is False
+          assert p['payment_required'] is False
+          assert p['execution_authority_granted'] is False
+          assert p['command_authority_granted'] is False
+          assert p['external_effect_authorized'] is False
+          assert p['purchase_grant']['execution_authority_granted'] is False
+          print('R1B_MARKET_OUTBOX_CONTRACT=PASS')
+          print('R1B_MONEY_ENABLED=FALSE')
+          PY
+
+  publish-shadow-packet:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS R1B BUYER QUERY SHADOW]') &&
+      github.event.issue.user.login == github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-market-home-outbox-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Materialize owner-shadow request from issue
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/r1b-live
+          python - <<'PY'
+          import json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          issue=payload['issue']
+          owner=payload['repository']['owner']['login']
+          login=issue['user']['login']
+          if login != owner:
+              raise SystemExit('R1B_SHADOW_OWNER_ONLY')
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_BUYER_QUERY_SHADOW_JSON'
+          end='JANUS_BUYER_QUERY_SHADOW_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('R1B_QUERY_JSON_MARKER_MISSING')
+          req=json.loads(body[s+len(begin):e].strip())
+          if req.get('schema') != 'janus.machine_market.buyer_query_shadow_request.v1':
+              raise SystemExit('R1B_QUERY_SCHEMA_INVALID')
+          req['request_id']=f"github-issue-id:{issue['id']}"
+          req['sku']='JANUS.SEARCH'
+          req['buyer_actor_id']=f"github:{login}"
+          req['conversation_id']=str(req.get('conversation_id') or f"market-issue-{issue['id']}")
+          req['turn_index']=int(req.get('turn_index', 0))
+          req['created_at']=str(issue['created_at'])
+          req['source_issue_number']=int(issue['number'])
+          req['source_issue_id']=int(issue['id'])
+          req['request_origin']='SELF_OWNER_SHADOW'
+          pathlib.Path('runtime/r1b-live/request.json').write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          print('R1B_SELF_OWNER_SHADOW_REQUEST=PASS')
+          PY
+
+      - name: Build sealed Market -> HOME packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python runtime/r1b_shadow_buyer_query.py \
+            --request runtime/r1b-live/request.json \
+            --output runtime/r1b-live/packet.json
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime/r1b-live/packet.json', encoding='utf-8'))
+          print('QUERY_ID=' + p['query_id'])
+          print('PURCHASE_ID=' + p['purchase_grant']['purchase_id'])
+          print('PACKET_HASH=' + p['packet_hash'])
+          PY
+
+      - name: Publish create-only packet to public credentialless outbox
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market Outbox"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          outbox="$RUNNER_TEMP/market-home-outbox"
+          rm -rf "$outbox"
+          if git ls-remote --exit-code --heads origin janus/market-home-outbox >/dev/null 2>&1; then
+            git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+            git worktree add -B janus-market-home-outbox-local "$outbox" origin/janus/market-home-outbox
+          else
+            git worktree add --detach "$outbox" HEAD
+            cd "$outbox"
+            git switch --orphan janus-market-home-outbox-local
+            git rm -rf --ignore-unmatch .
+            mkdir -p .janus/market-home-outbox
+            printf '%s\n' '{"schema":"janus.machine_market.home_outbox.v1","role":"CREATE_ONLY_MARKET_TO_HOME_BUYER_QUERY_PACKETS","transport":"PHYSARIUS_CREDENTIALLESS_PULL","money_enabled":false,"cross_repo_write_authority":false}' > .janus/market-home-outbox/MANIFEST.json
+            cd - >/dev/null
+          fi
+          qid="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['query_id'])")"
+          target="$outbox/.janus/market-home-outbox/${qid}.packet.json"
+          mkdir -p "$(dirname "$target")"
+          new=false
+          if [ -f "$target" ]; then
+            if cmp -s runtime/r1b-live/packet.json "$target"; then
+              echo 'R1B_OUTBOX_EXACT_RETRY_IDENTICAL=TRUE'
+            else
+              echo 'R1B_OUTBOX_CREATE_ONLY_CONFLICT=TRUE' >&2
+              exit 2
+            fi
+          else
+            cp runtime/r1b-live/packet.json "$target"
+            new=true
+          fi
+          cd "$outbox"
+          git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'R1B_OUTBOX_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "R1B buyer query ${qid}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'R1B_OUTBOX_COMMIT=PASS'
+          fi
+          commit="$(git rev-parse HEAD)"
+          blob="$(git hash-object ".janus/market-home-outbox/${qid}.packet.json")"
+          cd - >/dev/null
+          echo "query_id=$qid" >> "$GITHUB_OUTPUT"
+          echo "outbox_commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "blob_sha=$blob" >> "$GITHUB_OUTPUT"
+          echo "new_packet=$new" >> "$GITHUB_OUTPUT"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+
+      - name: Return outbox binding to source issue
+        if: steps.publish.outputs.new_packet == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          QUERY_ID: ${{ steps.publish.outputs.query_id }}
+          OUTBOX_COMMIT: ${{ steps.publish.outputs.outbox_commit }}
+          BLOB_SHA: ${{ steps.publish.outputs.blob_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          packet_hash="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['packet_hash'])")"
+          purchase_id="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['purchase_grant']['purchase_id'])")"
+          cat > "$RUNNER_TEMP/r1b-comment.md" <<EOF
+          R1B zero-price buyer-query packet published for credentialless HOME pull.
+
+          - query_id: \`${QUERY_ID}\`
+          - purchase_id: \`${purchase_id}\`
+          - packet_hash: \`${packet_hash}\`
+          - outbox_commit: \`${OUTBOX_COMMIT}\`
+          - git_blob_sha: \`${BLOB_SHA}\`
+          - money_enabled: \`false\`
+          - execution_authority_granted: \`false\`
+
+          HOME is the JANUS root. Market is only the external commercial nerve; the packet must be admitted by HOME/Activator before cognition.
+          EOF
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/r1b-comment.md")" >/dev/null
