@@ -2,15 +2,16 @@
   "schema": "janus.machine_market.catalog.v1",
   "market": "JANUS MACHINE MARKET",
   "generated": "2026-08-31",
-  "currency_policy": "Each product declares its own pricing and payment authority.",
+  "currency_policy": "Each product declares its own pricing and payment authority. Unsolicited payment grants nothing.",
   "products": [
     {
       "sku": "JANUS.SEARCH",
       "title": "JANUS Search",
       "class": "search_api",
-      "status": "SPECIFICATION_READY",
+      "status": "PAID_RUNTIME_ARMED_PRICE_AND_MERGE_GATES_PENDING",
       "machine_discovery": true,
       "machine_purchase": false,
+      "purchase_protocol": "PURCHASE_PROTOCOL.json",
       "product": "products/JANUS.SEARCH.json"
     },
     {
