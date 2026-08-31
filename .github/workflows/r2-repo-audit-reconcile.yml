@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - 'runtime/r2_repo_audit_reconcile.py'
+      - 'runtime/r2_repo_audit_selector.py'
       - 'tests/test_r2_repo_audit_reconcile.py'
       - '.github/workflows/r2-repo-audit-reconcile.yml'
   push:
     branches: [main]
     paths:
       - 'runtime/r2_repo_audit_reconcile.py'
+      - 'runtime/r2_repo_audit_selector.py'
       - 'tests/test_r2_repo_audit_reconcile.py'
       - '.github/workflows/r2-repo-audit-reconcile.yml'
   workflow_dispatch:
@@ -33,7 +35,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
-          python -m py_compile runtime/r2_repo_audit_reconcile.py tests/test_r2_repo_audit_reconcile.py
+          python -m py_compile runtime/r2_repo_audit_reconcile.py runtime/r2_repo_audit_selector.py tests/test_r2_repo_audit_reconcile.py
           python -m unittest -v tests.test_r2_repo_audit_reconcile
 
   reconcile:
@@ -99,90 +101,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p runtime/repo-audit-reconcile
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-          from runtime.r2_repo_audit_reconcile import is_safe_identifier, verify_home_response
-
-          home = Path(os.environ['HOME_SERVICE_WT']) / '.janus/market-service-responses'
-          outbox = Path(os.environ['MARKET_OUTBOX_WT']) / '.janus/market-home-outbox'
-          state = Path(os.environ['MARKET_STATE_WT']) / 'state/r2-services/repo-audit/receipts'
-          runtime = Path('runtime/repo-audit-reconcile')
-          quarantine = runtime / 'quarantine'
-          quarantine.mkdir(parents=True, exist_ok=True)
-          quarantined = 0
-
-          def quarantine_candidate(path: Path, reason: str, observed_id='') -> None:
-              global quarantined
-              raw = path.read_bytes()
-              source_sha = hashlib.sha256(raw).hexdigest()
-              record = {
-                  'schema': 'janus.machine_market.repo_audit_invalid_home_response.v1',
-                  'source_filename': path.name,
-                  'source_sha256': source_sha,
-                  'reason': reason,
-                  'observed_service_request_id': str(observed_id)[:256],
-                  'selected_for_delivery': False,
-                  'delivery_receipt_written': False,
-              }
-              target = quarantine / f'{source_sha}.json'
-              encoded = json.dumps(record, ensure_ascii=False, indent=2, sort_keys=True) + '\n'
-              if target.exists() and target.read_text(encoding='utf-8') != encoded:
-                  raise RuntimeError('REPO_AUDIT_QUARANTINE_HASH_COLLISION')
-              target.write_text(encoded, encoding='utf-8')
-              quarantined += 1
-
-          selected = None
-          if home.is_dir():
-              for path in sorted(home.glob('*.repo-audit-result.json')):
-                  try:
-                      response = json.loads(path.read_text(encoding='utf-8'))
-                  except Exception:
-                      quarantine_candidate(path, 'MALFORMED_JSON')
-                      continue
-                  rid = response.get('service_request_id')
-                  if not is_safe_identifier(rid):
-                      quarantine_candidate(path, 'UNSAFE_SERVICE_REQUEST_ID', rid)
-                      continue
-                  receipt_path = state / f'{rid}.json'
-                  if receipt_path.exists():
-                      continue
-                  packet_path = outbox / f'{rid}.repo-audit.packet.json'
-                  if not packet_path.is_file():
-                      quarantine_candidate(path, 'MATCHING_PACKET_MISSING', rid)
-                      continue
-                  try:
-                      packet = json.loads(packet_path.read_text(encoding='utf-8'))
-                  except Exception:
-                      quarantine_candidate(path, 'MATCHING_PACKET_MALFORMED', rid)
-                      continue
-                  if not verify_home_response(response, packet=packet):
-                      quarantine_candidate(path, 'HOME_RESPONSE_VERIFICATION_FAILED', rid)
-                      continue
-                  selected = (rid, path, response, packet)
-                  break
-
-          print('quarantine_count=' + str(quarantined))
-          if selected is None:
-              print('found=false')
-              print('request_id=')
-              raise SystemExit(0)
-
-          rid, path, response, packet = selected
-          (runtime / 'home-response.json').write_text(
-              json.dumps(response, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8'
-          )
-          (runtime / 'packet.json').write_text(
-              json.dumps(packet, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8'
-          )
-          (runtime / 'selected-response-path.txt').write_text(
-              f'.janus/market-service-responses/{rid}.repo-audit-result.json\n', encoding='utf-8'
-          )
-          print('found=true')
-          print('request_id=' + rid)
-          PY
+          python runtime/r2_repo_audit_selector.py \
+            --home-dir "$HOME_SERVICE_WT/.janus/market-service-responses" \
+            --outbox-dir "$MARKET_OUTBOX_WT/.janus/market-home-outbox" \
+            --receipts-dir "$MARKET_STATE_WT/state/r2-services/repo-audit/receipts" \
+            --runtime-dir runtime/repo-audit-reconcile \
+            >> "$GITHUB_OUTPUT"
 
       - name: Persist invalid-response quarantine evidence
         if: steps.select.outputs.quarantine_count != '0'
