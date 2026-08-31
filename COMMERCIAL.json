@@ -1,0 +1,25 @@
+{
+  "schema": "janus.machine_market.commercial.v1",
+  "market": "JANUS MACHINE MARKET",
+  "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "purpose": "Machine-readable discovery and commercial routing for bounded JANUS services and separately licensed technology.",
+  "status": "DISCOVERY_READY_TRANSACTION_GATE_NOT_ESTABLISHED",
+  "machine_discovery": true,
+  "machine_purchase_default": false,
+  "catalog": "CATALOG.json",
+  "agent_manifest": "AGENT_MARKET.json",
+  "products_directory": "products/",
+  "payment_policy": "PAYMENT_POLICY.md",
+  "licensing": "LICENSING.md",
+  "contact": {
+    "github": "Hawkar-usls",
+    "email": "hawkarlol@gmail.com"
+  },
+  "laws": [
+    "PAYMENT_IS_EVIDENCE_NOT_AUTHORITY",
+    "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
+    "PRODUCT_LISTING_DOES_NOT_CHANGE_PRODUCT_LICENSE",
+    "DISCOVERY_DOES_NOT_IMPLY_AVAILABILITY",
+    "CLAIMS_ARE_BOUNDED_TO_DECLARED_EVIDENCE"
+  ]
+}
