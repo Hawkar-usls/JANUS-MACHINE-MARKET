@@ -1,0 +1,46 @@
+{
+  "schema": "janus.machine_market.agent_manifest.v1",
+  "name": "JANUS MACHINE MARKET",
+  "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+  "status": "DISCOVERY_READY",
+  "catalog": {
+    "href": "CATALOG.json",
+    "media_type": "application/json"
+  },
+  "commercial": {
+    "href": "COMMERCIAL.json",
+    "media_type": "application/json"
+  },
+  "request_schema": "schemas/request.schema.json",
+  "quote_schema": "schemas/quote.schema.json",
+  "receipt_schema": "schemas/receipt.schema.json",
+  "grant_schema": "schemas/grant.schema.json",
+  "transaction_api": {
+    "status": "NOT_ESTABLISHED",
+    "endpoint": null
+  },
+  "x402": {
+    "status": "PLANNED_NOT_ACTIVE"
+  },
+  "payment_routes": [
+    {
+      "id": "USDT_ETHEREUM_DECLARED_RECEIVER",
+      "status": "DECLARED_NOT_GENERAL_PURCHASE_AUTHORITY",
+      "chain": "Ethereum Mainnet",
+      "chain_id": 1,
+      "asset": "USDT",
+      "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
+      "warning": "Do not send funds without an exact product-specific invoice or explicit active purchase route. Unsolicited payment grants nothing."
+    }
+  ],
+  "capabilities": [
+    "research_search",
+    "dataset_discovery",
+    "evidence_synthesis",
+    "archive_scan",
+    "repository_audit",
+    "bounded_research_job",
+    "technology_pilot_discovery"
+  ]
+}
