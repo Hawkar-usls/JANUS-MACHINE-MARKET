@@ -1,18 +1,30 @@
 {
-  "schema": "janus.machine_market.discovery_pointer.v2",
+  "schema": "janus.machine_market.discovery_pointer.v3",
   "market": "JANUS MACHINE MARKET",
   "canonical_repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
   "beacon": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/BEACON.json",
+  "live_beacon": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/janus/market-live/.well-known/janus-market-live.json",
   "commercial": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCIAL.json",
   "agent_manifest": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENT_MARKET.json",
   "catalog": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/CATALOG.json",
+  "purchase_protocol": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/PURCHASE_PROTOCOL.json",
+  "account_plane": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/ACCOUNT_PLANE.json",
   "llm_index": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/llms.txt",
-  "transaction_api_status": "NOT_ESTABLISHED",
+  "freshness_policy": {
+    "live_beacon_refresh_hours": 6,
+    "market_price_refresh_hours": 6,
+    "stale_market_data_may_raise_price": false,
+    "underused_available_services_are_promoted": true,
+    "closed_services_are_never_promoted_as_purchasable": true
+  },
+  "transaction_api_status": "ISSUE_PROTOCOL_PREPARED_PAID_PRS_AND_LIVE_PRICE_PENDING",
   "standard_discovery_status": {
     "a2a": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
     "mcp": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
     "x402_bazaar": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
-    "openapi": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API"
+    "openapi": "PREPARED_NOT_PUBLISHED_NO_HTTP_TRANSACTION_API",
+    "github_machine_quote": "PREPARED_IN_R2_PR",
+    "github_paid_search": "PREPARED_IN_R2_PR"
   },
-  "warning": "Discoverable does not mean purchasable. Unsolicited payment grants nothing."
+  "warning": "Discoverable does not mean purchasable. Follow the current live beacon and purchase protocol. Unsolicited payment grants nothing."
 }
