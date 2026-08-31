@@ -1,0 +1,59 @@
+{
+  "schema": "janus.machine_market.order_execution_matrix.v1",
+  "status": "PREPARED_NOT_PAID",
+  "law": "PURCHASE_GRANT_MUST_PASS_PRODUCT_POLICY_BEFORE_EXECUTION_GRANT",
+  "routes": {
+    "JANUS.SEARCH": {
+      "current_mode": "ZERO_PRICE_SHADOW",
+      "executor": "runtime/r1_shadow_search.py",
+      "persistent_reconcile": "runtime/r1b_home_response_reconcile.py",
+      "paid_execution": false
+    },
+    "JANUS.REPO_AUDIT": {
+      "current_mode": "OWNER_SHADOW",
+      "executor": "runtime/r2_repo_audit_shadow.py",
+      "selector": "runtime/r2_repo_audit_selector.py",
+      "persistent_reconcile": "runtime/r2_repo_audit_reconcile.py",
+      "paid_execution": false
+    },
+    "JANUS.DATASET_SCOUT": {
+      "current_mode": "OWNER_SHADOW",
+      "executor": "runtime/r3_dataset_scout_shadow.py",
+      "persistent_reconcile": "runtime/r3_dataset_scout_reconcile.py",
+      "paid_execution": false
+    },
+    "JANUS.EVIDENCE_PACK": {
+      "current_mode": "SPECIFICATION_READY",
+      "paid_execution": false
+    },
+    "JANUS.ARCHIVE_SCAN": {
+      "current_mode": "SPECIFICATION_READY",
+      "paid_execution": false
+    },
+    "JANUS.RESEARCH_JOB": {
+      "current_mode": "SPECIFICATION_READY",
+      "paid_execution": false
+    },
+    "JANUS.INFERENCE": {
+      "current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+      "paid_execution": false
+    },
+    "JANUS.COMPUTE": {
+      "current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+      "paid_execution": false
+    },
+    "HELIOS.PILOT": {
+      "current_mode": "DELEGATED_TO_JANUS_HELIOS_AUTHORITY",
+      "paid_execution": false
+    }
+  },
+  "promotion_requirements": [
+    "FOREIGN_AGENT_WITNESS == true",
+    "money_enabled policy explicitly promoted",
+    "exact quote/payment witness",
+    "persistent purchase ledger",
+    "purchase grant -> execution grant binding",
+    "result receipt persisted",
+    "fresh-checkout replay proves no duplicate billing/execution"
+  ]
+}
