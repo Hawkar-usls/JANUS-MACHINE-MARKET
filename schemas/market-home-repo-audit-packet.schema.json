@@ -6,7 +6,7 @@
   "required": ["schema", "packet_id", "created_at", "sku", "market_repository", "home_repository", "commerce_mode", "money_enabled", "purchase_grant", "purchase_grant_hash", "service_request", "service_request_hash", "command_authority_granted", "external_effect_authorized", "repository_write_authorized", "execute_repository_code", "packet_hash"],
   "properties": {
     "schema": {"const": "janus.machine_market.home_repo_audit_packet.v1"},
-    "packet_id": {"type": "string", "minLength": 1},
+    "packet_id": {"type": "string", "pattern": "^rap-shadow-[0-9a-f]{48}$"},
     "created_at": {"type": "string", "minLength": 1},
     "sku": {"const": "JANUS.REPO_AUDIT"},
     "market_repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
