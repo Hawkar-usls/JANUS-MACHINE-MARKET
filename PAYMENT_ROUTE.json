@@ -21,7 +21,16 @@
     "exact_amount_required": true,
     "minimum_confirmations": 12,
     "rpc_quorum": 2,
-    "rpc_urls_source": "JANUS_ETH_RPC_URLS",
+    "rpc_mode": "ENV_OVERRIDE_ELSE_PUBLIC_TWO_PROVIDER_QUORUM",
+    "rpc_env_override": "JANUS_ETH_RPC_URLS",
+    "public_rpc_urls": [
+      "https://cloudflare-eth.com/v1/mainnet",
+      "https://ethereum-rpc.publicnode.com"
+    ],
+    "public_rpc_provider_independence": [
+      "Cloudflare",
+      "PublicNode"
+    ],
     "replay_protection": "TX_HASH_PLUS_TRANSFER_LOG_INDEX_CREATE_ONLY"
   },
   "authority": {
@@ -32,5 +41,5 @@
     "purchase_grant_required_after_payment": true
   },
   "live_payment_enabled": false,
-  "enablement_gate": "EXACT_PRODUCT_PRICE_AND_RPC_QUORUM_CONFIGURED"
+  "enablement_gate": "EXACT_PRODUCT_PRICE_CONFIGURED"
 }
