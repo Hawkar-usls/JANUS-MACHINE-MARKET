@@ -1,0 +1,29 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.ARCHIVE_SCAN",
+  "title": "JANUS Archive Scan",
+  "class": "archive_research",
+  "status": "SPECIFICATION_READY",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Runs a bounded discovery pass across declared public archives and repositories and returns a deduplicated indexed manifest.",
+  "request": {
+    "mode": "CATALOG_ONLY_NO_LIVE_TRANSACTION_ENDPOINT",
+    "input_fields": ["query", "archives", "depth", "deduplication", "license_filter"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["index", "matches", "deduplicated_objects", "source_map", "license_observations", "receipt"]
+  },
+  "pricing": {
+    "mode": "NOT_PUBLISHED",
+    "quote_required": true
+  },
+  "source_repositories": ["Hawkar-usls/janus-meta-registry", "Hawkar-usls/Hawkar-usls"],
+  "authority": {
+    "payment_is_authority": false,
+    "unsolicited_payment_grants_rights": false,
+    "archive_discovery_is_content_ownership": false
+  },
+  "license": "Per-product/service terms; discovered archive objects remain governed by their source terms."
+}
