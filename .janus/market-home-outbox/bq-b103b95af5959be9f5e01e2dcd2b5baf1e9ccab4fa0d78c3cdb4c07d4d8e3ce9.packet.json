@@ -1,0 +1,107 @@
+{
+  "buyer_query": {
+    "buyer_actor_id": "github:Hawkar-usls",
+    "conversation_history": [],
+    "conversation_id": "market-selftest-search-2026-08-31",
+    "created_at": "2026-08-31T07:41:33Z",
+    "entitlement_nonce": "shadow-ee3325ccc8cd8a22b23b1645dcfd4b13",
+    "message_hash": "4fcd368d10bcd1c539f1318c406cca9bba46d9663a253d2cc35926d8a322c9bb",
+    "message_text": "As JANUS, inspect the currently bound HRAiN context and answer this bounded service test: what is the strongest relevant internal memory you can retrieve for JANUS Machine Market, and what uncertainty or limitation should the buyer know? Keep the response read-only and concise.",
+    "purchase_grant_hash": "b6eca1b23f6fdd0a202447f4706f1908ac651352d0ed6a46c1b4a8d2239d1435",
+    "purchase_id": "pur-bq-shadow-8f68d3110304543b6125bb3f1e5eb0f7",
+    "query_hash": "32891bad3a90e4bbaacdb753eab90760c599e7c65a4a5ee2be142264681dd54d",
+    "query_id": "bq-b103b95af5959be9f5e01e2dcd2b5baf1e9ccab4fa0d78c3cdb4c07d4d8e3ce9",
+    "requested_output": {
+      "mode": "JANUS_READ_ONLY_CONVERSATION"
+    },
+    "schema": "janus.machine_market.buyer_query.v1",
+    "sku": "JANUS.SEARCH",
+    "turn_index": 0
+  },
+  "command_authority_granted": false,
+  "execution_authority_granted": false,
+  "external_effect_authorized": false,
+  "home_repository": "Hawkar-usls/Hawkar-usls",
+  "laws": [
+    "MARKET_IS_EXTERNAL_NERVE_NOT_JANUS_ROOT",
+    "EVERY_EXTERNAL_NERVE -> HOME -> ACTIVATOR -> JANUS",
+    "PAYMENT != COMMAND",
+    "PURCHASE_GRANT != EXECUTION_AUTHORITY",
+    "BUYER_QUERY != COMMAND",
+    "PHYSARIUS_DELIVERY != AUTHORITY",
+    "EXACT_RETRY != SECOND_COGNITION"
+  ],
+  "market_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+  "mode": "ZERO_PRICE_SHADOW",
+  "money_enabled": false,
+  "offer": {
+    "buyer_query_turns": 1,
+    "mode": "ZERO_PRICE_SHADOW",
+    "payment_required": false,
+    "price": {
+      "amount": "0",
+      "asset": "NONE"
+    },
+    "production_purchase": false,
+    "schema": "janus.machine_market.buyer_query_shadow_offer.v1",
+    "sku": "JANUS.SEARCH"
+  },
+  "offer_hash": "086645ba8bc9c6ca133ff4519d056bba82fa1dd91a05dd40a76843d28331bb86",
+  "packet_hash": "46baa4375731d3554fba7d675613e8f0ee5033598d5afcd8c5c17b910bfdb23c",
+  "payment_required": false,
+  "physical_runtime_effect_authorized": false,
+  "production_purchase": false,
+  "purchase_grant": {
+    "allowed_operation": "REQUEST_BOUNDED_BUYER_QUERY",
+    "authority_ceiling": {
+      "conversation_mode": "READ_ONLY_HRAIN_MEMORY_BOUND",
+      "external_effects": false,
+      "production_effect_authority": false,
+      "repository_write": false,
+      "scientific_claim_promotion": false,
+      "secret_access": false,
+      "shell": false
+    },
+    "buyer_query_entitlement": {
+      "buyer_actor_id": "github:Hawkar-usls",
+      "conversation_history_turns": 8,
+      "enabled": true,
+      "entitlement_nonce": "shadow-ee3325ccc8cd8a22b23b1645dcfd4b13",
+      "external_effect_authorized": false,
+      "max_answer_utf8_bytes": 12000,
+      "max_message_utf8_bytes": 8000,
+      "max_turns": 1,
+      "read_only_conversation": true
+    },
+    "execution_authority_granted": false,
+    "expires_at": null,
+    "offer_hash": "086645ba8bc9c6ca133ff4519d056bba82fa1dd91a05dd40a76843d28331bb86",
+    "payment_reference": null,
+    "purchase_id": "pur-bq-shadow-8f68d3110304543b6125bb3f1e5eb0f7",
+    "reasons": [
+      "R1B_ZERO_PRICE_SHADOW",
+      "PURCHASE_GRANT_IS_NOT_EXECUTION_AUTHORITY",
+      "BUYER_QUERY_IS_NOT_COMMAND_AUTHORITY"
+    ],
+    "request_hash": "04ac8357d559f0de78dca2aa9dc2a19a35b7ff2cb9453004e57af6fcc5e6f4b5",
+    "schema": "janus.machine_market.purchase_grant.v1",
+    "sku": "JANUS.SEARCH",
+    "status": "PURCHASE_ELIGIBLE",
+    "terms_hash": null
+  },
+  "purchase_grant_hash": "b6eca1b23f6fdd0a202447f4706f1908ac651352d0ed6a46c1b4a8d2239d1435",
+  "query_hash": "32891bad3a90e4bbaacdb753eab90760c599e7c65a4a5ee2be142264681dd54d",
+  "query_id": "bq-b103b95af5959be9f5e01e2dcd2b5baf1e9ccab4fa0d78c3cdb4c07d4d8e3ce9",
+  "request_hash": "04ac8357d559f0de78dca2aa9dc2a19a35b7ff2cb9453004e57af6fcc5e6f4b5",
+  "request_id": "github-issue-id:5297714096",
+  "request_origin": "SELF_OWNER_SHADOW",
+  "return_route": {
+    "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "source_issue_id": 5297714096,
+    "source_issue_number": 13
+  },
+  "schema": "janus.machine_market.home_buyer_query_packet.v1",
+  "scientific_evidence_authority_granted": false,
+  "transport_mode": "PHYSARIUS_CREDENTIALLESS_PULL",
+  "world_truth_authority_granted": false
+}
