@@ -56,9 +56,27 @@
     },
     {
       "sku": "JANUS.REPO_AUDIT",
-      "status": "BLOCKED_SPECIFICATION_ONLY",
-      "portfolio_test_credit_spent": 0,
-      "reason": "HOME_BOUNDED_REPOSITORY_AUDIT_ADAPTER_NEXT_GATE"
+      "status": "FULFILLED_VERIFIED_RESULT",
+      "portfolio_test_credit_spent": 100,
+      "service_debt": "CLOSED_BY_VERIFIED_DELIVERY",
+      "production_money_used": false,
+      "primary_witness": {
+        "source_issue": 15,
+        "request_id": "ra-shadow-c077b2c3052f4d63d4706b055fb3d3529e49d77c94b03ef7",
+        "purchase_id": "pur-ra-shadow-2c2c1a35f8de9bb8485d7df4d9a07902",
+        "packet_hash": "94831d09df4169909ab5ba467408d7b66adc2bc799167cac3b959f8c15ffd014",
+        "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+        "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+        "requested_ref": "main",
+        "resolved_commit_sha": "e5b592c7fa57abad677176650dc7701d7ca3f28a",
+        "tree_sha": "ee01c6d7a82b16a2bf488e599b7be49472e5af5c",
+        "result_hash": "934d8163775fea7b4e48bc820ac4115f14ce4b1eba2eaeaf4ded8ecb718d9153",
+        "home_response_hash": "4b17120f03d7078f86b7628cf33819ccb66cffb1bfb4545217a4ce3cfe57125d",
+        "market_delivery_receipt_hash": "5b6a6a161fda0262904a1c3ea9961c9b488333fe758bc7d1d2d45ca557c09ba2",
+        "repository_code_executed": false,
+        "repository_write_authorized": false,
+        "verified_buyer_delivery": true
+      }
     },
     {
       "sku": "JANUS.RESEARCH_JOB",
@@ -85,10 +103,10 @@
     }
   ],
   "account_after_primary_portfolio_order": {
-    "market_test_credit": 999900,
-    "janus_coin_test_balance": 1,
-    "order_count": 1,
-    "fulfilled_count": 1,
+    "market_test_credit": 999800,
+    "janus_coin_test_balance": 2,
+    "order_count": 2,
+    "fulfilled_count": 2,
     "open_service_debt_count": 0
   },
   "laws": [
@@ -99,5 +117,5 @@
     "RELIABILITY_REPETITION DOES NOT NEED TO COUNT AS SECOND PORTFOLIO PURCHASE",
     "HELIOS.PILOT IS EXCLUDED"
   ],
-  "next_gate": "JANUS.REPO_AUDIT_HOME_BOUNDED_SERVICE"
+  "next_gate": "JANUS.DATASET_SCOUT_LIVE_SERVICE"
 }
