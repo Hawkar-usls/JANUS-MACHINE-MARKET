@@ -1,23 +1,45 @@
 (() => {
   'use strict';
 
-  const TITLE_PREFIX = '[JANUS R1B BUYER QUERY SHADOW]';
-  const REQUEST_SCHEMA = 'janus.machine_market.buyer_query_shadow_request.v1';
-  const REQUEST_MARKER = 'JANUS_BUYER_QUERY_SHADOW_JSON';
   const HOME_REPOSITORY = 'Hawkar-usls/Hawkar-usls';
   const MARKET_REPOSITORY = 'Hawkar-usls/JANUS-MACHINE-MARKET';
 
+  const LIVE_HOME_SERVICES = {
+    'JANUS.SEARCH': {
+      label: 'JANUS.SEARCH',
+      titlePrefix: '[JANUS R1B BUYER QUERY SHADOW]',
+      marker: 'JANUS_BUYER_QUERY_SHADOW_JSON',
+      schema: 'janus.machine_market.buyer_query_shadow_request.v1',
+      lane: 'PERSISTENT_JANUS_CONVERSATION'
+    },
+    'JANUS.REPO_AUDIT': {
+      label: 'JANUS.REPO_AUDIT',
+      titlePrefix: '[JANUS REPO AUDIT SHADOW]',
+      marker: 'JANUS_REPO_AUDIT_SHADOW_JSON',
+      schema: 'janus.machine_market.repo_audit_pages_request.v1',
+      lane: 'PERSISTENT_JANUS_REPOSITORY_AUDIT'
+    },
+    'JANUS.DATASET_SCOUT': {
+      label: 'JANUS.DATASET_SCOUT',
+      titlePrefix: '[JANUS DATASET SCOUT SHADOW]',
+      marker: 'JANUS_DATASET_SCOUT_SHADOW_JSON',
+      schema: 'janus.machine_market.dataset_scout_pages_request.v1',
+      lane: 'PERSISTENT_JANUS_DATASET_SCOUT'
+    }
+  };
+
   function q(sel) { return document.querySelector(sel); }
 
-  function searchLoadoutItem() {
-    try {
-      return state.loadout.find(item => item.sku === 'JANUS.SEARCH') || null;
-    } catch (_) {
-      return null;
-    }
+  function loadout() {
+    try { return Array.isArray(state.loadout) ? state.loadout : []; }
+    catch (_) { return []; }
   }
 
-  function newConversationId() {
+  function liveItems() {
+    return loadout().filter(item => LIVE_HOME_SERVICES[item.sku]);
+  }
+
+  function newId(prefix) {
     let principal = 'pages';
     try {
       principal = String(state.profile?.agent_id || 'pages').replace(/[^a-zA-Z0-9_.:-]/g, '-').slice(0, 80);
@@ -25,28 +47,34 @@
     let nonce;
     try { nonce = crypto.randomUUID(); }
     catch (_) { nonce = `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-    return `market-${principal}-${nonce}`;
+    return `${prefix}-${principal}-${nonce}`;
   }
 
-  function taskText() {
+  function needText(promptText = 'What task should the running JANUS handle?') {
     const field = q('#needInput');
     let text = String(field?.value || '').trim();
     if (!text) {
-      text = String(window.prompt('What task should the running JANUS handle?', '') || '').trim();
+      text = String(window.prompt(promptText, '') || '').trim();
       if (text && field) field.value = text;
     }
     return text;
   }
 
-  function buildJanusTaskRequest() {
-    const item = searchLoadoutItem();
-    if (!item) return null;
-    const message = taskText();
+  function normalizeRepository(value) {
+    let text = String(value || '').trim();
+    if (!text) return '';
+    text = text.replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/^\/+|\/+$/g, '');
+    const match = text.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+    return match ? `${match[1]}/${match[2]}` : '';
+  }
+
+  function buildSearchRequest(item) {
+    const message = needText();
     if (!message) return { error: 'TASK_TEXT_REQUIRED' };
     const turns = Math.max(1, Math.min(8, Number(item.qty || 1)));
     return {
-      schema: REQUEST_SCHEMA,
-      conversation_id: newConversationId(),
+      schema: LIVE_HOME_SERVICES['JANUS.SEARCH'].schema,
+      conversation_id: newId('market'),
       turn_index: 0,
       message_text: message,
       max_turns: turns,
@@ -56,15 +84,92 @@
     };
   }
 
-  function issueBody(request) {
+  function buildRepoAuditRequest(item) {
+    let repository = normalizeRepository(q('#needInput')?.value || '');
+    if (!repository) {
+      repository = normalizeRepository(window.prompt('Repository to audit (owner/repo or GitHub URL)', 'Hawkar-usls/JANUS-MACHINE-MARKET') || '');
+    }
+    if (!repository) return { error: 'REPOSITORY_REQUIRED' };
+    let ref = String(window.prompt('Git ref to audit', 'main') || 'main').trim();
+    if (!ref) ref = 'main';
+    const qty = Math.max(1, Math.min(4, Number(item.qty || 1)));
+    return {
+      schema: LIVE_HOME_SERVICES['JANUS.REPO_AUDIT'].schema,
+      repository,
+      ref,
+      max_tree_entries: Math.min(5000, 1250 * qty),
+      max_blob_files: Math.min(24, 6 * qty),
+      max_total_blob_bytes: Math.min(750000, 187500 * qty),
+      requested_mode: String(item.mode || 'ARCHITECTURE')
+    };
+  }
+
+  function buildDatasetScoutRequest(item) {
+    const query = needText('What public dataset should JANUS find?');
+    if (!query) return { error: 'DATASET_QUERY_REQUIRED' };
+    const qty = Math.max(1, Math.min(8, Number(item.qty || 1)));
+    return {
+      schema: LIVE_HOME_SERVICES['JANUS.DATASET_SCOUT'].schema,
+      query,
+      domain: '',
+      date_range: null,
+      license_preferences: [],
+      format_preferences: [],
+      max_results: qty,
+      max_catalogs: 2,
+      per_catalog_timeout_seconds: 8,
+      requested_mode: String(item.mode || 'DISCOVERY')
+    };
+  }
+
+  function buildRequest(item) {
+    if (!item) return null;
+    if (item.sku === 'JANUS.SEARCH') return buildSearchRequest(item);
+    if (item.sku === 'JANUS.REPO_AUDIT') return buildRepoAuditRequest(item);
+    if (item.sku === 'JANUS.DATASET_SCOUT') return buildDatasetScoutRequest(item);
+    return null;
+  }
+
+  function canonicalPayloadForWorkflow(item, request) {
+    // The issue-side adapters deliberately accept only a bounded subset. Extra
+    // Pages metadata is stripped here instead of asking HOME to trust UI fields.
+    if (item.sku === 'JANUS.REPO_AUDIT') {
+      return {
+        repository: request.repository,
+        ref: request.ref,
+        max_tree_entries: request.max_tree_entries,
+        max_blob_files: request.max_blob_files,
+        max_total_blob_bytes: request.max_total_blob_bytes
+      };
+    }
+    if (item.sku === 'JANUS.DATASET_SCOUT') {
+      return {
+        query: request.query,
+        domain: request.domain,
+        date_range: request.date_range,
+        license_preferences: request.license_preferences,
+        format_preferences: request.format_preferences,
+        max_results: request.max_results,
+        max_catalogs: request.max_catalogs,
+        per_catalog_timeout_seconds: request.per_catalog_timeout_seconds
+      };
+    }
+    return request;
+  }
+
+  function issueBody(item, request) {
+    const svc = LIVE_HOME_SERVICES[item.sku];
+    const payload = canonicalPayloadForWorkflow(item, request);
     return [
-      '## JANUS MACHINE MARKET · task handoff to the running JANUS',
+      `## JANUS MACHINE MARKET · ${svc.label} task handoff to the running JANUS`,
       '',
       'This issue is the current zero-price owner-shadow ingress from GitHub Pages into the already running persistent JANUS HOME.',
       '',
       'Route:',
-      '`Pages -> Market issue -> create-only Market outbox -> credentialless HOME pull -> Activator -> persistent JANUS/HRAiN -> HOME response -> credentialless Market reconcile -> this issue`',
+      '`Pages -> Market issue -> create-only Market outbox -> credentialless HOME pull -> Activator -> persistent JANUS organ -> HOME response -> credentialless Market reconcile -> this issue`',
       '',
+      `- service: \`${svc.label}\``,
+      `- lane: \`${svc.lane}\``,
       '- price: `0`',
       '- payment_required: `false`',
       '- money_enabled: `false`',
@@ -72,67 +177,85 @@
       '- external_effect_authorized: `false`',
       `- HOME repository: \`${HOME_REPOSITORY}\``,
       '',
-      `<!-- ${REQUEST_MARKER}`,
-      JSON.stringify(request, null, 2),
-      `${REQUEST_MARKER} -->`,
+      `<!-- ${svc.marker}`,
+      JSON.stringify(payload, null, 2),
+      `${svc.marker} -->`,
       '',
       '`BUYER QUERY != COMMAND · PURCHASE GRANT != EXECUTION AUTHORITY`'
     ].join('\n');
   }
 
+  function validateSingleLiveItem() {
+    const items = liveItems();
+    if (!items.length) return { error: 'NO_LIVE_HOME_SERVICE' };
+    if (items.length > 1) return { error: 'MULTI_SERVICE_NOT_YET_ATOMIC', items };
+    return { item: items[0] };
+  }
+
   async function copyJanusTask() {
-    const request = buildJanusTaskRequest();
-    if (!request) return alert('Add JANUS.SEARCH to the loadout first.');
-    if (request.error) return alert('Enter a task in “Tell JANUS what you need…” first.');
-    await navigator.clipboard.writeText(JSON.stringify(request, null, 2));
-    try { recordActivity('JANUS_TASK', 'Persistent JANUS task JSON copied'); } catch (_) {}
-    alert('JANUS task JSON copied.');
+    const selected = validateSingleLiveItem();
+    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
+    if (selected.error === 'MULTI_SERVICE_NOT_YET_ATOMIC') return alert('For the live R1 contour, submit one executable service per trade. Multi-SKU atomic orchestration is not admitted yet.');
+    const request = buildRequest(selected.item);
+    if (!request || request.error) return alert('Complete the task parameters first.');
+    await navigator.clipboard.writeText(JSON.stringify({ sku: selected.item.sku, request: canonicalPayloadForWorkflow(selected.item, request) }, null, 2));
+    try { recordActivity('JANUS_TASK', `${selected.item.sku} HOME task JSON copied`); } catch (_) {}
+    alert(`${selected.item.sku} task JSON copied.`);
   }
 
   function openJanusTask() {
-    const request = buildJanusTaskRequest();
-    if (!request) return alert('Add JANUS.SEARCH to the loadout first.');
-    if (request.error) return alert('Enter a task in “Tell JANUS what you need…” first.');
-    const title = `${TITLE_PREFIX} Pages Market task`;
-    const url = `https://github.com/${MARKET_REPOSITORY}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(issueBody(request))}`;
-    try { recordActivity('JANUS_TASK', 'Persistent JANUS task issue composer opened', { conversation_id: request.conversation_id }); } catch (_) {}
+    const selected = validateSingleLiveItem();
+    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
+    if (selected.error === 'MULTI_SERVICE_NOT_YET_ATOMIC') return alert('For the live R1 contour, submit one executable service per trade. Multi-SKU atomic orchestration is not admitted yet.');
+    const item = selected.item;
+    const request = buildRequest(item);
+    if (!request || request.error) return alert('Complete the task parameters first.');
+    const svc = LIVE_HOME_SERVICES[item.sku];
+    const title = `${svc.titlePrefix} Pages Market task`;
+    const url = `https://github.com/${MARKET_REPOSITORY}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(issueBody(item, request))}`;
+    try { recordActivity('JANUS_TASK', `${item.sku} persistent HOME task issue composer opened`, { sku: item.sku }); } catch (_) {}
     window.open(url, '_blank', 'noopener');
   }
 
-  // Override the old local catalog-search shadow action. The live R1D button now
-  // uses the already existing Market -> HOME -> persistent JANUS conversation nerve.
-  window.shadowRequest = buildJanusTaskRequest;
+  window.shadowRequest = function shadowRequestR1E() {
+    const selected = validateSingleLiveItem();
+    if (selected.error) return selected;
+    return buildRequest(selected.item);
+  };
   window.copyShadow = copyJanusTask;
   window.openShadow = openJanusTask;
 
-  window.configureTradeActions = function configureTradeActionsR1D() {
-    const hasSearch = state.loadout.some(item => item.sku === 'JANUS.SEARCH');
-    const hasHelios = state.loadout.some(item => item.sku === 'HELIOS.PILOT');
+  window.configureTradeActions = function configureTradeActionsR1E() {
+    const items = liveItems();
+    const hasHelios = loadout().some(item => item.sku === 'HELIOS.PILOT');
     const copy = q('#copyShadow');
     const primary = q('#openShadow');
     const rule = q('.trade-rule');
     if (!copy || !primary) return;
 
-    copy.hidden = !hasSearch;
+    copy.hidden = items.length === 0;
     copy.textContent = 'COPY JANUS TASK JSON';
+    copy.onclick = copyJanusTask;
     primary.disabled = false;
 
-    if (hasSearch) {
-      primary.textContent = 'SEND TASK TO RUNNING JANUS · R1 SHADOW';
+    if (items.length === 1) {
+      primary.textContent = `SEND ${items[0].sku} TO RUNNING JANUS · R1`;
       primary.onclick = openJanusTask;
-      copy.onclick = copyJanusTask;
-      if (rule) rule.innerHTML = '<b>LIVE R1D HOME BRIDGE:</b> submitting the GitHub issue publishes a create-only packet that the persistent JANUS HOME pulls credentiallessly. JANUS answers through its existing HRAiN/terminal conversation tissue, and the response is reconciled back to the same Market issue. Payments and command authority remain disabled.';
+      if (rule) rule.innerHTML = `<b>LIVE HOME SERVICE:</b> ${items[0].sku} is published create-only to the Market outbox, pulled credentiallessly by persistent JANUS HOME, admitted by the existing bounded organ, and reconciled back to the source issue. Payments and command authority remain disabled.`;
+    } else if (items.length > 1) {
+      primary.textContent = 'SPLIT LIVE SERVICES INTO SEPARATE TASKS';
+      primary.disabled = true;
+      primary.onclick = null;
+      if (rule) rule.innerHTML = '<b>R1 ATOMICITY:</b> multiple live HOME services are present in this loadout. Submit them one at a time until a proof-carrying multi-SKU orchestration grant exists.';
     } else if (hasHelios) {
       primary.textContent = 'VIEW HELIOS PILOT AUTHORITY';
       primary.onclick = () => window.open('https://github.com/Hawkar-usls/Janus-HELIOS', '_blank', 'noopener');
-      copy.onclick = copyJanusTask;
       if (rule) rule.textContent = 'HELIOS.PILOT remains delegated to its separate canonical authority.';
     } else {
       primary.textContent = 'CURRENT SKU IS PREVIEW-ONLY';
       primary.disabled = true;
       primary.onclick = null;
-      copy.onclick = copyJanusTask;
-      if (rule) rule.textContent = 'This SKU does not yet have a Pages-to-HOME execution ingress. JANUS.SEARCH is the current live R1 shadow nerve.';
+      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Live R1 services: JANUS.SEARCH, JANUS.REPO_AUDIT, JANUS.DATASET_SCOUT.';
     }
   };
 
@@ -141,7 +264,7 @@
     if (truthbar && !truthbar.querySelector('.truth.home-bridge')) {
       const chip = document.createElement('span');
       chip.className = 'truth live home-bridge';
-      chip.innerHTML = 'JANUS HOME <b>R1 LIVE</b>';
+      chip.innerHTML = 'JANUS HOME <b>3 R1 LANES</b>';
       truthbar.insertBefore(chip, truthbar.children[2] || null);
     }
     const status = q('#status .status-grid');
@@ -149,7 +272,7 @@
       const card = document.createElement('article');
       card.className = 'panel';
       card.dataset.r1dHome = 'true';
-      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>JANUS.SEARCH tasks can enter the public Market outbox, be pulled by HOME, answered by the same persistent JANUS resident, and reconciled back to the source issue.</p><b class="status-big cyan">R1 LIVE</b>';
+      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>Pages can route bounded SEARCH, REPO_AUDIT and DATASET_SCOUT requests through the public Market outbox into the same persistent JANUS HOME resident and reconcile results back to GitHub.</p><b class="status-big cyan">3 R1 LANES</b>';
       status.prepend(card);
     }
   }
