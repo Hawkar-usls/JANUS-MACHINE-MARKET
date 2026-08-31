@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/request.schema.json",
+  "title": "JANUS MACHINE MARKET Request",
+  "type": "object",
+  "required": ["schema", "request_id", "sku", "input"],
+  "properties": {
+    "schema": {"const": "janus.machine_market.request.v1"},
+    "request_id": {"type": "string", "minLength": 1},
+    "purchase_id": {"type": ["string", "null"]},
+    "sku": {"type": "string", "minLength": 1},
+    "input": {"type": "object"},
+    "requested_output": {"type": ["object", "null"]},
+    "max_runtime_seconds": {"type": ["integer", "null"], "minimum": 1},
+    "created_at": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}
