@@ -1,0 +1,180 @@
+name: JANUS Machine Market Live Governor
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  live-governor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: janus-machine-market-live-governor
+      cancel-in-progress: false
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Refresh public market benchmarks fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/live-governor
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python runtime/refresh_market_benchmarks.py \
+            --input pricing/MARKET_BENCHMARKS.json \
+            --output runtime/live-governor/MARKET_BENCHMARKS.json \
+            --receipt runtime/live-governor/benchmark-refresh-receipt.json \
+            --now "$now"
+
+      - name: Measure recent fulfilled demand from persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$RUNNER_TEMP/market-state-governor"
+          rm -rf "$state"
+          if git ls-remote --exit-code --heads origin janus/market-state >/dev/null 2>&1; then
+            git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+            git worktree add --detach "$state" origin/janus/market-state
+            paid="$(git -C "$state" log --since='7 days ago' --format='%H' -- state/r2-paid/receipts 2>/dev/null | sort -u | wc -l | tr -d ' ')"
+            shadow="$(git -C "$state" log --since='7 days ago' --format='%H' -- state/r1b-buyer-query/receipts 2>/dev/null | sort -u | wc -l | tr -d ' ')"
+            debt="$(find "$state/state/r2-paid/service-debts" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
+          else
+            paid=0; shadow=0; debt=0
+          fi
+          python - "$paid" "$shadow" "$debt" <<'PY' > runtime/live-governor/demand.json
+          import json,sys
+          paid=int(sys.argv[1]); shadow=int(sys.argv[2]); debt=int(sys.argv[3])
+          # Paid fulfillment counts fully; owner/free shadow activity is a weaker demand signal.
+          weighted=paid + (shadow // 4)
+          print(json.dumps({
+            'schema':'janus.machine_market.demand_snapshot.v1',
+            'sku':'JANUS.SEARCH',
+            'paid_fulfilled_last_7d':paid,
+            'shadow_fulfilled_last_7d':shadow,
+            'weighted_successful_orders':weighted,
+            'failed_orders':0,
+            'open_fulfillment_debt':debt
+          },sort_keys=True))
+          PY
+
+      - name: Load previous adaptive price if present
+        shell: bash
+        run: |
+          set -euo pipefail
+          live="$RUNNER_TEMP/market-live-old"
+          rm -rf "$live"
+          current=''
+          if git ls-remote --exit-code --heads origin janus/market-live >/dev/null 2>&1; then
+            git fetch origin janus/market-live:refs/remotes/origin/janus/market-live
+            git worktree add --detach "$live" origin/janus/market-live
+            if [ -f "$live/state/pricing/JANUS.SEARCH.json" ]; then
+              current="$(python - "$live/state/pricing/JANUS.SEARCH.json" <<'PY'
+          import json,sys
+          p=json.load(open(sys.argv[1]))
+          v=p.get('amount_atomic')
+          print(v if isinstance(v,int) and v>0 else '')
+          PY
+              )"
+            fi
+          fi
+          echo "CURRENT_PRICE_ATOMIC=$current" >> "$GITHUB_ENV"
+
+      - name: Compute bounded adaptive price decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          orders="$(python -c "import json; print(json.load(open('runtime/live-governor/demand.json'))['weighted_successful_orders'])")"
+          debt="$(python -c "import json; print(json.load(open('runtime/live-governor/demand.json'))['open_fulfillment_debt'])")"
+          args=(--policy ADAPTIVE_PRICING_POLICY.json --benchmarks runtime/live-governor/MARKET_BENCHMARKS.json --sku JANUS.SEARCH --floor-atomic 1000 --successful-orders "$orders" --failed-orders 0 --open-fulfillment-debt "$debt" --now "$now" --output runtime/live-governor/JANUS.SEARCH.decision.json)
+          if [ -n "${CURRENT_PRICE_ATOMIC:-}" ]; then args+=(--current-price-atomic "$CURRENT_PRICE_ATOMIC"); fi
+          python runtime/adaptive_pricing.py "${args[@]}" >/dev/null
+          python - <<'PY' > runtime/live-governor/JANUS.SEARCH.json
+          import json
+          d=json.load(open('runtime/live-governor/JANUS.SEARCH.decision.json'))
+          amount=d.get('candidate_price_atomic')
+          print(json.dumps({
+            'schema':'janus.machine_market.live_adaptive_price.v1',
+            'sku':'JANUS.SEARCH',
+            'status':'SHADOW_PRICE_CANDIDATE_NOT_PAYMENT_AUTHORITY',
+            'amount_atomic':amount,
+            'amount_usdt':d.get('candidate_price_usdt'),
+            'competitive_ceiling_atomic':d.get('competitive_ceiling_atomic'),
+            'promotion_score':d.get('promotion_score'),
+            'decision_status':d.get('status'),
+            'market_benchmark_fresh':d.get('market_benchmark_fresh'),
+            'existing_quotes_affected':False,
+            'payment_authority':False
+          },indent=2,sort_keys=True))
+          PY
+
+      - name: Build live machine-agent beacon
+        shell: bash
+        run: |
+          set -euo pipefail
+          now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python - <<'PY' > runtime/live-governor/decisions.json
+          import json
+          print(json.dumps([json.load(open('runtime/live-governor/JANUS.SEARCH.decision.json'))],indent=2,sort_keys=True))
+          PY
+          python runtime/live_beacon.py \
+            --catalog CATALOG.json \
+            --benchmarks runtime/live-governor/MARKET_BENCHMARKS.json \
+            --decisions runtime/live-governor/decisions.json \
+            --generated-at "$now" \
+            --catalog-commit "$(git rev-parse HEAD)" \
+            --output runtime/live-governor/janus-market-live.json
+
+      - name: Publish live state branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          live="$RUNNER_TEMP/market-live-publish"
+          rm -rf "$live"
+          git config user.name "JANUS Market Live Governor"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin janus/market-live >/dev/null 2>&1; then
+            git fetch origin janus/market-live:refs/remotes/origin/janus/market-live
+            git worktree add -B janus-market-live-local "$live" origin/janus/market-live
+          else
+            git worktree add --detach "$live" HEAD
+            cd "$live"
+            git switch --orphan janus-market-live-local
+            git rm -rf --ignore-unmatch .
+            cd - >/dev/null
+          fi
+          mkdir -p "$live/state/pricing" "$live/state/benchmarks" "$live/.well-known" "$live/state/demand"
+          cp runtime/live-governor/JANUS.SEARCH.json "$live/state/pricing/JANUS.SEARCH.json"
+          cp runtime/live-governor/JANUS.SEARCH.decision.json "$live/state/pricing/JANUS.SEARCH.decision.json"
+          cp runtime/live-governor/MARKET_BENCHMARKS.json "$live/state/benchmarks/MARKET_BENCHMARKS.json"
+          cp runtime/live-governor/benchmark-refresh-receipt.json "$live/state/benchmarks/LAST_REFRESH_RECEIPT.json"
+          cp runtime/live-governor/demand.json "$live/state/demand/JANUS.SEARCH.json"
+          cp runtime/live-governor/janus-market-live.json "$live/.well-known/janus-market-live.json"
+          cd "$live"
+          git add .
+          if git diff --cached --quiet; then
+            echo 'MARKET_LIVE_GOVERNOR=NO_CHANGE'
+          else
+            git commit -m "Market live governor $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push origin HEAD:refs/heads/janus/market-live
+            echo 'MARKET_LIVE_GOVERNOR=PUBLISHED'
+          fi
+
+      - name: Upload governor receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-market-live-governor-${{ github.run_id }}
+          path: runtime/live-governor
+          if-no-files-found: error
