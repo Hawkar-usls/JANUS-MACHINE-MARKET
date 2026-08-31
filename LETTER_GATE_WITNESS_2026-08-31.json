@@ -5,7 +5,7 @@
   "evidence_branch": "evidence/letter-gate-clean-witness-2026-08-31",
   "hardening_main_sha": "ca42feb888d2da5cfa5aac03b4ec9523a467f8d1",
   "latest_mutex_main_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
-  "gate_state": "BLOCKED_FINAL_WITNESS_IN_PROGRESS",
+  "gate_state": "BLOCKED_WAITING_FINAL_HOME_RESPONSE",
   "truth_boundary": "No pre-hardening or pre-final-mutex delivery may be reused as LETTER GATE PASS evidence.",
   "superseded_witness": {
     "source_issue": 24,
@@ -34,16 +34,33 @@
     }
   },
   "final_post_mutex_witness": {
-    "status": "ISSUE_CREATED_WAITING_OUTBOX",
+    "status": "OUTBOX_PASS_WAITING_HOME",
     "required_after_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
     "source_issue": 26,
     "source_issue_title": "[JANUS REPO AUDIT SHADOW] LETTER gate FINAL post-mutex clean witness",
     "created_at": "2026-08-31T15:35:54Z",
-    "outbox": {"status": "WAITING"},
+    "outbox": {
+      "status": "PASS",
+      "workflow_run_id": 33409364467,
+      "workflow_head_sha": "30efeae6add72a2b3d99ed554d1d336df23f8760",
+      "contract_job_id": 99544770268,
+      "contract_job_conclusion": "success",
+      "publish_job_id": 99544816212,
+      "publish_job_conclusion": "success",
+      "request_id": "ra-shadow-dabd3c8bfb52301e5c8ab13ff3854303e3648f487bc83ceb",
+      "purchase_id": "pur-ra-shadow-48583f6b57265f673f7206edd8992e25",
+      "packet_id": "rap-shadow-ffa88ee8f698345434f3ad3113b7952e97d3891d7365be31",
+      "packet_hash": "6506ccf74f0f4438668085c39c502806aeb879fc54deacb23b095fd68b07e682",
+      "repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+      "ref": "main",
+      "money_enabled": false,
+      "execute_repository_code": false,
+      "repository_write_authorized": false
+    },
     "home_bridge": {"status": "WAITING"},
     "market_reconcile": {"status": "WAITING"},
     "persistent_receipt": {"status": "WAITING"},
     "fresh_checkout_replay": {"status": "WAITING"}
   },
-  "promotion_rule": "PASS only after final issue #26 produces a post-final-mutex outbox packet, HOME returns a fully verified response, patched Market reconcile persists the exact delivery receipt on janus/market-state, fresh-checkout replay succeeds, and all exact bindings are independently rechecked."
+  "promotion_rule": "PASS only after final request ra-shadow-dabd3c8bfb52301e5c8ab13ff3854303e3648f487bc83ceb receives a fully verified HOME response, patched Market reconcile persists the exact delivery receipt on janus/market-state, fresh-checkout replay succeeds, and all exact bindings are independently rechecked."
 }
