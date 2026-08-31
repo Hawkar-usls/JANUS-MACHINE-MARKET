@@ -1,0 +1,1 @@
+{"schema":"janus.machine_market.home_outbox.v1","role":"CREATE_ONLY_MARKET_TO_HOME_BUYER_QUERY_PACKETS","transport":"PHYSARIUS_CREDENTIALLESS_PULL","money_enabled":false,"cross_repo_write_authority":false}
