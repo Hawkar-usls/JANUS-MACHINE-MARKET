@@ -11,6 +11,7 @@
   <link rel="alternate" type="application/json" href="CATALOG.json">
   <link rel="alternate" type="application/json" href="AGENT_MARKET.json">
   <link rel="alternate" type="application/json" href="GM_SHOP.json">
+  <link rel="alternate" type="application/json" href="PRICING.json">
 </head>
 <body>
   <div class="noise"></div>
@@ -74,12 +75,12 @@
           <div id="loadoutList" class="loadout-list empty">Add services from the catalog.</div>
           <div class="quote-lines">
             <div><span>Mode</span><b>R1 SHADOW</b></div>
-            <div><span>Live price</span><b>NOT PUBLISHED</b></div>
+            <div><span>Live price</span><b>LOADING RATECARD</b></div>
             <div><span>Payments</span><b class="amber">LOCKED</b></div>
             <div><span>Autonomous purchase</span><b>OFF</b></div>
           </div>
           <button id="reviewTrade" class="gold-btn wide">REVIEW TRADE</button>
-          <p class="micro">The interface previews the final commerce UX. Current public transaction authority remains closed.</p>
+          <p class="micro">The ratecard can calculate and freeze a quote preview. A payable invoice still requires the JANUS Commerce Authority gate.</p>
         </aside>
       </div>
     </section>
@@ -166,9 +167,9 @@
       <h2>JANUS TRADE WINDOW</h2>
       <div class="trade-cols">
         <section><h3>BUYER</h3><div id="buyerTradeItems" class="trade-items"></div><div class="confirm-box pending"><span>BUYER SETTLEMENT</span><b>PAYMENTS LOCKED</b></div></section>
-        <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>SHADOW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WAITING FOR FUTURE COMMERCE GATE</b></div></section>
+        <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>PREVIEW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WAITING FOR COMMERCE GATE</b></div></section>
       </div>
-      <div class="trade-rule">TRADE COMPLETE requires both sides confirmed. Current R1 interface never converts this preview into payment or execution authority.</div>
+      <div class="trade-rule">The browser freezes a deterministic quote preview before invoice/payment. Only JANUS Commerce Authority may issue a payable invoice; payment still does not equal execution authority.</div>
       <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SHADOW ISSUE</button></div>
     </div>
   </div>
@@ -176,6 +177,7 @@
   <footer class="shell footer"><span>JANUS MACHINE MARKET · Human storefront + machine discovery</span><span>Apache-2.0 applies to marketplace implementation only.</span></footer>
   <script src="assets/site.js"></script>
   <script src="assets/store-exec-v1.js"></script>
+  <script src="assets/pricing-v1.js"></script>
   <script src="assets/slot-polish-v5.js"></script>
 </body>
 </html>
