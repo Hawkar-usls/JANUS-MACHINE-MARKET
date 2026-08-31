@@ -1,0 +1,314 @@
+name: JANUS Machine Market R1C Foreign Agent Witness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/**'
+      - 'schemas/foreign-agent-witness-receipt.schema.json'
+      - 'docs/FOREIGN_AGENT_WITNESS_GATE.md'
+      - '.github/workflows/r1-foreign-agent-witness.yml'
+      - 'products/JANUS.INFERENCE.json'
+      - 'products/JANUS.COMPUTE.json'
+      - 'AGENT_MARKET.json'
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate R1C fail-closed contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime/FOREIGN_AGENT_WITNESS_POLICY.json', encoding='utf-8'))
+          a=json.load(open('AGENT_MARKET.json', encoding='utf-8'))
+          inf=json.load(open('products/JANUS.INFERENCE.json', encoding='utf-8'))
+          comp=json.load(open('products/JANUS.COMPUTE.json', encoding='utf-8'))
+          schema=json.load(open('schemas/foreign-agent-witness-receipt.schema.json', encoding='utf-8'))
+          assert p['status'] == 'PREPARED_PENDING_REAL_EXTERNAL_REQUEST'
+          assert p['execution']['money_enabled'] is False
+          assert p['execution']['autonomous_purchase_declared'] is False
+          assert p['promotion_law']['owner_self_request_can_promote'] is False
+          assert p['promotion_law']['workflow_dispatch_can_promote'] is False
+          assert a['transaction_api']['status'] == 'NOT_ESTABLISHED'
+          assert a['transaction_api']['endpoint'] is None
+          assert a['x402']['status'] == 'PLANNED_NOT_ACTIVE'
+          for x in (inf, comp):
+              assert x['status'] == 'CLOSED_TARGET_EXECUTION_WITNESS_PENDING'
+              assert x['machine_purchase'] is False
+          assert schema['properties']['money_enabled']['const'] is False
+          assert schema['properties']['autonomous_purchase_declared']['const'] is False
+          print('R1C_NO_PAYMENTS=PASS')
+          print('R1C_NO_AUTONOMOUS_PURCHASE_CLAIM=PASS')
+          print('R1C_INFERENCE_COMPUTE_CLOSED=PASS')
+          print('R1C_FOREIGN_AGENT_WITNESS=PENDING_REAL_EXTERNAL_REQUEST')
+          PY
+
+  foreign-roundtrip:
+    needs: contract
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS FOREIGN MACHINE REQUEST]') &&
+      github.event.issue.user.login != github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical main runtime
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify external GitHub principal and materialize request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          issue=payload['issue']; user=issue['user']
+          policy=json.load(open('runtime/FOREIGN_AGENT_WITNESS_POLICY.json', encoding='utf-8'))
+          owner=policy['owner']
+          login=str(user.get('login') or '')
+          uid=int(user.get('id') or 0)
+          utype=str(user.get('type') or '')
+          assoc=str(issue.get('author_association') or 'NONE').upper()
+          allowed=set(policy['independence_gate']['accepted_author_association'])
+          if login.lower() == owner['login'].lower(): raise SystemExit('FOREIGN_GATE_OWNER_LOGIN_REJECTED')
+          if uid == int(owner['github_user_id']): raise SystemExit('FOREIGN_GATE_OWNER_ID_REJECTED')
+          if utype.lower() == 'bot': raise SystemExit('FOREIGN_GATE_BOT_REJECTED')
+          if assoc not in allowed: raise SystemExit(f'FOREIGN_GATE_AUTHOR_ASSOCIATION_REJECTED:{assoc}')
+          body=str(issue.get('body') or '')
+          def extract(name):
+              a=f'<!-- {name}'; b=f'{name} -->'
+              s=body.find(a); e=body.find(b)
+              if s < 0 or e < 0 or e <= s: raise SystemExit(f'{name}_MARKER_MISSING')
+              return json.loads(body[s+len(a):e].strip())
+          req=extract('JANUS_MACHINE_REQUEST_JSON')
+          disc=extract('JANUS_DISCOVERY_WITNESS_JSON')
+          required=policy['required_discovery_claim']
+          if disc.get('schema') != required['schema']: raise SystemExit('DISCOVERY_SCHEMA_REJECTED')
+          if disc.get('discovery_surface') not in required['allowed_surfaces']: raise SystemExit('DISCOVERY_SURFACE_REJECTED')
+          if disc.get('independent_from_owner') is not True: raise SystemExit('REQUESTER_INDEPENDENCE_ATTESTATION_REQUIRED')
+          if disc.get('machine_client') is not True: raise SystemExit('MACHINE_CLIENT_ATTESTATION_REQUIRED')
+          if req.get('sku') != 'JANUS.SEARCH': raise SystemExit('R1C_ONLY_JANUS_SEARCH_ALLOWED')
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          (root/'r1c-request.json').write_text(json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          (root/'r1c-discovery.json').write_text(json.dumps(disc, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          principal={
+            'login':login,
+            'github_user_id':uid,
+            'type':utype,
+            'author_association':assoc,
+            'issue_id':int(issue['id']),
+            'issue_number':int(issue['number']),
+            'issue_url':str(issue['html_url']),
+            'repository_id':int(payload['repository']['id'])
+          }
+          (root/'r1c-principal.json').write_text(json.dumps(principal, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          print('R1C_EXTERNAL_PRINCIPAL=PASS')
+          print(f'R1C_REQUESTER={login}')
+          print(f'R1C_AUTHOR_ASSOCIATION={assoc}')
+          PY
+
+      - name: Mount persistent market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market State"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-state"
+          git worktree add -B janus/market-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+
+      - name: Execute bounded zero-price JANUS.SEARCH
+        shell: bash
+        run: |
+          set -euo pipefail
+          python runtime/r1_shadow_search.py \
+            --request "$RUNNER_TEMP/r1c-request.json" \
+            --state "$MARKET_STATE/state/r1-shadow/market.sqlite3" \
+            --catalog CATALOG.json --products-dir products \
+            --output "$RUNNER_TEMP/r1c-result.json"
+          python - "$MARKET_STATE/state/r1-shadow/market.sqlite3" <<'PY'
+          import sqlite3, sys
+          db=sqlite3.connect(sys.argv[1]); db.execute('PRAGMA wal_checkpoint(TRUNCATE)'); db.close()
+          print('R1C_SQLITE_CHECKPOINT=PASS')
+          PY
+
+      - name: Freeze independent persistent witness
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$MARKET_STATE/state/r1-foreign/receipts"
+          python - "$RUNNER_TEMP/r1c-result.json" "$RUNNER_TEMP/r1c-discovery.json" "$RUNNER_TEMP/r1c-principal.json" "$MARKET_STATE" <<'PY'
+          import hashlib, json, pathlib, sys
+          result=json.load(open(sys.argv[1], encoding='utf-8'))
+          disc=json.load(open(sys.argv[2], encoding='utf-8'))
+          principal=json.load(open(sys.argv[3], encoding='utf-8'))
+          state=pathlib.Path(sys.argv[4])
+          canon=lambda x: json.dumps(x, ensure_ascii=False, sort_keys=True, separators=(',',':')).encode('utf-8')
+          dh=hashlib.sha256(canon(disc)).hexdigest()
+          witness_seed={
+            'repository_id':principal['repository_id'],
+            'issue_id':principal['issue_id'],
+            'requester_github_user_id':principal['github_user_id'],
+            'request_hash':result['request_hash'],
+            'execution_id':result['execution_id']
+          }
+          wid='faw-'+hashlib.sha256(canon(witness_seed)).hexdigest()
+          receipt={
+            'schema':'janus.machine_market.foreign_agent_witness_receipt.v1',
+            'witness_id':wid,
+            'repository':'Hawkar-usls/JANUS-MACHINE-MARKET',
+            'repository_id':principal['repository_id'],
+            'issue_id':principal['issue_id'],
+            'issue_number':principal['issue_number'],
+            'issue_url':principal['issue_url'],
+            'requester':{k:principal[k] for k in ('login','github_user_id','type','author_association')},
+            'independence':{
+              'login_differs_from_owner':True,
+              'numeric_id_differs_from_owner':True,
+              'non_bot':True,
+              'association_allowed':True,
+              'requester_attested_independent':True,
+              'github_observable_independence_pass':True
+            },
+            'discovery_claim':disc,
+            'discovery_claim_hash':dh,
+            'request_hash':result['request_hash'],
+            'purchase_id':result['purchase_grant']['purchase_id'],
+            'purchase_grant_hash':result['purchase_grant_hash'],
+            'execution_id':result['execution_id'],
+            'result_sha256':result['result_sha256'],
+            'result_receipt':result['result_receipt'],
+            'money_enabled':False,
+            'autonomous_purchase_declared':False,
+            'foreign_agent_witness':True,
+            'closed_skus':{
+              'JANUS.INFERENCE':'CLOSED_TARGET_EXECUTION_WITNESS_PENDING',
+              'JANUS.COMPUTE':'CLOSED_TARGET_EXECUTION_WITNESS_PENDING'
+            }
+          }
+          root=state/'state/r1-foreign'
+          path=root/'receipts'/f'{wid}.json'
+          text=json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True)+'\n'
+          if path.exists() and path.read_text(encoding='utf-8') != text:
+              raise SystemExit('FOREIGN_WITNESS_IMMUTABILITY_CONFLICT')
+          path.write_text(text, encoding='utf-8')
+          head={
+            'schema':'janus.machine_market.foreign_agent_witness_head.v1',
+            'status':'FOREIGN_AGENT_WITNESS_OBSERVED_UNDER_GITHUB_TRUST_MODEL',
+            'witness_id':wid,
+            'requester':receipt['requester'],
+            'request_hash':receipt['request_hash'],
+            'execution_id':receipt['execution_id'],
+            'result_sha256':receipt['result_sha256'],
+            'money_enabled':False,
+            'autonomous_purchase_declared':False,
+            'JANUS.INFERENCE':'CLOSED_TARGET_EXECUTION_WITNESS_PENDING',
+            'JANUS.COMPUTE':'CLOSED_TARGET_EXECUTION_WITNESS_PENDING'
+          }
+          (root/'HEAD.json').write_text(json.dumps(head, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+          pathlib.Path(sys.argv[1]+'.witness_id').write_text(wid, encoding='utf-8')
+          print(f'R1C_WITNESS_ID={wid}')
+          print('R1C_FOREIGN_AGENT_WITNESS=PASS_UNDER_GITHUB_OBSERVABLE_TRUST_MODEL')
+          PY
+
+      - name: Validate frozen witness invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          wid="$(cat "$RUNNER_TEMP/r1c-result.json.witness_id")"
+          python - "$MARKET_STATE/state/r1-foreign/receipts/${wid}.json" <<'PY'
+          import json, sys
+          r=json.load(open(sys.argv[1], encoding='utf-8'))
+          assert r['foreign_agent_witness'] is True
+          assert r['money_enabled'] is False
+          assert r['autonomous_purchase_declared'] is False
+          assert r['independence']['github_observable_independence_pass'] is True
+          assert r['requester']['author_association'] in {'NONE','FIRST_TIMER','FIRST_TIME_CONTRIBUTOR'}
+          assert r['closed_skus']['JANUS.INFERENCE'] == 'CLOSED_TARGET_EXECUTION_WITNESS_PENDING'
+          assert r['closed_skus']['JANUS.COMPUTE'] == 'CLOSED_TARGET_EXECUTION_WITNESS_PENDING'
+          print('R1C_FROZEN_RECEIPT_INVARIANTS=PASS')
+          PY
+
+      - name: Commit only persistent witness state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" add state/r1-shadow/market.sqlite3 state/r1-foreign
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'R1C_STATE_DELTA=NONE_EXACT_RETRY'
+          else
+            git -C "$MARKET_STATE" commit -m "R1C foreign machine witness ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'R1C_PERSISTENT_RECEIPT=PASS'
+          fi
+
+      - name: Fresh-checkout replay proves one execution identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          replay="$RUNNER_TEMP/market-state-replay"
+          git worktree add --detach "$replay" origin/janus/market-state
+          python runtime/r1_shadow_search.py \
+            --request "$RUNNER_TEMP/r1c-request.json" \
+            --state "$replay/state/r1-shadow/market.sqlite3" \
+            --catalog CATALOG.json --products-dir products \
+            --output "$RUNNER_TEMP/r1c-replay.json"
+          python - "$RUNNER_TEMP/r1c-result.json" "$RUNNER_TEMP/r1c-replay.json" <<'PY'
+          import json, sys
+          a=json.load(open(sys.argv[1], encoding='utf-8')); b=json.load(open(sys.argv[2], encoding='utf-8'))
+          assert b['replayed'] is True
+          assert b['billable_execution_delta'] == 0
+          assert b['execution_count_for_purchase'] == 1
+          assert a['request_hash'] == b['request_hash']
+          assert a['execution_id'] == b['execution_id']
+          assert a['result_sha256'] == b['result_sha256']
+          print('R1C_EXTERNAL_REQUEST_REPLAY=PASS')
+          print('R1C_ONE_REQUEST_IDENTITY_AT_MOST_ONE_EXECUTION_IDENTITY=PASS')
+          PY
+
+      - name: Return bounded witness receipt pointer to requester
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          wid="$(cat "$RUNNER_TEMP/r1c-result.json.witness_id")"
+          cat > "$RUNNER_TEMP/r1c-comment.md" <<EOF
+          ## JANUS.SEARCH · external machine witness accepted
+
+          - witness_id: \`$wid\`
+          - foreign_agent_witness: \`PASS_UNDER_GITHUB_OBSERVABLE_TRUST_MODEL\`
+          - price: \`0\`
+          - payments: \`DISABLED\`
+          - autonomous purchase: \`NOT DECLARED\`
+          - JANUS.INFERENCE: \`CLOSED\`
+          - JANUS.COMPUTE: \`CLOSED\`
+
+          Persistent receipt: \`janus/market-state:state/r1-foreign/receipts/$wid.json\`
+
+          \`DISCOVERY != PURCHASE != EXECUTION AUTHORITY\`
+          EOF
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/r1c-comment.md")" >/dev/null
+          echo 'R1C_RESULT_RETURNED_TO_EXTERNAL_REQUESTER=PASS'

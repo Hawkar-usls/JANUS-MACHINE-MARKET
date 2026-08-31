@@ -16,6 +16,22 @@
     "execution_authority_granted": {"const": false},
     "allowed_operation": {"type": ["string", "null"]},
     "authority_ceiling": {"type": ["object", "null"]},
+    "buyer_query_entitlement": {
+      "type": ["object", "null"],
+      "required": ["enabled", "buyer_actor_id", "max_turns", "max_message_utf8_bytes", "max_answer_utf8_bytes", "entitlement_nonce"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "buyer_actor_id": {"type": "string", "minLength": 1},
+        "max_turns": {"type": "integer", "minimum": 0, "maximum": 100},
+        "max_message_utf8_bytes": {"type": "integer", "minimum": 1, "maximum": 32000},
+        "max_answer_utf8_bytes": {"type": "integer", "minimum": 1, "maximum": 64000},
+        "conversation_history_turns": {"type": "integer", "minimum": 0, "maximum": 32},
+        "entitlement_nonce": {"type": "string", "minLength": 16},
+        "read_only_conversation": {"const": true},
+        "external_effect_authorized": {"const": false}
+      },
+      "additionalProperties": false
+    },
     "expires_at": {"type": ["string", "null"]},
     "reasons": {"type": "array", "items": {"type": "string"}}
   },

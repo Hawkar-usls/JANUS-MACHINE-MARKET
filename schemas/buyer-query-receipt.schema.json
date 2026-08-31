@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/schemas/buyer-query-receipt.schema.json",
+  "title": "JANUS MACHINE MARKET Buyer Query Response Receipt",
+  "type": "object",
+  "required": [
+    "schema",
+    "purchase_id",
+    "purchase_grant_hash",
+    "query_id",
+    "query_hash",
+    "status",
+    "response_hash",
+    "response_text",
+    "execution_authority_granted",
+    "external_effect_authorized"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.buyer_query_receipt.v1"},
+    "purchase_id": {"type": "string", "minLength": 1},
+    "purchase_grant_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "query_id": {"type": "string", "pattern": "^bq-[0-9a-f]{64}$"},
+    "query_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["DELIVERED", "REPLAYED", "BLOCKED", "FAILED", "UNKNOWN_RESOURCE_LIMIT"]},
+    "resident_uuid": {"type": ["string", "null"]},
+    "model_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "file_fabric_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "turn_id": {"type": ["string", "null"]},
+    "hrain_context_receipt_hash": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "hrain_context_hash": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "memory_source_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+    "response_text": {"type": "string", "minLength": 1, "maxLength": 12000},
+    "response_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "execution_identity": {"type": ["string", "null"]},
+    "execution_authority_granted": {"const": false},
+    "external_effect_authorized": {"const": false},
+    "scientific_evidence_authority_granted": {"const": false},
+    "world_truth_authority_granted": {"const": false},
+    "replayed": {"type": "boolean"},
+    "billable_execution_delta": {"type": "integer", "minimum": 0, "maximum": 1}
+  },
+  "additionalProperties": false
+}

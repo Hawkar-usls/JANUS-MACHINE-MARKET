@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/schemas/foreign-agent-witness-receipt.schema.json",
+  "title": "JANUS Machine Market Foreign Agent Witness Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "witness_id",
+    "repository",
+    "repository_id",
+    "issue_id",
+    "issue_number",
+    "requester",
+    "independence",
+    "discovery_claim",
+    "discovery_claim_hash",
+    "request_hash",
+    "purchase_id",
+    "purchase_grant_hash",
+    "execution_id",
+    "result_sha256",
+    "result_receipt",
+    "money_enabled",
+    "autonomous_purchase_declared",
+    "foreign_agent_witness",
+    "closed_skus"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.foreign_agent_witness_receipt.v1"},
+    "witness_id": {"type": "string", "pattern": "^faw-[0-9a-f]{64}$"},
+    "repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
+    "repository_id": {"type": "integer"},
+    "issue_id": {"type": "integer"},
+    "issue_number": {"type": "integer", "minimum": 1},
+    "issue_url": {"type": "string", "format": "uri"},
+    "requester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["login", "github_user_id", "type", "author_association"],
+      "properties": {
+        "login": {"type": "string", "minLength": 1},
+        "github_user_id": {"type": "integer"},
+        "type": {"type": "string"},
+        "author_association": {
+          "enum": ["NONE", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR"]
+        }
+      }
+    },
+    "independence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "login_differs_from_owner",
+        "numeric_id_differs_from_owner",
+        "non_bot",
+        "association_allowed",
+        "requester_attested_independent",
+        "github_observable_independence_pass"
+      ],
+      "properties": {
+        "login_differs_from_owner": {"const": true},
+        "numeric_id_differs_from_owner": {"const": true},
+        "non_bot": {"const": true},
+        "association_allowed": {"const": true},
+        "requester_attested_independent": {"const": true},
+        "github_observable_independence_pass": {"const": true}
+      }
+    },
+    "discovery_claim": {"type": "object"},
+    "discovery_claim_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "purchase_id": {"type": "string", "minLength": 1},
+    "purchase_grant_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "execution_id": {"type": "string", "minLength": 1},
+    "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "result_receipt": {"type": "object"},
+    "money_enabled": {"const": false},
+    "autonomous_purchase_declared": {"const": false},
+    "foreign_agent_witness": {"const": true},
+    "closed_skus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["JANUS.INFERENCE", "JANUS.COMPUTE"],
+      "properties": {
+        "JANUS.INFERENCE": {"const": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"},
+        "JANUS.COMPUTE": {"const": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"}
+      }
+    }
+  }
+}

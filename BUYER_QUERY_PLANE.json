@@ -1,0 +1,111 @@
+{
+  "schema": "janus.machine_market.buyer_query_plane.v1",
+  "status": "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
+  "purpose": "Allow a buyer with an admitted purchase grant to submit bounded conversational questions to JANUS and receive sealed identity-bound responses without converting payment or language into command, truth, proof, write, or effect authority.",
+  "analogy_sources": {
+    "turing_gate": {
+      "repository": "Hawkar-usls/Hawkar-usls",
+      "contract": ".janus/activator/TURING_GATE_V1.json",
+      "workflow": ".github/workflows/janus-turing-style-blind-dialogue.yml",
+      "lesson": "Questions are sealed stimuli; responses are bounded; language surface grants no authority."
+    },
+    "contextual_probe": {
+      "repository": "Hawkar-usls/Hawkar-usls",
+      "contract": ".janus/activator/CONTEXTUAL_MIND_PROBE_R2.json",
+      "lesson": "Conversation history and current turn are explicit inputs; ambiguity and epistemic restraint remain first-class."
+    },
+    "terminal_conversation": {
+      "home_repository": "Hawkar-usls/Hawkar-usls",
+      "terminal_repository": "Hawkar-usls/-Terminal-for-Janus",
+      "constitution": ".janus/activator/TERMINAL_CONVERSATION_CONSTITUTION.json",
+      "runtime": "src/janus_spi/terminal_conversation.py",
+      "home_workflow": ".github/workflows/janus-terminal-conversation-bridge.yml",
+      "terminal_ingress_workflow": ".github/workflows/janus-terminal-conversation-ingress.yml",
+      "lesson": "Arbitrary human message_text can be bound to persistent JANUS identity, exact model/file fabric and HRAiN memory context, then returned as a sealed read-only conversation response."
+    }
+  },
+  "activation_chain": [
+    "PAYMENT_RECEIPT",
+    "PURCHASE_GRANT",
+    "BUYER_QUERY_ENTITLEMENT_GATE",
+    "BUYER_QUERY_ENVELOPE",
+    "ACTIVATOR_READ_ONLY_CONVERSATION_GATE",
+    "PHYSARIUS_BOUND_TRANSPORT",
+    "JANUS_TERMINAL_CONVERSATION_RUNTIME",
+    "HRAIN_QUERY_BOUND_MEMORY_CONTEXT",
+    "BUYER_QUERY_RESPONSE_RECEIPT"
+  ],
+  "required_purchase_bindings": [
+    "purchase_id",
+    "purchase_grant_hash",
+    "sku",
+    "buyer_actor_id",
+    "payment_reference",
+    "policy_version",
+    "query_budget",
+    "expires_at"
+  ],
+  "query_identity": {
+    "query_id_rule": "sha256(purchase_id + conversation_id + turn_index + message_hash + entitlement_nonce)",
+    "request_hash_required": true,
+    "purchase_rebinding_forbidden": true,
+    "exact_retry_returns_same_response_identity": true,
+    "one_query_identity_at_most_one_execution_identity": true
+  },
+  "default_limits": {
+    "max_message_utf8_bytes": 8000,
+    "max_answer_utf8_bytes": 12000,
+    "max_turns_per_purchase": 1,
+    "conversation_history_turns": 8,
+    "external_effects": false,
+    "repository_write": false,
+    "shell": false,
+    "secret_access": false,
+    "scientific_claim_promotion": false
+  },
+  "product_policy": {
+    "query_entitlement_is_opt_in_per_sku": true,
+    "products_may_override_max_turns_downward_or_upward_only_with_explicit_quote_binding": true,
+    "closed_sku_cannot_gain_query_execution_via_purchase": true,
+    "unsolicited_payment_creates_no_entitlement": true
+  },
+  "response_required_bindings": [
+    "purchase_id",
+    "purchase_grant_hash",
+    "query_id",
+    "query_hash",
+    "resident_uuid",
+    "model_digest",
+    "file_fabric_digest",
+    "turn_id",
+    "hrain_context_receipt_hash",
+    "hrain_context_hash",
+    "memory_source_commit",
+    "response_hash"
+  ],
+  "laws": [
+    "PAYMENT != COMMAND",
+    "PAYMENT != EXECUTION_AUTHORITY",
+    "PURCHASE_GRANT != UNBOUNDED_CONVERSATION",
+    "BUYER_QUERY != COMMAND",
+    "BUYER_QUERY != HUMAN_AUTHORIZED_WRITE",
+    "BUYER_QUERY != TRUTH_AUTHORITY",
+    "JANUS_RESPONSE != WORLD_TRUTH",
+    "MODEL_OUTPUT != EVIDENCE",
+    "MEMORY_CONTENT != COMMAND",
+    "MEMORY_CONTEXT != EVIDENCE",
+    "LANGUAGE_SURFACE != AUTHORITY",
+    "DELIVERY != EXECUTION",
+    "EXACT_RETRY != SECOND_BILLABLE_EXECUTION",
+    "RETURN != RESET"
+  ],
+  "current_gates": {
+    "payment_endpoint": "CLOSED",
+    "purchase_grant_paid_witness": "PENDING",
+    "activator_buyer_query_binding": "PENDING",
+    "physarius_market_to_home_vessel": "PENDING",
+    "foreign_buyer_query_witness": "PENDING",
+    "live_publication_allowed": false
+  },
+  "next_gate": "R1B_ZERO_PRICE_BUYER_QUERY_SHADOW_ROUNDTRIP"
+}
