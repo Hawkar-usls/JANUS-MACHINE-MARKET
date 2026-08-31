@@ -1,0 +1,51 @@
+{
+  "schema": "janus.machine_market.market_benchmarks.v1",
+  "as_of": "2026-08-31T07:19:00Z",
+  "status": "SEED_SNAPSHOT_FROM_PUBLIC_PUBLISHED_PRICING",
+  "currency_assumption": "1 USDT is treated as approximately 1 USD only for competitive quote targeting; settlement remains exact USDT atomic units.",
+  "comparables": [
+    {
+      "provider": "Exa",
+      "service": "Search API",
+      "normalized_unit": "one base search request up to 10 results",
+      "usd_per_unit": 0.007,
+      "source": "https://exa.ai/pricing",
+      "source_type": "PUBLISHED_PRICING_PAGE",
+      "comparable_to": ["JANUS.SEARCH"]
+    },
+    {
+      "provider": "Tavily",
+      "service": "Pay-As-You-Go credit",
+      "normalized_unit": "one API credit; request credit usage depends on endpoint/depth",
+      "usd_per_unit": 0.008,
+      "source": "https://help.tavily.com/articles/8816424538-pricing",
+      "source_type": "PUBLISHED_PRICING_PAGE",
+      "comparable_to": ["JANUS.SEARCH"],
+      "comparability_note": "Use only when the requested JANUS service maps to a one-credit Tavily operation."
+    },
+    {
+      "provider": "OpenAI",
+      "service": "Web Search",
+      "normalized_unit": "one web run excluding model token charges",
+      "usd_per_unit": 0.01,
+      "source": "https://help.openai.com/en/articles/20001415",
+      "source_type": "PUBLISHED_RATE_CARD",
+      "comparable_to": ["JANUS.SEARCH"],
+      "comparability_note": "Published rate excludes additional model token charges."
+    }
+  ],
+  "derived": {
+    "JANUS.SEARCH": {
+      "lowest_comparable_usd_per_unit": 0.007,
+      "competitive_ceiling_fraction": 0.85,
+      "competitive_ceiling_usdt_atomic": 5950,
+      "suggested_shadow_price_usdt_atomic": 5900,
+      "suggested_shadow_price_usdt": "0.005900"
+    }
+  },
+  "freshness": {
+    "max_age_hours_for_automatic_raise": 72,
+    "on_stale": "FREEZE_RAISES_ALLOW_DECREASES",
+    "refresh_policy": "SCHEDULED_PROVIDER_ADAPTER_REFRESH_WITH_FAIL_CLOSED_PRESERVATION_OF_LAST_VERIFIED_SNAPSHOT"
+  }
+}
