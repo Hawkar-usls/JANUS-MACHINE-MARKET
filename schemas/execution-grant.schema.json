@@ -4,7 +4,7 @@
   "title": "JANUS MACHINE MARKET bounded execution grant",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "grant_id", "purchase_id", "purchase_grant_hash", "sku", "request_hash", "status", "allowed_operation", "authority", "expires_at"],
+  "required": ["schema", "grant_id", "purchase_id", "purchase_grant_hash", "sku", "request_hash", "status", "allowed_operation", "authority", "expires_at", "issued_by", "grant_hash"],
   "properties": {
     "schema": {"const": "janus.machine_market.execution_grant.v1"},
     "grant_id": {"type": "string", "minLength": 8},
