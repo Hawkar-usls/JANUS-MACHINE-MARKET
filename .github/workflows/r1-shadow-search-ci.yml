@@ -1,0 +1,81 @@
+name: JANUS Machine Market R1 Shadow Search
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/**'
+      - 'tests/test_r1_shadow_search.py'
+      - 'examples/r1-shadow-search-request.json'
+      - '.github/workflows/r1-shadow-search-ci.yml'
+      - 'CATALOG.json'
+      - 'products/**'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/**'
+      - 'tests/test_r1_shadow_search.py'
+      - 'examples/r1-shadow-search-request.json'
+      - '.github/workflows/r1-shadow-search-ci.yml'
+      - 'CATALOG.json'
+      - 'products/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  r1-shadow-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact snapshot
+        uses: actions/checkout@v4
+
+      - name: Compile runtime
+        run: python -m py_compile runtime/r1_shadow_search.py tests/test_r1_shadow_search.py
+
+      - name: Validate R1 constitution
+        run: python -m json.tool runtime/R1_SHADOW_SEARCH_CONSTITUTION.json >/dev/null
+
+      - name: Run idempotency and authority tests
+        run: python -m unittest -v tests.test_r1_shadow_search
+
+      - name: Execute exact retry smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          python runtime/r1_shadow_search.py \
+            --request examples/r1-shadow-search-request.json \
+            --state "$tmp/state.sqlite3" \
+            --output "$tmp/first.json"
+          python runtime/r1_shadow_search.py \
+            --request examples/r1-shadow-search-request.json \
+            --state "$tmp/state.sqlite3" \
+            --output "$tmp/retry.json"
+          python - "$tmp/first.json" "$tmp/retry.json" <<'PY'
+          import json, sys
+          a=json.load(open(sys.argv[1], encoding='utf-8'))
+          b=json.load(open(sys.argv[2], encoding='utf-8'))
+          assert a['replayed'] is False
+          assert b['replayed'] is True
+          assert a['request_hash'] == b['request_hash']
+          assert a['execution_id'] == b['execution_id']
+          assert a['result_sha256'] == b['result_sha256']
+          assert a['result_receipt'] == b['result_receipt']
+          assert a['billable_execution_delta'] == 1
+          assert b['billable_execution_delta'] == 0
+          assert b['execution_count_for_purchase'] == 1
+          assert a['purchase_grant']['execution_authority_granted'] is False
+          assert a['result_receipt']['execution_receipt']['production_activator_authority'] is False
+          print('R1_REQUEST_HASH_DETERMINISTIC=PASS')
+          print('R1_PURCHASE_ID_PERSISTENT=PASS')
+          print('R1_PURCHASE_GRANT_PERSISTENT_LOCAL_STATE=PASS')
+          print('R1_BOUNDED_SEARCH_RESULT=PASS')
+          print('R1_EXACT_RETRY_NO_SECOND_EXECUTION=PASS')
+          print('R1_PRODUCTION_ACTIVATOR_BINDING=PENDING')
+          print('R1_EXTERNAL_AGENT_WITNESS=PENDING')
+          print('R1_DURABLE_STATE_BRANCH=PENDING')
+          print('R1_GREEN=FALSE')
+          PY

@@ -1,0 +1,55 @@
+{
+  "schema": "janus.machine_market.r1_shadow_search_constitution.v1",
+  "version": "1.0.0",
+  "gate": "R1_ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP",
+  "status": "CANDIDATE_ENGINE_NOT_YET_R1_GREEN",
+  "sku": "JANUS.SEARCH",
+  "price_mode": "ZERO_PRICE_SHADOW",
+  "money_enabled": false,
+  "runtime_scope": "CHECKED_OUT_MARKET_CATALOG_ONLY",
+  "network_access_allowed": false,
+  "external_effects_allowed": false,
+  "production_activator_binding": "PENDING",
+  "production_target_execution_witness": false,
+  "identity_laws": [
+    "REQUEST_HASH_IS_CANONICAL_SEMANTIC_HASH",
+    "PURCHASE_ID_IS_PERSISTENT_AND_REPLAYABLE",
+    "ONE_PURCHASE_ID_PLUS_REQUEST_HASH_IMPLIES_AT_MOST_ONE_EXECUTION_IDENTITY",
+    "EXACT_RETRY_RETURNS_EXACT_PERSISTED_RESULT_AND_RECEIPT",
+    "PURCHASE_ID_REBOUND_TO_DIFFERENT_REQUEST_HASH_FAILS_CLOSED"
+  ],
+  "authority_laws": [
+    "PAYMENT_IS_NOT_USED_IN_R1",
+    "PURCHASE_GRANT_IS_NOT_EXECUTION_AUTHORITY",
+    "SHADOW_LOCAL_EXECUTION_AUTHORITY_IS_NOT_PRODUCTION_ACTIVATOR_AUTHORITY",
+    "DISCOVERABLE_DOES_NOT_MEAN_PURCHASABLE",
+    "DELIVERED_SHADOW_RESULT_DOES_NOT_PROVE_PRODUCTION_TARGET_EXECUTION"
+  ],
+  "persistence": {
+    "engine": "SQLITE",
+    "tables": ["purchases", "executions"],
+    "durability_mode": "WAL_PLUS_SYNCHRONOUS_FULL",
+    "canonical_persistent_repository_branch": "janus/market-state",
+    "branch_binding_status": "PENDING_WORKFLOW_INTEGRATION"
+  },
+  "r1_green_requires": [
+    "REAL_MACHINE_OR_EXTERNAL_AGENT_REQUEST_OBSERVED",
+    "DETERMINISTIC_REQUEST_HASH_PASS",
+    "PERSISTENT_PURCHASE_ID_PASS",
+    "PERSISTENT_PURCHASE_GRANT_PASS",
+    "BOUNDED_SEARCH_RESULT_PASS",
+    "EXACT_RETRY_SAME_RESULT_NO_SECOND_EXECUTION_PASS",
+    "PERSISTENT_STATE_FRESH_CHECKOUT_REPLAY_PASS",
+    "ACTIVATOR_OR_EXPLICITLY_ADMITTED_SHADOW_AUTHORITY_BOUNDARY_VERIFIED"
+  ],
+  "r1_green_forbidden_if": [
+    "MONEY_REQUIRED",
+    "SECOND_EXECUTION_ON_EXACT_RETRY",
+    "PURCHASE_GRANT_DIRECTLY_CLAIMS_PRODUCTION_EXECUTION_AUTHORITY",
+    "NETWORK_OR_EXTERNAL_SIDE_EFFECT_ESCAPES_BOUND",
+    "PERSISTENCE_EXISTS_ONLY_INSIDE_EPHEMERAL_CI_RUNNER",
+    "SELF_GENERATED_REQUEST_IS_MISLABELED_AS_FOREIGN_AGENT_WITNESS"
+  ],
+  "next_after_green": "R1_5_LIVE_FREE_AGENT_INTERFACES",
+  "hard_boundary": "R1 proves a zero-price callable-service contour only after the external-request and durable-replay gates pass; it does not authorize paid x402, inference, compute, or production external effects."
+}

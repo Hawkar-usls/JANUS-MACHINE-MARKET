@@ -1,0 +1,16 @@
+{
+  "schema": "janus.machine_market.request.v1",
+  "request_id": "r1-shadow-smoke-001",
+  "purchase_id": null,
+  "sku": "JANUS.SEARCH",
+  "input": {
+    "query": "repository audit research evidence",
+    "source_scope": "MARKET_CATALOG",
+    "max_results": 5
+  },
+  "requested_output": {
+    "format": "application/json"
+  },
+  "max_runtime_seconds": 10,
+  "created_at": null
+}
