@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import copy
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from runtime.r2_repo_audit_reconcile import (
     build_market_receipt,
     digest,
     is_safe_identifier,
+    prevalidate_home_response_identity,
     verify_home_response,
     verify_packet,
 )
+from runtime.r2_repo_audit_selector import select_verified_response
 from runtime.r2_repo_audit_shadow import build_shadow_packet
 
 
@@ -40,16 +45,9 @@ class RepoAuditReconcileTest(unittest.TestCase):
                 "resolved_commit_sha": "a" * 40,
                 "tree_sha": "b" * 40,
             },
-            "bounds": {
-                "observed_tree_entries": 42,
-            },
-            "architecture_map": {
-                "has_tests": True,
-                "has_ci": True,
-            },
-            "license_observations": {
-                "license_file_observed": True,
-            },
+            "bounds": {"observed_tree_entries": 42},
+            "architecture_map": {"has_tests": True, "has_ci": True},
+            "license_observations": {"license_file_observed": True},
             "risk_register": [
                 {"code": "EXAMPLE_RISK", "severity": "LOW", "scope": "test"},
             ],
@@ -109,6 +107,11 @@ class RepoAuditReconcileTest(unittest.TestCase):
             {k: v for k, v in response.items() if k != "home_response_hash"}
         )
 
+    @staticmethod
+    def write_json(path: Path, value):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
     def test_valid_response_closes_service_debt(self):
         p = self.packet()
         r = self.response(p)
@@ -125,6 +128,22 @@ class RepoAuditReconcileTest(unittest.TestCase):
         self.assertTrue(receipt["verified_buyer_delivery"])
         self.assertTrue(receipt["service_debt_closed"])
         self.assertFalse(receipt["repository_code_executed"])
+
+    def test_schema_and_identity_prevalidation_precedes_path_use(self):
+        p = self.packet()
+        r = self.response(p)
+        self.assertEqual(prevalidate_home_response_identity(r), p["service_request"]["request_id"])
+        for mutation in (
+            {"schema": "wrong.schema"},
+            {"sku": "OTHER"},
+            {"service_request_id": "../escape"},
+            {"service_request_hash": "not-a-hash"},
+            {"packet_hash": "not-a-hash"},
+        ):
+            with self.subTest(mutation=mutation):
+                bad = copy.deepcopy(r)
+                bad.update(mutation)
+                self.assertIsNone(prevalidate_home_response_identity(bad))
 
     def test_target_rebinding_fails(self):
         p = self.packet()
@@ -144,7 +163,6 @@ class RepoAuditReconcileTest(unittest.TestCase):
         p = self.packet()
         r = self.response(p)
         r["audit_result"]["architecture_map"]["has_tests"] = False
-        # Deliberately do not update result_hash; only reseal the outer envelope.
         r["home_response_hash"] = digest({k: v for k, v in r.items() if k != "home_response_hash"})
         self.assertFalse(verify_home_response(r, packet=p))
 
@@ -206,6 +224,70 @@ class RepoAuditReconcileTest(unittest.TestCase):
                 home_response_path=".janus/market-service-responses/other.repo-audit-result.json",
                 home_response_blob_sha="2" * 40,
             )
+
+    def test_selector_quarantines_invalid_candidate_then_selects_valid(self):
+        p = self.packet()
+        good = self.response(p)
+        bad = copy.deepcopy(good)
+        bad["audit_result"]["target"]["repository"] = "attacker/repo"
+        self.reseal_response(bad)
+        rid = p["service_request"]["request_id"]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            outbox = root / "outbox"
+            receipts = root / "receipts"
+            quarantine = root / "quarantine"
+            self.write_json(home / "00-invalid.repo-audit-result.json", bad)
+            self.write_json(home / "01-valid.repo-audit-result.json", good)
+            self.write_json(outbox / f"{rid}.repo-audit.packet.json", p)
+            result = select_verified_response(
+                home_dir=home,
+                outbox_dir=outbox,
+                receipts_dir=receipts,
+                quarantine_dir=quarantine,
+            )
+            self.assertTrue(result["found"])
+            self.assertEqual(result["request_id"], rid)
+            self.assertEqual(len(result["quarantined"]), 1)
+            records = list(quarantine.glob("*.json"))
+            self.assertEqual(len(records), 1)
+            record = json.loads(records[0].read_text(encoding="utf-8"))
+            self.assertEqual(record["reason"], "HOME_RESPONSE_VERIFICATION_FAILED")
+            self.assertFalse(record["delivery_receipt_written"])
+
+    def test_selector_quarantines_malformed_and_unsafe_identity_without_blocking_valid(self):
+        p = self.packet()
+        good = self.response(p)
+        unsafe = copy.deepcopy(good)
+        unsafe["service_request_id"] = "x'; touch PWNED; #"
+        unsafe["home_response_hash"] = digest({k: v for k, v in unsafe.items() if k != "home_response_hash"})
+        rid = p["service_request"]["request_id"]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            outbox = root / "outbox"
+            receipts = root / "receipts"
+            quarantine = root / "quarantine"
+            home.mkdir(parents=True)
+            (home / "00-malformed.repo-audit-result.json").write_text("{not json\n", encoding="utf-8")
+            self.write_json(home / "01-unsafe.repo-audit-result.json", unsafe)
+            self.write_json(home / "02-valid.repo-audit-result.json", good)
+            self.write_json(outbox / f"{rid}.repo-audit.packet.json", p)
+            result = select_verified_response(
+                home_dir=home,
+                outbox_dir=outbox,
+                receipts_dir=receipts,
+                quarantine_dir=quarantine,
+            )
+            self.assertTrue(result["found"])
+            self.assertEqual(result["request_id"], rid)
+            self.assertEqual(len(result["quarantined"]), 2)
+            reasons = {
+                json.loads(path.read_text(encoding="utf-8"))["reason"]
+                for path in quarantine.glob("*.json")
+            }
+            self.assertEqual(reasons, {"MALFORMED_JSON", "SCHEMA_OR_IDENTITY_PREVALIDATION_FAILED"})
 
 
 if __name__ == "__main__":
