@@ -4,10 +4,13 @@
   "law": "PURCHASE_GRANT_MUST_PASS_PRODUCT_POLICY_BEFORE_EXECUTION_GRANT",
   "routes": {
     "JANUS.SEARCH": {
-      "current_mode": "ZERO_PRICE_SHADOW",
-      "executor": "runtime/r1_shadow_search.py",
+      "current_mode": "ZERO_PRICE_SHADOW_PLUS_COMMERCE_BRIDGE_PREPARED",
+      "shadow_executor": "runtime/r1_shadow_search.py",
+      "commerce_executor": "runtime/commerce_search_executor.py",
+      "execution_grant_schema": "schemas/execution-grant.schema.json",
       "persistent_reconcile": "runtime/r1b_home_response_reconcile.py",
-      "paid_execution": false
+      "paid_execution": false,
+      "paid_execution_blocker": "FOREIGN_AGENT_WITNESS_AND_LIVE_ACTIVATOR_EXECUTION_GRANT"
     },
     "JANUS.REPO_AUDIT": {
       "current_mode": "OWNER_SHADOW",
@@ -22,30 +25,12 @@
       "persistent_reconcile": "runtime/r3_dataset_scout_reconcile.py",
       "paid_execution": false
     },
-    "JANUS.EVIDENCE_PACK": {
-      "current_mode": "SPECIFICATION_READY",
-      "paid_execution": false
-    },
-    "JANUS.ARCHIVE_SCAN": {
-      "current_mode": "SPECIFICATION_READY",
-      "paid_execution": false
-    },
-    "JANUS.RESEARCH_JOB": {
-      "current_mode": "SPECIFICATION_READY",
-      "paid_execution": false
-    },
-    "JANUS.INFERENCE": {
-      "current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
-      "paid_execution": false
-    },
-    "JANUS.COMPUTE": {
-      "current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
-      "paid_execution": false
-    },
-    "HELIOS.PILOT": {
-      "current_mode": "DELEGATED_TO_JANUS_HELIOS_AUTHORITY",
-      "paid_execution": false
-    }
+    "JANUS.EVIDENCE_PACK": {"current_mode": "SPECIFICATION_READY", "paid_execution": false},
+    "JANUS.ARCHIVE_SCAN": {"current_mode": "SPECIFICATION_READY", "paid_execution": false},
+    "JANUS.RESEARCH_JOB": {"current_mode": "SPECIFICATION_READY", "paid_execution": false},
+    "JANUS.INFERENCE": {"current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING", "paid_execution": false},
+    "JANUS.COMPUTE": {"current_mode": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING", "paid_execution": false},
+    "HELIOS.PILOT": {"current_mode": "DELEGATED_TO_JANUS_HELIOS_AUTHORITY", "paid_execution": false}
   },
   "promotion_requirements": [
     "FOREIGN_AGENT_WITNESS == true",
