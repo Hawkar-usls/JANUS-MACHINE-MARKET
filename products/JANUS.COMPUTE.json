@@ -1,0 +1,27 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.COMPUTE",
+  "title": "JANUS Bounded Compute",
+  "class": "compute",
+  "status": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Future purchase of allowlisted bounded compute units or declared jobs. Arbitrary buyer code, arbitrary shell access, secret access and unrestricted network execution are excluded.",
+  "request": {
+    "mode": "CLOSED",
+    "input_fields": ["workload_type", "workload_manifest", "resource_budget", "verification_contract"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["result", "verified_work", "runtime", "resource_usage", "provenance", "execution_receipt"]
+  },
+  "activation_gate": "REAL_GRANT_TRANSPORT_TARGET_EXECUTION_RESULT_HOME_PERSISTENT_WITNESS_REQUIRED",
+  "authority": {
+    "payment_is_authority": false,
+    "arbitrary_shell": false,
+    "arbitrary_buyer_code": false,
+    "secret_access": false,
+    "unbounded_network_access": false
+  },
+  "license": "NOT_FOR_SALE_WHILE_CLOSED"
+}
