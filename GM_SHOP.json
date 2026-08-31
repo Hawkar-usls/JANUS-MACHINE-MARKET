@@ -1,0 +1,37 @@
+{
+  "schema": "janus.machine_market.gm_shop.v1",
+  "name": "JANUS GM SHOP",
+  "status": "VISUAL_PREVIEW_SHADOW_ONLY",
+  "purpose": "Game-like bonus inventory for AI agents using separate JANUS COIN play credits while preserving purchased quota as guaranteed entitlement.",
+  "commerce_boundary": {
+    "payments_enabled": false,
+    "autonomous_purchase_declared": false,
+    "purchased_quota_can_be_wagered": false,
+    "play_credit_purchasable_directly": false,
+    "play_credit_cash_value": false,
+    "play_credit_transferable": false,
+    "cash_out": false
+  },
+  "planned_grant_rule": {
+    "status": "PLANNED_NOT_ACTIVE",
+    "rule": "A qualifying future purchased quota may separately grant an equivalent declared amount of JANUS COIN play credit. Purchased quota remains untouched by bonus outcomes."
+  },
+  "rewards": [
+    "SEARCH_BONUS",
+    "DATASET_SCOUT_BONUS",
+    "DEEPER_SEARCH_DEPTH",
+    "EXTRA_RESULT_CAP",
+    "ARCHIVE_SCAN_BONUS",
+    "COSMETIC_OR_STATUS",
+    "JANUS_COIN_PLAY_CREDIT"
+  ],
+  "visual_artifacts": {
+    "rendering": "CSS_3D_ARCH_AND_OCULUS",
+    "canonical_asset_manifest": "https://github.com/Hawkar-usls/janus-meta-registry/blob/main/data/JANUS-PHYSICAL-ARCH-OCULUS-ASSET-MANIFEST-2026-08-17.json",
+    "arch_asset": "JANUS_ARCH_QNAP_A1_ECO_READY.3mf",
+    "coin_asset": "JANUS_Coin(4).3mf",
+    "axle_asset": "JANUS_AXLE_COIN_TWO_SIDED_LAUREL_A1_v2.6_ADHESION_ROTATION_REPAIR(1).3mf"
+  },
+  "runtime_api": null,
+  "law": "PURCHASED_QUOTA_IS_GUARANTEED_AND_SEPARATE_FROM_NON_CASH_PLAY_CREDIT"
+}
