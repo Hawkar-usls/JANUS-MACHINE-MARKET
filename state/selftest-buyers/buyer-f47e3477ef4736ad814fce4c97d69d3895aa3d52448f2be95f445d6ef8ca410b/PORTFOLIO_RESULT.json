@@ -1,0 +1,103 @@
+{
+  "schema": "janus.machine_market.self_test_portfolio_result.v1",
+  "agent_id": "internal-test:chatgpt-gpt-5.6-sol",
+  "profile_id": "buyer-f47e3477ef4736ad814fce4c97d69d3895aa3d52448f2be95f445d6ef8ca410b",
+  "mode": "TEST_ONLY_NO_CASH_VALUE",
+  "production_payment_witness": false,
+  "foreign_agent_witness": false,
+  "truth_policy": "ONLY_VERIFIED_RESULT_RECEIPT_COUNTS_AS_FULFILLED",
+  "results": [
+    {
+      "sku": "JANUS.SEARCH",
+      "status": "FULFILLED_VERIFIED_RESULT",
+      "portfolio_test_credit_spent": 100,
+      "service_debt": "CLOSED_BY_VERIFIED_DELIVERY",
+      "production_money_used": false,
+      "primary_witness": {
+        "source_issue": 12,
+        "query_id": "bq-4134e81034c939598f98bb73a1ae7e3c0878123a22c2abbc08b1f2217c9b44f8",
+        "purchase_id": "pur-bq-shadow-ab982118a2fb0ab15fb0f949f6c5546d",
+        "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+        "execution_identity": "tr-aaf16dc3950b1b0229ef392dd89f4a736ff9bd49be39680c1bf90a8b1b274f80",
+        "response_hash": "ae116e3622562ff121e01eece69dfa9da4e2902580a58a5aac590ded9edd0d06",
+        "home_response_hash": "a4444abad7e4cde6c3acadb7d15a041d82042c30705a967203086f05a13eb0aa",
+        "hrain_selected_memory_count": 9
+      },
+      "reliability_witness": {
+        "source_issue": 13,
+        "query_id": "bq-b103b95af5959be9f5e01e2dcd2b5baf1e9ccab4fa0d78c3cdb4c07d4d8e3ce9",
+        "purchase_id": "pur-bq-shadow-8f68d3110304543b6125bb3f1e5eb0f7",
+        "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+        "execution_identity": "tr-ce2f33497cb15be45e468eea91eb280d4cdd8be84e98102c9f309444ec43e7be",
+        "response_hash": "972546157b2ff526ab7c05d2243ca729161e01a1ce4bc48aeb08457bff1a62f8",
+        "home_response_hash": "94acd46b33169116d65be8f074c46e992cc0e3fc07d84216cabeb7df7ce32a3a",
+        "hrain_selected_memory_count": 8
+      },
+      "roundtrip_successes": 2,
+      "roundtrip_attempts": 2
+    },
+    {
+      "sku": "JANUS.DATASET_SCOUT",
+      "status": "BLOCKED_SPECIFICATION_ONLY",
+      "portfolio_test_credit_spent": 0,
+      "reason": "NO_LIVE_SERVICE_ADAPTER_OR_RESULT_RECEIPT_YET"
+    },
+    {
+      "sku": "JANUS.EVIDENCE_PACK",
+      "status": "BLOCKED_SPECIFICATION_ONLY",
+      "portfolio_test_credit_spent": 0,
+      "reason": "NO_LIVE_SERVICE_ADAPTER_OR_RESULT_RECEIPT_YET"
+    },
+    {
+      "sku": "JANUS.ARCHIVE_SCAN",
+      "status": "BLOCKED_SPECIFICATION_ONLY",
+      "portfolio_test_credit_spent": 0,
+      "reason": "NO_LIVE_SERVICE_ADAPTER_OR_RESULT_RECEIPT_YET"
+    },
+    {
+      "sku": "JANUS.REPO_AUDIT",
+      "status": "BLOCKED_SPECIFICATION_ONLY",
+      "portfolio_test_credit_spent": 0,
+      "reason": "HOME_BOUNDED_REPOSITORY_AUDIT_ADAPTER_NEXT_GATE"
+    },
+    {
+      "sku": "JANUS.RESEARCH_JOB",
+      "status": "BLOCKED_SPECIFICATION_ONLY",
+      "portfolio_test_credit_spent": 0,
+      "reason": "NO_LIVE_SERVICE_ADAPTER_OR_RESULT_RECEIPT_YET"
+    },
+    {
+      "sku": "JANUS.INFERENCE",
+      "status": "BLOCKED_CLOSED",
+      "portfolio_test_credit_spent": 0,
+      "reason": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+    },
+    {
+      "sku": "JANUS.COMPUTE",
+      "status": "BLOCKED_CLOSED",
+      "portfolio_test_credit_spent": 0,
+      "reason": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+    },
+    {
+      "sku": "HELIOS.PILOT",
+      "status": "EXCLUDED_BY_USER",
+      "portfolio_test_credit_spent": 0
+    }
+  ],
+  "account_after_primary_portfolio_order": {
+    "market_test_credit": 999900,
+    "janus_coin_test_balance": 1,
+    "order_count": 1,
+    "fulfilled_count": 1,
+    "open_service_debt_count": 0
+  },
+  "laws": [
+    "ORDER_ACCEPTED != SERVICE_FULFILLED",
+    "SPECIFICATION_READY != LIVE_SERVICE",
+    "BLOCKED_OR_CLOSED_SKU MUST NOT CONSUME TEST CREDIT",
+    "OWNER_SHADOW_PROXY != FOREIGN_AGENT_WITNESS",
+    "RELIABILITY_REPETITION DOES NOT NEED TO COUNT AS SECOND PORTFOLIO PURCHASE",
+    "HELIOS.PILOT IS EXCLUDED"
+  ],
+  "next_gate": "JANUS.REPO_AUDIT_HOME_BOUNDED_SERVICE"
+}
