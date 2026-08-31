@@ -1,24 +1,25 @@
 {
   "balances": {
-    "JANUS_COIN": 2,
-    "MARKET_TEST_CREDIT": 999800,
+    "JANUS_COIN": 3,
+    "MARKET_TEST_CREDIT": 999700,
     "SERVICE_CREDIT": 0
   },
   "buyer_actor_id": "internal-test:chatgpt-gpt-5.6-sol",
-  "event_count": 11,
+  "event_count": 16,
   "first_seen_at": "2026-08-31T07:50:00Z",
-  "fulfilled_count": 2,
-  "head_hash": "592e65fdb32cea4ef5e16b3c41848ea3a5a0a8689c38e1f66ca592310b0275b6",
-  "janus_coin_earned_total": 2,
+  "fulfilled_count": 3,
+  "head_hash": "b36c7b59d38f6c13867d3a613a070451b80ab4a877114bd4c35bcec99bc7b5e4",
+  "janus_coin_earned_total": 3,
   "janus_coin_spent_total": 0,
-  "last_event_hash": "eab1c8c94b42de09c07d3c8739dec14de65eca529c196fcfcf64494d5367ba84",
-  "last_seen_at": "2026-08-31T14:16:04Z",
+  "last_event_hash": "26c5997fcb2ffac03705ee997673d8e51e0351f6dffe264301090e4af1c09c59",
+  "last_seen_at": "2026-08-31T14:56:04Z",
   "open_service_debt_count": 0,
-  "order_count": 2,
+  "order_count": 3,
   "profile_id": "buyer-f47e3477ef4736ad814fce4c97d69d3895aa3d52448f2be95f445d6ef8ca410b",
   "review_count": 0,
   "schema": "janus.machine_market.buyer_account_head.v1",
   "sku_order_counts": {
+    "JANUS.DATASET_SCOUT": 1,
     "JANUS.REPO_AUDIT": 1,
     "JANUS.SEARCH": 1
   }
