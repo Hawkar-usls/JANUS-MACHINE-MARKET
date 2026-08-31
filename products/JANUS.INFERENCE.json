@@ -1,0 +1,26 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.INFERENCE",
+  "title": "JANUS Bounded Inference Run",
+  "class": "inference",
+  "status": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Future bounded purchase of a declared JANUS operation such as analyze, compare, classify, synthesize or route. It is not unrestricted model access.",
+  "request": {
+    "mode": "CLOSED",
+    "input_fields": ["operation", "input", "limits", "output_contract"]
+  },
+  "delivery": {
+    "format": "application/json",
+    "outputs": ["result", "organ", "runtime", "resource_usage", "provenance", "execution_receipt"]
+  },
+  "activation_gate": "REAL_GRANT_TRANSPORT_TARGET_EXECUTION_RESULT_HOME_PERSISTENT_WITNESS_REQUIRED",
+  "authority": {
+    "payment_is_authority": false,
+    "arbitrary_model_access": false,
+    "arbitrary_shell": false,
+    "secret_access": false
+  },
+  "license": "NOT_FOR_SALE_WHILE_CLOSED"
+}
