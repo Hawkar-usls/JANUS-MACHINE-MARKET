@@ -1,0 +1,27 @@
+{
+  "candidate_count": 1,
+  "catalogs_succeeded": [
+    "ZENODO",
+    "HUGGINGFACE"
+  ],
+  "dataset_payload_downloaded": false,
+  "dataset_scout_result_hash": "bcfc0b0ba416d7ea83b4f0c99d1fb49c730a959d757fe5bf10746a77c072f00b",
+  "external_effect_authorized": false,
+  "home_response_git_blob_sha": "273a2b61280826222ff3c8ee12322311d2b993d6",
+  "home_response_hash": "7a1feec99c0b45b512f1139f2e29e71a47cfdd98875a4259f1170d3a68285e11",
+  "home_response_path": ".janus/market-service-responses/ds-shadow-081dc88215756b0ff335970963ca3bfc725f048303b414ca.dataset-scout-result.json",
+  "home_service_receipt_hash": "c24937cffa637505c456529160efa15d1b5923731fe1af2e104a9edfa2cf778f",
+  "home_source_commit": "07d686100584b03ef79198ca53b741a5ec8f82fc",
+  "license_authority_granted": false,
+  "packet_hash": "5c30bd62e97c1df43c03627e2292cd30dd26cab8e2aac92c451805597b123b31",
+  "purchase_id": "pur-ds-shadow-665c96c1a8d5cef04736e4585e5c4e1c",
+  "receipt_hash": "0e9742dca32708050480756afdccc96865026376acb18aa22600be1ad591c619",
+  "redistribution_authority_granted": false,
+  "resident_uuid": "75e514ab-be76-42c8-bcb3-fc9670164f96",
+  "schema": "janus.machine_market.dataset_scout_delivery_receipt.v1",
+  "service_debt_closed": true,
+  "service_request_hash": "d3da4c7f3efe07ea48834f3142ef6131b0252cea55356b7991ec8c3692eb5e1b",
+  "service_request_id": "ds-shadow-081dc88215756b0ff335970963ca3bfc725f048303b414ca",
+  "sku": "JANUS.DATASET_SCOUT",
+  "verified_buyer_delivery": true
+}
