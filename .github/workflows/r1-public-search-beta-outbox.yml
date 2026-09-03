@@ -53,7 +53,7 @@ jobs:
       github.event.issue.user.login != github.repository_owner
     needs: contract
     concurrency:
-      group: janus-market-home-outbox-writer
+      group: janus-machine-market-state-writer
       cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 8
