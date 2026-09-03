@@ -1,0 +1,367 @@
+name: JANUS Paid SEARCH Checkout
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/commerce_authority.py'
+      - 'runtime/ethereum_usdt_observer.py'
+      - 'runtime/purchase_ledger.py'
+      - 'runtime/paid_search_packet.py'
+      - 'runtime/paid_search_checkout.py'
+      - 'runtime/paid_search_settlement.py'
+      - 'tests/test_paid_search_packet.py'
+      - 'tests/test_paid_search_checkout.py'
+      - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'docs/PAID_SEARCH_TERMS.md'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search.md'
+      - '.github/workflows/paid-search-checkout.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/commerce_authority.py'
+      - 'runtime/ethereum_usdt_observer.py'
+      - 'runtime/purchase_ledger.py'
+      - 'runtime/paid_search_packet.py'
+      - 'runtime/paid_search_checkout.py'
+      - 'runtime/paid_search_settlement.py'
+      - 'tests/test_paid_search_packet.py'
+      - 'tests/test_paid_search_checkout.py'
+      - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'docs/PAID_SEARCH_TERMS.md'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search.md'
+      - '.github/workflows/paid-search-checkout.yml'
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile paid checkout runtime
+        run: |
+          python -m py_compile \
+            runtime/commerce_authority.py \
+            runtime/ethereum_usdt_observer.py \
+            runtime/purchase_ledger.py \
+            runtime/paid_search_packet.py \
+            runtime/paid_search_checkout.py \
+            runtime/paid_search_settlement.py
+      - name: Run paid checkout contract tests
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_commerce_authority.py \
+            tests/test_ethereum_usdt_transaction_observer.py \
+            tests/test_paid_search_packet.py \
+            tests/test_paid_search_checkout.py
+      - name: Assert no transaction signing/sending code in checkout runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths=[
+            'runtime/ethereum_usdt_observer.py','runtime/paid_search_checkout.py',
+            'runtime/paid_search_settlement.py','runtime/paid_search_packet.py'
+          ]
+          text='\n'.join(Path(x).read_text() for x in paths).lower()
+          assert 'eth_sendrawtransaction' not in text
+          assert 'private_key' not in text
+          print('CHECKOUT_SIGNS_OR_SENDS_TRANSACTIONS=FALSE')
+          PY
+
+  issue-invoice:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS PAID SEARCH]') &&
+      github.event.issue.user.login != github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mount persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Paid Search State"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-paid-state"
+          rm -rf "$state"
+          git worktree add -B janus-market-paid-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+      - name: Normalize request and create/recover invoice only when canonical money gates are live
+        id: invoice
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from runtime.commerce_authority import CommerceBlocked
+          from runtime.paid_search_checkout import checkout_gate, issue_invoice, verify_invoice
+          from runtime.paid_search_packet import normalize_paid_issue_request
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
+          issue=event['issue']; body=str(issue.get('body') or '')
+          a='<!-- JANUS_PAID_SEARCH_JSON'; b='JANUS_PAID_SEARCH_JSON -->'
+          s=body.find(a); e=body.find(b)
+          if s<0 or e<0 or e<=s: raise SystemExit('JANUS_PAID_SEARCH_JSON_MARKER_MISSING')
+          raw=json.loads(body[s+len(a):e].strip())
+          request=normalize_paid_issue_request(issue,raw,owner_login=event['repository']['owner']['login'])
+          readiness=json.load(open('COMMERCE_READINESS.json'))
+          witness=json.load(open('FOREIGN_AGENT_WITNESS.json'))
+          product=json.load(open('products/JANUS.SEARCH.json'))
+          try:
+              checkout_gate(readiness=readiness,witness=witness,product=product)
+          except CommerceBlocked as exc:
+              print('live=false'); print('new=false'); print('reason='+str(exc).replace('\n',' '))
+              raise SystemExit(0)
+          state=Path(os.environ['MARKET_STATE'])
+          target=state/'state/commerce/invoices'/f"issue-{issue['id']}.json"
+          target.parent.mkdir(parents=True,exist_ok=True)
+          if target.exists():
+              record=json.loads(target.read_text())
+              if record.get('request')!=request: raise SystemExit('PAID_SEARCH_INVOICE_CREATE_ONLY_REQUEST_CONFLICT')
+              verify_invoice(record['invoice'],request)
+              new=False
+          else:
+              pricing=json.load(open('PRICING.json'))
+              inv=issue_invoice(request=request,pricing=pricing,issued_at=datetime.now(timezone.utc))
+              record={'schema':'janus.machine_market.paid_search_invoice_record.v1','issue_id':int(issue['id']),'issue_number':int(issue['number']),'issue_url':issue['html_url'],'buyer_login':issue['user']['login'],'request':request,'invoice':inv}
+              target.write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+              new=True
+          Path('runtime').mkdir(exist_ok=True)
+          Path('runtime/paid-invoice-record.json').write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          inv=record['invoice']
+          print('live=true'); print('new='+('true' if new else 'false')); print('invoice_id='+inv['invoice_id']); print('amount='+str(inv['amount_usdt_micros'])); print('expires_at='+inv['expires_at']); print('receiver='+inv['receiving_address'])
+          PY
+      - name: Commit immutable invoice record
+        if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" add state/commerce/invoices
+          git -C "$MARKET_STATE" commit -m "Paid SEARCH invoice ${{ steps.invoice.outputs.invoice_id }}"
+          git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+      - name: Tell requester checkout is still fail-closed
+        if: steps.invoice.outputs.live != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ steps.invoice.outputs.reason }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid checkout is **not live**, and no payable invoice was issued. Reason: \`$REASON\`. **Do not send funds.** The zero-price public SEARCH beta remains separate from this gate."
+      - name: Publish exact live invoice to requester
+        if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > "$RUNNER_TEMP/invoice-comment.md"
+          import json
+          r=json.load(open('runtime/paid-invoice-record.json')); i=r['invoice']; q=i['quote']
+          amount=i['amount_usdt_micros']/1_000_000
+          print('### JANUS.SEARCH live invoice')
+          print()
+          print(f"Invoice: `{i['invoice_id']}`")
+          print(f"Amount: **{amount:.6f} USDT**")
+          print('Network: **Ethereum mainnet (chain_id 1)**')
+          print(f"USDT contract: `{q['token_contract']}`")
+          print(f"Recipient: `{q['receiving_address']}`")
+          print(f"Expires: `{q['expires_at']}` — the transfer must be mined no later than this time.")
+          print('Required confirmations: **12**')
+          print()
+          print('After the transfer has enough confirmations, post a new comment containing:')
+          print('```')
+          print('<!-- JANUS_PAYMENT_PROOF_JSON')
+          print('{"tx_hash":"0x...","log_index":0}')
+          print('JANUS_PAYMENT_PROOF_JSON -->')
+          print('```')
+          print('Use the actual ERC-20 Transfer log index. Payment is evidence of settlement, not command/execution authority. Unsolicited or wrong-chain/wrong-token/wrong-recipient/wrong-amount transfers grant nothing.')
+          PY
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/invoice-comment.md"
+
+  payment-proof:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      startsWith(github.event.issue.title, '[JANUS PAID SEARCH]') &&
+      github.event.comment.user.login == github.event.issue.user.login &&
+      github.event.issue.user.login != github.repository_owner &&
+      contains(github.event.comment.body, 'JANUS_PAYMENT_PROOF_JSON')
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mount persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Paid Search State"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-paid-state"
+          rm -rf "$state"
+          git worktree add -B janus-market-paid-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+      - name: Extract buyer payment proof and bind exact invoice
+        id: proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from pathlib import Path
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
+          body=str(event['comment'].get('body') or '')
+          a='<!-- JANUS_PAYMENT_PROOF_JSON'; b='JANUS_PAYMENT_PROOF_JSON -->'
+          s=body.find(a); e=body.find(b)
+          if s<0 or e<0 or e<=s: raise SystemExit('JANUS_PAYMENT_PROOF_JSON_MARKER_MISSING')
+          proof=json.loads(body[s+len(a):e].strip())
+          if set(proof)-{'tx_hash','log_index'}: raise SystemExit('PAYMENT_PROOF_UNKNOWN_FIELDS')
+          if not proof.get('tx_hash'): raise SystemExit('PAYMENT_PROOF_TX_HASH_REQUIRED')
+          if proof.get('log_index') is not None: proof['log_index']=int(proof['log_index'])
+          issue=event['issue']; state=Path(os.environ['MARKET_STATE'])
+          invoice_path=state/'state/commerce/invoices'/f"issue-{issue['id']}.json"
+          if not invoice_path.exists(): raise SystemExit('PAID_SEARCH_INVOICE_NOT_FOUND')
+          record=json.loads(invoice_path.read_text())
+          if record.get('buyer_login')!=issue['user']['login']: raise SystemExit('PAID_SEARCH_INVOICE_BUYER_MISMATCH')
+          Path('runtime').mkdir(exist_ok=True)
+          Path('runtime/paid-invoice-record.json').write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          Path('runtime/payment-proof.json').write_text(json.dumps(proof,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          print('tx_hash='+str(proof['tx_hash']))
+          print('log_index='+('' if proof.get('log_index') is None else str(proof['log_index'])))
+          PY
+      - name: Observe exact transaction and settle only if all canonical gates remain live
+        id: settle
+        env:
+          PYTHONPATH: .
+          ETHEREUM_RPC_URL: https://ethereum-rpc.publicnode.com
+        shell: bash
+        run: |
+          set -euo pipefail
+          python runtime/paid_search_settlement.py \
+            --invoice-record runtime/paid-invoice-record.json \
+            --proof runtime/payment-proof.json \
+            --state-root "$MARKET_STATE" \
+            --rpc-url "$ETHEREUM_RPC_URL" \
+            --readiness COMMERCE_READINESS.json \
+            --witness FOREIGN_AGENT_WITNESS.json \
+            --product products/JANUS.SEARCH.json \
+            --result-out runtime/paid-settlement-result.json \
+            --packet-out runtime/paid-home-packet.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('runtime/paid-settlement-result.json'))
+          o=r.get('observation') or {}
+          print('status='+str(o.get('status') or 'ERROR'))
+          print('confirmations='+str(o.get('confirmations') or 0))
+          print('settled='+('true' if r.get('settled') is True else 'false'))
+          print('purchase_id='+str(r.get('purchase_id') or ''))
+          print('query_id='+str(r.get('query_id') or ''))
+          PY
+      - name: Explain payment not yet admitted
+        if: steps.settle.outputs.settled != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment proof observed with status **${{ steps.settle.outputs.status }}** and **${{ steps.settle.outputs.confirmations }}/12 confirmations**. No purchase or execution was admitted. Re-submit the same proof after 12 confirmations if the status is OBSERVED; QUARANTINED/NOT_FOUND remains fail-closed."
+      - name: Commit settled purchase ledger
+        if: steps.settle.outputs.settled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" add state/commerce
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'PAID_PURCHASE_LEDGER=IDEMPOTENT_REPLAY'
+          else
+            git -C "$MARKET_STATE" commit -m "Paid SEARCH purchase ${{ steps.settle.outputs.purchase_id }}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'PAID_PURCHASE_LEDGER=PASS'
+          fi
+      - name: Publish create-only paid packet to common credentialless HOME outbox
+        if: steps.settle.outputs.settled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          outbox="$RUNNER_TEMP/paid-market-home-outbox"
+          rm -rf "$outbox"
+          git config user.name "JANUS Paid Search Outbox"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin janus/market-home-outbox >/dev/null 2>&1; then
+            git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+            git worktree add -B paid-market-home-outbox "$outbox" origin/janus/market-home-outbox
+          else
+            git worktree add --detach "$outbox" HEAD
+            cd "$outbox"; git switch --orphan paid-market-home-outbox; git rm -rf --ignore-unmatch .; mkdir -p .janus/market-home-outbox; cd - >/dev/null
+          fi
+          target="$outbox/.janus/market-home-outbox/${{ steps.settle.outputs.query_id }}.packet.json"
+          mkdir -p "$(dirname "$target")"
+          if [ -f "$target" ]; then
+            cmp -s runtime/paid-home-packet.json "$target" || { echo 'PAID_HOME_PACKET_CREATE_ONLY_CONFLICT' >&2; exit 2; }
+            echo 'PAID_HOME_PACKET=IDEMPOTENT_REPLAY'
+          else
+            cp runtime/paid-home-packet.json "$target"
+          fi
+          cd "$outbox"
+          git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'PAID_HOME_OUTBOX_COMMIT=NO_CHANGE_REPLAY'
+          else
+            git commit -m "Paid SEARCH HOME packet ${{ steps.settle.outputs.query_id }}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'PAID_HOME_OUTBOX_COMMIT=PASS'
+          fi
+      - name: Confirm accepted purchase without overstating delivery
+        if: steps.settle.outputs.settled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment is **CONFIRMED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed. Paid query \`${{ steps.settle.outputs.query_id }}\` has been published to the credentialless persistent-JANUS HOME outbox. This is **purchase accepted**, not yet delivery: the issue will receive the final immutable HOME result only after JANUS returns and Market reconcile succeeds. Exact retry does not create a second charge or billable execution."
