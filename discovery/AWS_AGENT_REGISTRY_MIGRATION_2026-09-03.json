@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.aws_agent_registry_migration_receipt.v1",
   "recorded_at": "2026-09-03",
-  "status": "MIGRATION_CONTRACT_RECORDED_NO_LIVE_INTEGRATION",
+  "status": "MIGRATION_CONTRACT_RECORDED_NO_LIVE_INTEGRATION_VERSION_GAPS_SEALED",
   "service": "AWS_AGENT_REGISTRY",
   "migration_window": {
     "from_namespace": "bedrock-agentcore",
@@ -38,7 +38,25 @@
       "inlineContent": "data",
       "schemaVersion": "dataSchemaVersion"
     },
-    "registry_schema_validation": "MCP_AND_A2A_OFFICIAL_PROTOCOL_SCHEMAS"
+    "explicit_current_supported_versions": {
+      "mcp_server_json": [
+        "2025-12-11",
+        "2025-10-17",
+        "2025-10-11",
+        "2025-09-29",
+        "2025-09-16",
+        "2025-07-09"
+      ],
+      "mcp_tools": [
+        "2025-11-25",
+        "2025-06-18",
+        "2025-03-26",
+        "2024-11-05"
+      ],
+      "a2a_agent_card": [
+        "0.3"
+      ]
+    }
   },
   "iam_delta": {
     "legacy_full_access_policy": "BedrockAgentCoreFullAccess",
@@ -46,11 +64,16 @@
     "janus_policy_created": false,
     "janus_credentials_required_for_offline_fixture": false
   },
-  "protocol_separation": {
-    "aws_registry_mcp_endpoint_revision": "2025-11-25",
-    "janus_planned_mcp_server_revision": "2026-07-28",
+  "protocol_and_schema_separation": {
+    "aws_registry_mcp_endpoint_protocol_revision": "2025-11-25",
+    "janus_planned_mcp_runtime_revision": "2026-07-28",
+    "aws_latest_listed_mcp_server_json_schema": "2025-12-11",
+    "aws_latest_listed_mcp_tools_schema": "2025-11-25",
+    "janus_planned_a2a_runtime_version": "1.0",
+    "aws_latest_listed_a2a_schema": "0.3",
     "must_not_be_conflated": true,
-    "a2a_janus_target": "1.0"
+    "direct_janus_a2a_1_0_aws_descriptor_compatibility": false,
+    "policy": "DO_NOT_DOWNGRADE_JANUS_TO_FORCE_REGISTRY_COMPATIBILITY"
   },
   "authoritative_sources": [
     "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/registry-mcp-endpoint.html",
@@ -61,6 +84,7 @@
   ],
   "janus_action": {
     "adapter": "discovery/AWS_AGENT_REGISTRY_ADAPTER.json",
+    "descriptor_template": "discovery/AWS_AGENT_REGISTRY_DESCRIPTOR_TEMPLATE.json",
     "fixture": "discovery/fixtures/AWS_AGENT_REGISTRY_MCP_A2A_SHADOW_CONFORMANCE.json",
     "beacon_lane": "AWS_AGENT_REGISTRY",
     "live_publication": "BLOCKED"
@@ -68,6 +92,7 @@
   "truth_boundary": [
     "MIGRATION_RECEIPT != LIVE_MIGRATION",
     "AWS_REGISTRY_SUPPORT != JANUS_LISTING",
+    "GENERAL_SCHEMA_SUPPORT_LANGUAGE != EXPLICIT_CURRENT_VERSION_LIST",
     "DESCRIPTOR_SCHEMA_KNOWN != DESCRIPTOR_RUNTIME_TRUTHFUL",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
   ]
