@@ -6,13 +6,19 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'PUBLIC_SERVICE_BETA.json'
+      - 'MACHINE_INGRESS.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'runtime/public_search_beta.py'
       - 'assets/site.js'
       - 'assets/site.css'
       - 'assets/store-exec-v1.js'
       - 'assets/pricing-v1.js'
       - 'assets/pricing-v1.css'
+      - 'tests/test_public_search_beta.py'
       - 'tests/test_store_pages_execution_contract.py'
       - 'tests/test_pricing_ui_contract.py'
+      - '.github/workflows/r1-public-search-beta-outbox.yml'
       - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
       - '.github/workflows/store-pages-execution-integrity.yml'
   push:
@@ -20,13 +26,19 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'PUBLIC_SERVICE_BETA.json'
+      - 'MACHINE_INGRESS.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'runtime/public_search_beta.py'
       - 'assets/site.js'
       - 'assets/site.css'
       - 'assets/store-exec-v1.js'
       - 'assets/pricing-v1.js'
       - 'assets/pricing-v1.css'
+      - 'tests/test_public_search_beta.py'
       - 'tests/test_store_pages_execution_contract.py'
       - 'tests/test_pricing_ui_contract.py'
+      - '.github/workflows/r1-public-search-beta-outbox.yml'
       - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
       - '.github/workflows/store-pages-execution-integrity.yml'
   workflow_dispatch:
@@ -44,7 +56,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile contract tests
-        run: python -m py_compile tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py
+        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py
+      - name: Verify public SEARCH beta admission and quotas
+        run: PYTHONPATH=. python -m unittest -v tests.test_public_search_beta
       - name: Verify Pages -> Market -> HOME ingress contract
         run: python -m unittest -v tests.test_store_pages_execution_contract
       - name: Verify deterministic dynamic pricing and quote-preview boundary
@@ -56,12 +70,20 @@ jobs:
           readiness=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
           witness=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
           pricing=json.load(open('PRICING.json',encoding='utf-8'))
+          beta=json.load(open('PUBLIC_SERVICE_BETA.json',encoding='utf-8'))
+          ingress=json.load(open('MACHINE_INGRESS.json',encoding='utf-8'))
           assert witness['foreign_agent_witness'] is False
           assert readiness['money_enabled'] is False
           assert readiness['autonomous_purchase_declared'] is False
           assert pricing['status'] == 'PREVIEW_RATECARD_NOT_LIVE'
-          print('PAGES_TO_JANUS_R1_EXECUTION_NERVE=WIRED')
+          assert beta['authority']['money_enabled'] is False
+          assert beta['authority']['command_authority_granted'] is False
+          assert ingress['live_services']['JANUS.SEARCH']['status'] == 'LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW'
+          assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.REPO_AUDIT']['status']
+          assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.DATASET_SCOUT']['status']
+          print('PAGES_TO_JANUS_PUBLIC_SEARCH_BETA=WIRED')
+          print('REPO_AUDIT_DATASET_SCOUT=OWNER_SHADOW_ONLY')
           print('DYNAMIC_PRICING=PREVIEW_RATECARD')
           print('PAYMENTS=LOCKED')
-          print('FOREIGN_AGENT_WITNESS=PENDING_REAL_EXTERNAL_REQUEST')
+          print('FOREIGN_AGENT_WITNESS=PENDING_SEPARATE_GATE')
           PY

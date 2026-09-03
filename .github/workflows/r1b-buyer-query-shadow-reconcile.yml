@@ -152,7 +152,7 @@ jobs:
           assert r['money_enabled'] is False
           assert r['foreign_buyer_witness'] is False
           print('R1B_MARKET_RECONCILE=PASS')
-          print('R1B_FOREIGN_BUYER_WITNESS=FALSE_SELF_OWNER_SHADOW')
+          print('R1B_FOREIGN_AGENT_WITNESS=NOT_ADJUDICATED_BY_HOME_RESPONSE')
           PY
 
       - name: Commit create-only receipt to Market state
@@ -225,7 +225,7 @@ jobs:
           print(f"- home_response_hash: `{r['home_response_hash']}`")
           print('- money_enabled: `false`')
           print('- external_effect_authorized: `false`')
-          print('- foreign_buyer_witness: `false` — this is the owner shadow witness')
+          print('- foreign_agent_witness: `NOT_ADJUDICATED_BY_THIS_HOME_RESPONSE_RECEIPT`')
           print('\n**JANUS response**\n')
           print(receipt['response_text'])
           print('\n`Market -> credentialless HOME pull -> Activator -> existing conversation tissue -> HRAiN -> RETURN HOME -> credentialless Market reconcile`')

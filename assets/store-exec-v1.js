@@ -10,21 +10,24 @@
       titlePrefix: '[JANUS R1B BUYER QUERY SHADOW]',
       marker: 'JANUS_BUYER_QUERY_SHADOW_JSON',
       schema: 'janus.machine_market.buyer_query_shadow_request.v1',
-      lane: 'PERSISTENT_JANUS_CONVERSATION'
+      lane: 'PERSISTENT_JANUS_CONVERSATION',
+      publicBeta: true
     },
     'JANUS.REPO_AUDIT': {
       label: 'JANUS.REPO_AUDIT',
       titlePrefix: '[JANUS REPO AUDIT SHADOW]',
       marker: 'JANUS_REPO_AUDIT_SHADOW_JSON',
       schema: 'janus.machine_market.repo_audit_pages_request.v1',
-      lane: 'PERSISTENT_JANUS_REPOSITORY_AUDIT'
+      lane: 'PERSISTENT_JANUS_REPOSITORY_AUDIT',
+      publicBeta: false
     },
     'JANUS.DATASET_SCOUT': {
       label: 'JANUS.DATASET_SCOUT',
       titlePrefix: '[JANUS DATASET SCOUT SHADOW]',
       marker: 'JANUS_DATASET_SCOUT_SHADOW_JSON',
       schema: 'janus.machine_market.dataset_scout_pages_request.v1',
-      lane: 'PERSISTENT_JANUS_DATASET_SCOUT'
+      lane: 'PERSISTENT_JANUS_DATASET_SCOUT',
+      publicBeta: false
     }
   };
 
@@ -160,16 +163,20 @@
   function issueBody(item, request) {
     const svc = LIVE_HOME_SERVICES[item.sku];
     const payload = canonicalPayloadForWorkflow(item, request);
+    const ingressNote = svc.publicBeta
+      ? 'JANUS.SEARCH is open as a bounded zero-price GitHub-authenticated public beta. External requests are server-normalized to one turn, 4 KB input / 6 KB output and quota limits before entering the HOME outbox. Repository-owner requests continue through the existing owner-shadow contract.'
+      : 'This service currently uses the repository-owner shadow ingress. It is not yet open as a public service.';
     return [
       `## JANUS MACHINE MARKET · ${svc.label} task handoff to the running JANUS`,
       '',
-      'This issue is the current zero-price owner-shadow ingress from GitHub Pages into the already running persistent JANUS HOME.',
+      ingressNote,
       '',
       'Route:',
       '`Pages -> Market issue -> create-only Market outbox -> credentialless HOME pull -> Activator -> persistent JANUS organ -> HOME response -> credentialless Market reconcile -> this issue`',
       '',
       `- service: \`${svc.label}\``,
       `- lane: \`${svc.lane}\``,
+      `- public_zero_price_beta: \`${svc.publicBeta ? 'true' : 'false'}\``,
       '- price: `0`',
       '- payment_required: `false`',
       '- money_enabled: `false`',
@@ -181,7 +188,7 @@
       JSON.stringify(payload, null, 2),
       `${svc.marker} -->`,
       '',
-      '`BUYER QUERY != COMMAND · PURCHASE GRANT != EXECUTION AUTHORITY`'
+      '`PUBLIC INTAKE != COMPLETED SERVICE · BUYER QUERY != COMMAND · PURCHASE GRANT != EXECUTION AUTHORITY`'
     ].join('\n');
   }
 
@@ -239,9 +246,14 @@
     primary.disabled = false;
 
     if (items.length === 1) {
-      primary.textContent = `SEND ${items[0].sku} TO RUNNING JANUS · R1`;
+      const item = items[0];
+      const svc = LIVE_HOME_SERVICES[item.sku];
+      primary.textContent = svc.publicBeta
+        ? `SEND ${item.sku} · ZERO-PRICE PUBLIC BETA`
+        : `SEND ${item.sku} · OWNER SHADOW`;
       primary.onclick = openJanusTask;
-      if (rule) rule.innerHTML = `<b>LIVE HOME SERVICE:</b> ${items[0].sku} is published create-only to the Market outbox, pulled credentiallessly by persistent JANUS HOME, admitted by the existing bounded organ, and reconciled back to the source issue. Payments and command authority remain disabled.`;
+      if (rule && svc.publicBeta) rule.innerHTML = `<b>PUBLIC BETA:</b> ${item.sku} can be submitted by a GitHub-authenticated external requester. The Market server clamps it to one bounded turn, writes a create-only packet, persistent JANUS HOME answers it, and Market returns the verified response to the same issue. Payments, command authority and external effects remain disabled.`;
+      else if (rule) rule.innerHTML = `<b>OWNER SHADOW:</b> ${item.sku} uses the proven Market -> persistent JANUS HOME route but is not open to external requesters yet.`;
     } else if (items.length > 1) {
       primary.textContent = 'SPLIT LIVE SERVICES INTO SEPARATE TASKS';
       primary.disabled = true;
@@ -255,24 +267,30 @@
       primary.textContent = 'CURRENT SKU IS PREVIEW-ONLY';
       primary.disabled = true;
       primary.onclick = null;
-      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Live R1 services: JANUS.SEARCH, JANUS.REPO_AUDIT, JANUS.DATASET_SCOUT.';
+      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Public now: JANUS.SEARCH zero-price beta. Owner-shadow only: JANUS.REPO_AUDIT and JANUS.DATASET_SCOUT.';
     }
   };
 
   function patchVisibleTruth() {
     const truthbar = q('#truthbar');
+    if (truthbar && !truthbar.querySelector('.truth.public-search-beta')) {
+      const chip = document.createElement('span');
+      chip.className = 'truth live public-search-beta';
+      chip.innerHTML = 'SEARCH <b>PUBLIC BETA</b>';
+      truthbar.insertBefore(chip, truthbar.children[2] || null);
+    }
     if (truthbar && !truthbar.querySelector('.truth.home-bridge')) {
       const chip = document.createElement('span');
       chip.className = 'truth live home-bridge';
       chip.innerHTML = 'JANUS HOME <b>3 R1 LANES</b>';
-      truthbar.insertBefore(chip, truthbar.children[2] || null);
+      truthbar.insertBefore(chip, truthbar.children[3] || null);
     }
     const status = q('#status .status-grid');
     if (status && !status.querySelector('[data-r1d-home]')) {
       const card = document.createElement('article');
       card.className = 'panel';
       card.dataset.r1dHome = 'true';
-      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>Pages can route bounded SEARCH, REPO_AUDIT and DATASET_SCOUT requests through the public Market outbox into the same persistent JANUS HOME resident and reconcile results back to GitHub.</p><b class="status-big cyan">3 R1 LANES</b>';
+      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>JANUS.SEARCH is the first GitHub-authenticated zero-price public beta routed to persistent JANUS HOME. REPO_AUDIT and DATASET_SCOUT remain owner-shadow until a real external SEARCH roundtrip is sealed.</p><b class="status-big cyan">SEARCH BETA</b>';
       status.prepend(card);
     }
   }

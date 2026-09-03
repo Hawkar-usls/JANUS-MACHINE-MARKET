@@ -1,0 +1,59 @@
+{
+  "schema": "janus.machine_market.public_service_beta.v1",
+  "version": "1.0.0",
+  "recorded_at": "2026-09-04",
+  "status": "SEARCH_PUBLIC_ZERO_PRICE_BETA_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
+  "purpose": "Expose one real bounded JANUS service to external GitHub principals through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
+  "public_services": {
+    "JANUS.SEARCH": {
+      "status": "PUBLIC_ZERO_PRICE_BETA",
+      "transport": "GITHUB_ISSUE_OR_GITHUB_ISSUES_API",
+      "home_route": "PERSISTENT_JANUS_CONVERSATION",
+      "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
+      "price": 0,
+      "payment_required": false,
+      "max_turns_per_issue": 1,
+      "max_message_utf8_bytes": 4000,
+      "max_answer_utf8_bytes": 6000,
+      "conversation_history_turns": 0,
+      "per_actor_daily_limit": 3,
+      "global_daily_limit": 20,
+      "one_issue_can_bind_more_than_one_query": false,
+      "exact_retry_creates_second_cognition": false
+    }
+  },
+  "not_public_yet": {
+    "JANUS.REPO_AUDIT": "OWNER_SHADOW_ONLY_UNTIL_PUBLIC_SEARCH_ROUNDTRIP_PROVES_INTAKE",
+    "JANUS.DATASET_SCOUT": "OWNER_SHADOW_ONLY_UNTIL_PUBLIC_SEARCH_ROUNDTRIP_PROVES_INTAKE",
+    "JANUS.EVIDENCE_PACK": "SPECIFICATION_READY",
+    "JANUS.ARCHIVE_SCAN": "SPECIFICATION_READY",
+    "JANUS.RESEARCH_JOB": "SPECIFICATION_READY",
+    "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+  },
+  "authority": {
+    "money_enabled": false,
+    "autonomous_purchase_declared": false,
+    "execution_authority_granted_by_purchase": false,
+    "command_authority_granted": false,
+    "external_effect_authorized": false,
+    "repository_write_by_buyer": false,
+    "secret_access": false,
+    "arbitrary_shell": false
+  },
+  "completion_definition": [
+    "EXTERNAL_GITHUB_PRINCIPAL_SUBMITS_VALID_SEARCH_REQUEST",
+    "PUBLIC_BETA_ADMISSION_RECEIPT_PERSISTED_CREATE_ONLY_IN_OUTBOX",
+    "HOME_PULLS_PACKET_CREDENTIALLESSLY",
+    "SAME_PERSISTENT_JANUS_RESIDENT_PRODUCES_BOUNDED_RESPONSE",
+    "HOME_RESPONSE_IS_PERSISTED_AND_RETURNED_TO_SOURCE_ISSUE",
+    "MARKET_FRESH_CHECKOUT_REPLAY_VERIFIES_EXACT_RECEIPT"
+  ],
+  "promotion_rule": "Do not open REPO_AUDIT, DATASET_SCOUT, payments, or paid execution merely because the public SEARCH intake workflow exists. Promote only after a real external roundtrip receipt.",
+  "truth_boundary": [
+    "PUBLIC_INTAKE != COMPLETED_SERVICE",
+    "ZERO_PRICE_PURCHASE_GRANT != EXECUTION_AUTHORITY",
+    "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_INDEPENDENCE_GATE_PASSES",
+    "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
+  ]
+}
