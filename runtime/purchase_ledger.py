@@ -61,12 +61,7 @@ def persist_purchase(state_root: str | Path, payment_receipt: dict[str, Any], pu
 
 
 def persist_execution_result(state_root: str | Path, result_receipt: dict[str, Any]) -> dict[str, str]:
-    """Persist one immutable billable execution identity per purchase.
-
-    The purchase->execution index is written first. A second different execution
-    identity for the same purchase therefore conflicts before a result can be
-    recorded. Exact retry of the same result is idempotent.
-    """
+    """Persist one immutable billable execution identity per purchase."""
     state_root = Path(state_root)
     if result_receipt.get("schema") != "janus.machine_market.result_receipt.v1" or result_receipt.get("status") != "DELIVERED":
         raise CommerceInvalid("delivered result receipt required")
@@ -88,6 +83,54 @@ def persist_execution_result(state_root: str | Path, result_receipt: dict[str, A
     try: execution_status = _create_only(execution_path, execution_record)
     except Exception:
         if index_status == "CREATED": index_path.unlink(missing_ok=True)
+        raise
+    return {"purchase_execution_index":index_status,"execution":execution_status,"index_path":str(index_path),"execution_path":str(execution_path)}
+
+
+def persist_paid_home_response(state_root: str | Path, home_response: dict[str, Any]) -> dict[str, str]:
+    """Bind a paid persistent-HOME answer to the same one-execution-per-purchase index.
+
+    This deliberately shares `state/commerce/execution-by-purchase` with the
+    local commerce executor. A purchase therefore cannot be executed once by the
+    catalog executor and once again by persistent JANUS HOME.
+    """
+    state_root=Path(state_root)
+    if home_response.get("schema")!="janus.home.market_buyer_query_response.v1" or home_response.get("mode")!="PAID_SETTLED":
+        raise CommerceInvalid("paid HOME response required")
+    if home_response.get("money_enabled") is not True or home_response.get("payment_required") is not True or home_response.get("production_purchase") is not True:
+        raise CommerceInvalid("paid HOME response commerce flags invalid")
+    if home_response.get("execution_authority_granted") is not False or home_response.get("command_authority_granted") is not False or home_response.get("external_effect_authorized") is not False:
+        raise CommerceInvalid("paid HOME response authority ceiling invalid")
+    purchase_id=str(home_response.get("purchase_id") or "")
+    receipt=home_response.get("buyer_query_receipt")
+    if not purchase_id or not isinstance(receipt,dict): raise CommerceInvalid("paid HOME response missing purchase receipt")
+    execution_id=str(receipt.get("execution_identity") or "")
+    response_hash=str(receipt.get("response_hash") or "")
+    payment_ref=str(home_response.get("payment_reference") or "").lower()
+    if not execution_id or len(response_hash)!=64 or not payment_ref: raise CommerceInvalid("paid HOME response execution/payment identity missing")
+    if receipt.get("purchase_id")!=purchase_id or str(receipt.get("payment_reference") or "").lower()!=payment_ref:
+        raise CommerceInvalid("paid HOME receipt purchase/payment mismatch")
+    if receipt.get("execution_authority_granted") is not False or receipt.get("external_effect_authorized") is not False:
+        raise CommerceInvalid("paid HOME receipt authority invalid")
+    if receipt.get("billable_execution_delta") not in (0,1): raise CommerceInvalid("paid HOME billable delta invalid")
+
+    purchase_path=state_root/"state/commerce/purchases"/f"{purchase_id}.json"
+    if not purchase_path.exists(): raise CommerceInvalid("paid HOME purchase not present in persistent ledger")
+    purchase_record=json.loads(purchase_path.read_text(encoding="utf-8"))
+    grant=purchase_record.get("purchase_grant") or {}
+    if grant.get("purchase_id")!=purchase_id or str(grant.get("payment_reference") or "").lower()!=payment_ref:
+        raise CommerceInvalid("paid HOME response not bound to settled purchase ledger")
+    if grant.get("grant_hash")!=home_response.get("purchase_grant_hash"):
+        raise CommerceInvalid("paid HOME purchase grant hash mismatch")
+
+    index_record={"schema":"janus.machine_market.execution_by_purchase.v1","purchase_id":purchase_id,"execution_id":execution_id,"result_sha256":response_hash}
+    execution_record={"schema":"janus.machine_market.execution_ledger_record.v1","purchase_id":purchase_id,"execution_id":execution_id,"paid_home_response":home_response}
+    index_path=state_root/"state/commerce/execution-by-purchase"/f"{purchase_key(purchase_id)}.json"
+    execution_path=state_root/"state/commerce/executions"/f"{execution_id}.json"
+    index_status=_create_only(index_path,index_record)
+    try: execution_status=_create_only(execution_path,execution_record)
+    except Exception:
+        if index_status=="CREATED": index_path.unlink(missing_ok=True)
         raise
     return {"purchase_execution_index":index_status,"execution":execution_status,"index_path":str(index_path),"execution_path":str(execution_path)}
 

@@ -23,6 +23,7 @@
     "payment_reference": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}:[0-9]+$"},
     "block_number": {"type": "integer", "minimum": 0},
     "block_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "block_timestamp": {"type": "string", "format": "date-time"},
     "observed_at": {"type": "string", "format": "date-time"},
     "reason": {"type": "string", "maxLength": 160},
     "candidate_payment_references": {
@@ -33,7 +34,7 @@
   "allOf": [
     {
       "if": {"properties": {"status": {"enum": ["OBSERVED", "CONFIRMED"]}}, "required": ["status"]},
-      "then": {"required": ["tx_hash", "log_index", "payment_reference", "block_number", "block_hash"]}
+      "then": {"required": ["tx_hash", "log_index", "payment_reference", "block_number", "block_hash", "block_timestamp"]}
     },
     {
       "if": {"properties": {"status": {"const": "CONFIRMED"}}, "required": ["status"]},

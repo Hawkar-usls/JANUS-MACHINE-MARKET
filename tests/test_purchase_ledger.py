@@ -14,7 +14,7 @@ NOW=datetime(2026,8,31,18,0,tzinfo=timezone.utc)
 def request(): return {"schema":"janus.machine_market.request.v1","sku":"JANUS.SEARCH","input":{"query":"ledger"}}
 def quote(): return build_quote(request=request(),sku="JANUS.SEARCH",amount_usdt_micros=100_000,receiving_address=RECEIVER,expires_at="2026-08-31T19:00:00+00:00",nonce="ledger-nonce",policy_version="v1")
 def receipt():
-    q=quote(); return {"schema":"janus.machine_market.payment_receipt.v1","status":"CONFIRMED","quote_hash":q["quote_hash"],"tx_hash":TX,"log_index":2,"payment_reference":REF,"chain_id":1,"token_contract":USDT_ETHEREUM,"to":RECEIVER,"amount_usdt_micros":100_000,"confirmations":12,"required_confirmations":12}
+    q=quote(); return {"schema":"janus.machine_market.payment_receipt.v1","status":"CONFIRMED","quote_hash":q["quote_hash"],"tx_hash":TX,"log_index":2,"payment_reference":REF,"chain_id":1,"token_contract":USDT_ETHEREUM,"to":RECEIVER,"amount_usdt_micros":100_000,"confirmations":12,"required_confirmations":12,"block_timestamp":"2026-08-31T18:30:00+00:00"}
 def grant(): return admit_purchase(readiness={"money_enabled":True,"autonomous_purchase_declared":True},foreign_witness={"foreign_agent_witness":True},product={"sku":"JANUS.SEARCH","machine_purchase":True},request=request(),quote=quote(),payment_receipt=receipt(),now=NOW)
 def result_receipt(execution_id="exe-1",result_hash="1"*64):
     p=grant()

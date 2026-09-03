@@ -1,49 +1,76 @@
 {
   "schema": "janus.machine_market.commerce_readiness.v1",
-  "status": "PREPARED_BLOCKED_BY_FOREIGN_AGENT_WITNESS",
+  "status": "PAID_SEARCH_PIPELINE_ARMED_BLOCKED_BY_FOREIGN_AGENT_WITNESS",
   "money_enabled": false,
   "autonomous_purchase_declared": false,
-  "reason": "FOREIGN_AGENT_WITNESS.json remains false; live payment acceptance must stay fail-closed until the independent requester persistent receipt exists.",
+  "reason": "The paid JANUS.SEARCH invoice, exact Ethereum-USDT transaction observer, create-only purchase ledger, PAID_SETTLED persistent-HOME route and paid response reconcile are implemented and CI-gated. Live invoices remain fail-closed because FOREIGN_AGENT_WITNESS.json is still false and product machine_purchase is still false.",
   "payment_rail": {
-    "network": "ethereum-mainnet", "chain_id": 1, "asset": "USDT",
-    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7", "decimals": 6,
+    "network": "ethereum-mainnet",
+    "chain_id": 1,
+    "asset": "USDT",
+    "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "decimals": 6,
     "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
-    "state": "DECLARED_NOT_CHECKOUT", "required_confirmations": 12,
-    "payment_identity": "transaction_hash + ERC20_log_index", "unsolicited_payment_grants": "NOTHING"
+    "state": "CHECKOUT_ARMED_GATE_CLOSED",
+    "required_confirmations": 12,
+    "payment_identity": "transaction_hash + ERC20_log_index",
+    "quote_expiry_rule": "TRANSFER_CANONICAL_BLOCK_TIMESTAMP_MUST_BE_AT_OR_BEFORE_QUOTE_EXPIRY; CONFIRMATIONS_MAY_COMPLETE_LATER",
+    "unsolicited_payment_grants": "NOTHING"
   },
-  "authority_chain": ["OFFER", "REQUEST", "QUOTE", "PAYMENT_RECEIPT", "PURCHASE_GRANT", "POLICY_SCOPE_GATES", "EXECUTION_GRANT", "RESULT", "RESULT_RECEIPT"],
+  "authority_chain": [
+    "OFFER",
+    "REQUEST",
+    "QUOTE",
+    "PAYMENT_RECEIPT",
+    "PURCHASE_GRANT",
+    "POLICY_SCOPE_GATES",
+    "PAID_SETTLED_HOME_PACKET",
+    "PERSISTENT_JANUS_HOME",
+    "RESULT",
+    "RESULT_RECEIPT"
+  ],
   "prepared_components": {
     "quote_and_purchase_authority": "runtime/commerce_authority.py",
     "ethereum_usdt_observer": "runtime/ethereum_usdt_observer.py",
+    "paid_search_checkout": "runtime/paid_search_checkout.py",
+    "paid_search_settlement": "runtime/paid_search_settlement.py",
+    "paid_search_home_packet": "runtime/paid_search_packet.py",
     "persistent_purchase_and_execution_ledger": "runtime/purchase_ledger.py",
+    "paid_home_response_reconcile": "runtime/r1b_home_response_reconcile.py",
     "payment_receipt_schema": "schemas/payment-receipt.schema.json",
     "purchase_grant_schema": "schemas/grant.schema.json",
-    "bounded_search_execution_grant_schema": "schemas/execution-grant.schema.json",
-    "bounded_search_execution_bridge": "runtime/commerce_search_executor.py",
-    "order_execution_matrix": "ORDER_EXECUTION_MATRIX.json"
+    "market_home_packet_schema": "schemas/market-home-buyer-query-packet.schema.json",
+    "issue_checkout_workflow": ".github/workflows/paid-search-checkout.yml",
+    "paid_home_reconcile_workflow": ".github/workflows/paid-home-reconcile-integrity.yml",
+    "home_acceptor_repository": "Hawkar-usls/Hawkar-usls",
+    "home_acceptor_merge": "b2c147e1a9a00d175853ca68f040034057f0d087"
   },
   "required_live_gates": {
     "foreign_agent_witness": false,
     "money_enabled_policy": false,
     "product_machine_purchase": false,
-    "transaction_endpoint": "NOT_ESTABLISHED",
-    "payment_observer": "IMPLEMENTED_NOT_SCHEDULED",
-    "persistent_purchase_ledger": "IMPLEMENTED_REQUIRES_MARKET_STATE_MOUNT_AND_SHARED_MUTEX",
-    "execution_grant_bridge": "JANUS.SEARCH_IMPLEMENTED_NOT_CONNECTED_TO_LIVE_ACTIVATOR",
-    "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE",
-    "fresh_checkout_replay": "REQUIRED"
+    "transaction_endpoint": "GITHUB_ISSUE_INVOICE_AND_TX_PROOF_ENDPOINT_ARMED_GATE_CLOSED",
+    "payment_observer": "TX_SPECIFIC_READ_ONLY_ETHEREUM_RPC_IMPLEMENTED_CI_GATED",
+    "persistent_purchase_ledger": "IMPLEMENTED_CREATE_ONLY_SHARED_GLOBAL_MUTEX",
+    "paid_home_packet": "IMPLEMENTED_SELF_VERIFYING_PAID_SETTLED",
+    "persistent_janus_home_acceptor": "MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID",
+    "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE_SHARED_WITH_LOCAL_EXECUTOR",
+    "fresh_checkout_replay": "REQUIRED_ON_FIRST_REAL_PAID_WITNESS",
+    "first_real_paid_delivery": "PENDING"
   },
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
     "1 transaction_hash + 1 ERC20_log_index => <= 1 accepted purchase grant",
-    "purchase grant never equals execution authority",
-    "exact retry returns prior state/result and creates no second charge"
+    "purchase grant never equals command or execution authority",
+    "free and paid HOME outbox writers share janus-machine-market-state-writer mutex",
+    "exact retry returns prior state/result and creates no second charge or billable execution"
   ],
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
     "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
   },
-  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT",
+  "next_gate": "GENUINE_EXTERNAL_PRINCIPAL_COMPLETES_PUBLIC_PERSISTENT_HOME_ROUNDTRIP_THEN_CANONICAL_FOREIGN_WITNESS_PROMOTION_BEFORE_FIRST_LIVE_INVOICE",
   "policy": "PAYMENT_POLICY.md",
+  "paid_terms": "docs/PAID_SEARCH_TERMS.md",
   "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json"
 }

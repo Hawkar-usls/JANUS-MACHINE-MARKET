@@ -34,7 +34,7 @@ def payment(req):
         "schema": "janus.machine_market.payment_receipt.v1", "status": "CONFIRMED", "quote_hash": q["quote_hash"],
         "tx_hash": TX, "log_index": 2, "payment_reference": f"{TX}:2", "chain_id": 1,
         "token_contract": USDT_ETHEREUM, "to": RECEIVER, "amount_usdt_micros": 50_000,
-        "confirmations": 12, "required_confirmations": 12,
+        "confirmations": 12, "required_confirmations": 12, "block_timestamp": "2026-08-31T18:30:00+00:00",
     }
 
 

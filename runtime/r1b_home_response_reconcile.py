@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Verify and persist HOME -> JANUS MACHINE MARKET buyer-query responses.
 
-R1D GitHub Pages tasks use the existing buyer-query nerve; this verifier remains
-the authoritative return gate. A browser/UI cannot manufacture delivery: the
-HOME response must bind the persistent resident, HRAiN context, Market packet,
-credentialless pull receipt, and zero-authority ceiling before Market state or
-the source issue is updated.
+The same return gate serves zero-price and paid settled buyer queries. A paid
+response must already bind a settled purchase in the persistent commerce ledger
+and is atomically indexed as the purchase's single execution identity.
 """
 from __future__ import annotations
 
@@ -16,11 +14,15 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from runtime.purchase_ledger import persist_paid_home_response
+
 HOME_RESPONSE_SCHEMA = "janus.home.market_buyer_query_response.v1"
 BUYER_RECEIPT_SCHEMA = "janus.machine_market.buyer_query_receipt.v1"
 TERMINAL_RESPONSE_SCHEMA = "janus.terminal.response.v1"
 MARKET_REPOSITORY = "Hawkar-usls/JANUS-MACHINE-MARKET"
 HOME_REPOSITORY = "Hawkar-usls/Hawkar-usls"
+ZERO_MODE = "ZERO_PRICE_SHADOW"
+PAID_MODE = "PAID_SETTLED"
 
 
 class HomeResponseError(ValueError):
@@ -52,7 +54,13 @@ def verify_home_response(response: dict[str, Any]) -> bool:
         return False
     if outer.get("market_repository") != MARKET_REPOSITORY or outer.get("home_repository") != HOME_REPOSITORY:
         return False
-    if outer.get("mode") != "ZERO_PRICE_SHADOW" or outer.get("money_enabled") is not False:
+    mode=outer.get("mode")
+    if mode not in (ZERO_MODE,PAID_MODE):
+        return False
+    paid=mode==PAID_MODE
+    if outer.get("money_enabled") is not paid:
+        return False
+    if outer.get("payment_required",False) is not paid or outer.get("production_purchase",False) is not paid:
         return False
     if outer.get("same_resident_required") is not True or outer.get("exact_retry_is_second_cognition") is not False:
         return False
@@ -96,12 +104,21 @@ def verify_home_response(response: dict[str, Any]) -> bool:
         return False
     if receipt.get("memory_source_commit") != terminal.get("memory_source_commit"):
         return False
-    if receipt.get("billable_execution_delta") != 0:
-        return False
     if receipt.get("execution_authority_granted") is not False or receipt.get("external_effect_authorized") is not False:
         return False
     if receipt.get("scientific_evidence_authority_granted") is not False or receipt.get("world_truth_authority_granted") is not False:
         return False
+    if paid:
+        payment_ref=str(outer.get("payment_reference") or "").lower()
+        if not payment_ref or str(receipt.get("payment_reference") or "").lower()!=payment_ref:
+            return False
+        if receipt.get("billable_execution_delta") not in (0,1):
+            return False
+    else:
+        if outer.get("payment_reference") is not None or receipt.get("payment_reference") is not None:
+            return False
+        if receipt.get("billable_execution_delta") != 0:
+            return False
     if terminal.get("command_authority_granted") is not False or terminal.get("external_effect_authorized") is not False:
         return False
     if terminal.get("physical_runtime_effect_authorized") is not False:
@@ -129,6 +146,7 @@ def reconcile_response(*, response_path: Path, state_root: Path) -> dict[str, An
     require(verify_home_response(response), "R1B_HOME_RESPONSE_INVALID")
     qid = str(response["query_id"])
     purchase_id = str(response["purchase_id"])
+    paid=response["mode"]==PAID_MODE
     receipts = state_root / "state/r1b-buyer-query/receipts"
     receipts.mkdir(parents=True, exist_ok=True)
     target = receipts / f"{qid}.json"
@@ -138,21 +156,28 @@ def reconcile_response(*, response_path: Path, state_root: Path) -> dict[str, An
     else:
         shutil.copyfile(response_path, target)
         new = True
+
+    commerce_ledger=None
+    if paid:
+        commerce_ledger=persist_paid_home_response(state_root,response)
+
     head = {
         "schema": "janus.machine_market.r1b_buyer_query_head.v1",
-        "status": "R1B_ZERO_PRICE_HOME_RESPONSE_RECONCILED",
+        "status": "R1B_PAID_HOME_RESPONSE_RECONCILED" if paid else "R1B_ZERO_PRICE_HOME_RESPONSE_RECONCILED",
+        "mode":response["mode"],
         "query_id": qid,
         "query_hash": response["query_hash"],
         "purchase_id": purchase_id,
         "purchase_grant_hash": response["purchase_grant_hash"],
+        "payment_reference":response.get("payment_reference"),
         "resident_uuid": response["buyer_query_receipt"]["resident_uuid"],
         "model_digest": response["buyer_query_receipt"]["model_digest"],
         "file_fabric_digest": response["buyer_query_receipt"]["file_fabric_digest"],
         "execution_identity": response["buyer_query_receipt"]["execution_identity"],
         "response_hash": response["buyer_query_receipt"]["response_hash"],
         "home_response_hash": response["home_response_hash"],
-        "money_enabled": False,
-        "production_purchase": False,
+        "money_enabled": paid,
+        "production_purchase": paid,
         "external_effect_authorized": False,
         "foreign_buyer_witness": False,
     }
@@ -161,15 +186,19 @@ def reconcile_response(*, response_path: Path, state_root: Path) -> dict[str, An
     head_path.write_text(json.dumps(head, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return {
         "schema": "janus.machine_market.r1b_reconcile_result.v1",
+        "mode":response["mode"],
         "query_id": qid,
         "purchase_id": purchase_id,
+        "payment_reference":response.get("payment_reference"),
         "resident_uuid": head["resident_uuid"],
         "execution_identity": head["execution_identity"],
         "response_hash": head["response_hash"],
         "home_response_hash": head["home_response_hash"],
         "source_issue_number": (response.get("return_route") or {}).get("source_issue_number"),
         "new_receipt": new,
-        "money_enabled": False,
+        "money_enabled": paid,
+        "production_purchase":paid,
+        "commerce_execution_ledger":commerce_ledger,
         "foreign_buyer_witness": False,
     }
 

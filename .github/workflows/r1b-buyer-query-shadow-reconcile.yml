@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'runtime/r1b_home_response_reconcile.py'
+      - 'runtime/purchase_ledger.py'
       - 'tests/test_r1b_home_response_reconcile.py'
+      - 'tests/test_r1b_paid_home_response_reconcile.py'
       - '.github/workflows/r1b-buyer-query-shadow-reconcile.yml'
   push:
     branches: [main]
     paths:
       - 'runtime/r1b_home_response_reconcile.py'
+      - 'runtime/purchase_ledger.py'
       - 'tests/test_r1b_home_response_reconcile.py'
+      - 'tests/test_r1b_paid_home_response_reconcile.py'
       - '.github/workflows/r1b-buyer-query-shadow-reconcile.yml'
   workflow_dispatch:
   schedule:
@@ -35,17 +39,20 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest
       - name: Compile and test HOME response verifier
         run: |
-          python -m py_compile runtime/r1b_home_response_reconcile.py tests/test_r1b_home_response_reconcile.py
-          PYTHONPATH=. python -m pytest -q tests/test_r1b_home_response_reconcile.py
+          python -m py_compile runtime/r1b_home_response_reconcile.py runtime/purchase_ledger.py tests/test_r1b_home_response_reconcile.py tests/test_r1b_paid_home_response_reconcile.py
+          PYTHONPATH=. python -m pytest -q tests/test_r1b_home_response_reconcile.py tests/test_r1b_paid_home_response_reconcile.py
       - name: Enforce response authority ceiling
         run: |
           python - <<'PY'
-          from runtime.r1b_home_response_reconcile import HOME_RESPONSE_SCHEMA, MARKET_REPOSITORY, HOME_REPOSITORY
+          from runtime.r1b_home_response_reconcile import HOME_RESPONSE_SCHEMA, MARKET_REPOSITORY, HOME_REPOSITORY, PAID_MODE, ZERO_MODE
           assert HOME_RESPONSE_SCHEMA == 'janus.home.market_buyer_query_response.v1'
           assert MARKET_REPOSITORY == 'Hawkar-usls/JANUS-MACHINE-MARKET'
           assert HOME_REPOSITORY == 'Hawkar-usls/Hawkar-usls'
+          assert ZERO_MODE == 'ZERO_PRICE_SHADOW'
+          assert PAID_MODE == 'PAID_SETTLED'
           print('R1B_HOME_RESPONSE_VERIFIER=PASS')
-          print('R1B_MONEY_ENABLED=FALSE_BY_CONTRACT')
+          print('R1B_ZERO_AND_PAID_MODES=PASS')
+          print('R1B_PAYMENT_COMMAND_AUTHORITY=FALSE')
           PY
 
   reconcile:
@@ -110,7 +117,7 @@ jobs:
                   raise SystemExit(f'R1B_INVALID_HOME_RESPONSE:{path.name}')
               target=state/f"{value['query_id']}.json"
               if not target.exists():
-                  chosen={'path':str(path),'query_id':value['query_id'],'home_response_hash':value['home_response_hash']}
+                  chosen={'path':str(path),'query_id':value['query_id'],'home_response_hash':value['home_response_hash'],'mode':value['mode']}
                   break
               if target.read_bytes() != path.read_bytes():
                   raise SystemExit(f'R1B_EXISTING_RECEIPT_CONFLICT:{value["query_id"]}')
@@ -123,6 +130,7 @@ jobs:
           print('found=' + ('true' if s.get('found') else 'false'))
           print('path=' + str(c.get('path') or ''))
           print('query_id=' + str(c.get('query_id') or ''))
+          print('mode=' + str(c.get('mode') or ''))
           PY
           echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
 
@@ -149,13 +157,23 @@ jobs:
           import json
           r=json.load(open('runtime/r1b-reconcile-result.json'))
           assert r['new_receipt'] is True
-          assert r['money_enabled'] is False
+          paid=r['mode']=='PAID_SETTLED'
+          assert r['money_enabled'] is paid
+          assert r['production_purchase'] is paid
           assert r['foreign_buyer_witness'] is False
+          if paid:
+              assert r['payment_reference']
+              assert r['commerce_execution_ledger']['purchase_execution_index']=='CREATED'
+              assert r['commerce_execution_ledger']['execution']=='CREATED'
+          else:
+              assert r['payment_reference'] is None
+              assert r['commerce_execution_ledger'] is None
           print('R1B_MARKET_RECONCILE=PASS')
+          print('R1B_MARKET_RECONCILE_MODE=' + r['mode'])
           print('R1B_FOREIGN_AGENT_WITNESS=NOT_ADJUDICATED_BY_HOME_RESPONSE')
           PY
 
-      - name: Commit create-only receipt to Market state
+      - name: Commit create-only buyer and commerce receipts atomically to Market state
         if: steps.select.outputs.found == 'true'
         shell: bash
         run: |
@@ -164,6 +182,7 @@ jobs:
           git config user.name "JANUS Machine Market R1B State"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state/r1b-buyer-query
+          if [ -d state/commerce ]; then git add state/commerce; fi
           if git diff --cached --quiet; then
             echo 'R1B_MARKET_STATE_COMMIT=NO_CHANGE_EXACT_RETRY'
           else
@@ -172,7 +191,7 @@ jobs:
             echo 'R1B_MARKET_STATE_COMMIT=PASS'
           fi
 
-      - name: Fresh-checkout verify exact Market receipt
+      - name: Fresh-checkout verify exact Market receipt and paid execution index
         if: steps.select.outputs.found == 'true'
         env:
           PYTHONPATH: .
@@ -187,6 +206,7 @@ jobs:
           MARKET_REPLAY="$replay" python - <<'PY'
           import json, os
           from pathlib import Path
+          from runtime.purchase_ledger import purchase_key
           from runtime.r1b_home_response_reconcile import verify_home_response
           response=json.load(open(os.environ['RESPONSE_PATH']))
           root=Path(os.environ['MARKET_REPLAY'])
@@ -195,12 +215,23 @@ jobs:
           value=json.loads(stored.read_text(encoding='utf-8'))
           assert verify_home_response(value)
           head=json.loads((root/'state/r1b-buyer-query/HEAD.json').read_text(encoding='utf-8'))
+          paid=response['mode']=='PAID_SETTLED'
           assert head['query_id'] == response['query_id']
           assert head['resident_uuid'] == response['buyer_query_receipt']['resident_uuid']
           assert head['execution_identity'] == response['buyer_query_receipt']['execution_identity']
-          assert head['money_enabled'] is False
+          assert head['money_enabled'] is paid
+          if paid:
+              idx=root/'state/commerce/execution-by-purchase'/f"{purchase_key(response['purchase_id'])}.json"
+              assert idx.exists()
+              row=json.loads(idx.read_text(encoding='utf-8'))
+              assert row['purchase_id']==response['purchase_id']
+              assert row['execution_id']==response['buyer_query_receipt']['execution_identity']
+              assert row['result_sha256']==response['buyer_query_receipt']['response_hash']
+              purchase=root/'state/commerce/purchases'/f"{response['purchase_id']}.json"
+              assert purchase.exists()
           print('R1B_MARKET_FRESH_CHECKOUT_REPLAY=PASS')
           print('R1B_SAME_RESPONSE_IDENTITY=PASS')
+          print('R1B_PAID_EXECUTION_LEDGER_REPLAY=' + ('PASS' if paid else 'NOT_APPLICABLE'))
           PY
 
       - name: Return JANUS response to source Market issue
@@ -216,19 +247,28 @@ jobs:
           r=json.load(open(os.environ['RESPONSE_PATH']))
           receipt=r['buyer_query_receipt']
           issue=(r.get('return_route') or {}).get('source_issue_number')
-          print('JANUS R1B HOME buyer-query response returned.\n')
+          paid=r['mode']=='PAID_SETTLED'
+          print(('JANUS paid SEARCH delivery completed.' if paid else 'JANUS public SEARCH beta delivery completed.')+'\n')
+          print(f"- mode: `{r['mode']}`")
           print(f"- query_id: `{r['query_id']}`")
           print(f"- purchase_id: `{r['purchase_id']}`")
+          if paid:
+              print(f"- payment_reference: `{r['payment_reference']}`")
+              print('- paid_delivery: `true`')
+              print('- billable_execution_delta: `1`')
+          else:
+              print('- price: `0`')
+              print('- paid_delivery: `false`')
           print(f"- resident_uuid: `{receipt['resident_uuid']}`")
           print(f"- execution_identity: `{receipt['execution_identity']}`")
           print(f"- response_hash: `{receipt['response_hash']}`")
           print(f"- home_response_hash: `{r['home_response_hash']}`")
-          print('- money_enabled: `false`')
+          print('- command_authority_granted: `false`')
           print('- external_effect_authorized: `false`')
           print('- foreign_agent_witness: `NOT_ADJUDICATED_BY_THIS_HOME_RESPONSE_RECEIPT`')
           print('\n**JANUS response**\n')
           print(receipt['response_text'])
-          print('\n`Market -> credentialless HOME pull -> Activator -> existing conversation tissue -> HRAiN -> RETURN HOME -> credentialless Market reconcile`')
+          print('\n`Market -> credentialless HOME pull -> Activator -> existing conversation tissue -> HRAiN -> RETURN HOME -> credentialless Market reconcile -> source issue`')
           print(f"\n<!-- R1B_RETURNED_QUERY_ID:{r['query_id']} -->")
           if issue is None:
               raise SystemExit('R1B_RETURN_ROUTE_ISSUE_MISSING')
