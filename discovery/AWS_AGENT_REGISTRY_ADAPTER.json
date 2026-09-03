@@ -1,10 +1,10 @@
 {
   "schema": "janus.machine_market.aws_agent_registry_adapter.v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "recorded_at": "2026-09-03",
   "provider": "AWS",
   "service": "AWS_AGENT_REGISTRY",
-  "status": "OFFLINE_SHADOW_READY_NOT_REGISTERED",
+  "status": "OFFLINE_SHADOW_READY_VERSION_GAPS_RECORDED_NOT_REGISTERED",
   "namespace": {
     "current": "agent-registry",
     "preview_legacy": "bedrock-agentcore",
@@ -46,12 +46,30 @@
     "important_separation": "AWS_REGISTRY_MCP_CONSUMER_PROTOCOL_2025_11_25_IS_NOT_THE_JANUS_FUTURE_MCP_SERVER_BASELINE_2026_07_28"
   },
   "descriptor_contract": {
-    "aws_docs_claim": "REGISTRY_VALIDATES_MCP_AND_A2A_DESCRIPTORS_AGAINST_OFFICIAL_PROTOCOL_SCHEMAS_AND_SUPPORTS_ALL_PROTOCOL_SCHEMA_VERSIONS",
     "current_shape": {
       "mcp": "descriptors.mcpServer",
       "a2a": "descriptors.a2aAgentCard",
       "payload_field": "data",
       "schema_version_field": "dataSchemaVersion"
+    },
+    "explicit_current_supported_versions_from_aws_docs": {
+      "mcp_server_json": [
+        "2025-12-11",
+        "2025-10-17",
+        "2025-10-11",
+        "2025-09-29",
+        "2025-09-16",
+        "2025-07-09"
+      ],
+      "mcp_tools": [
+        "2025-11-25",
+        "2025-06-18",
+        "2025-03-26",
+        "2024-11-05"
+      ],
+      "a2a_agent_card": [
+        "0.3"
+      ]
     },
     "legacy_shape": {
       "payload_field": "inlineContent",
@@ -61,11 +79,19 @@
   },
   "janus_mapping": {
     "mcp_source": "discovery/MCP_PUBLICATION.json",
-    "janus_mcp_target_revision": "2026-07-28",
+    "janus_mcp_runtime_target_revision": "2026-07-28",
+    "mcp_server_json_schema_target": "LATEST_AWS_LISTED_SERVER_JSON_SCHEMA_ONLY_AFTER_RUNTIME_EXISTS",
     "a2a_source": "discovery/A2A_PUBLICATION.json",
-    "janus_a2a_target_version": "1.0",
+    "janus_a2a_runtime_target_version": "1.0",
+    "aws_a2a_descriptor_currently_lists_janus_target_version": false,
+    "descriptor_template": "discovery/AWS_AGENT_REGISTRY_DESCRIPTOR_TEMPLATE.json",
     "shadow_fixture": "discovery/fixtures/AWS_AGENT_REGISTRY_MCP_A2A_SHADOW_CONFORMANCE.json",
     "migration_receipt": "discovery/AWS_AGENT_REGISTRY_MIGRATION_2026-09-03.json"
+  },
+  "compatibility_gaps": {
+    "mcp_runtime_vs_aws_tools_schema": "JANUS_2026_07_28_RUNTIME_IS_NEWER_THAN_AWS_CURRENTLY_LISTED_MCP_TOOL_SCHEMA_2025_11_25",
+    "a2a_runtime_vs_aws_agent_card_schema": "JANUS_A2A_1_0_TARGET_IS_NEWER_THAN_AWS_CURRENTLY_LISTED_A2A_0_3_SCHEMA",
+    "policy": "DO_NOT_DOWNGRADE_JANUS_RUNTIME_OR_FABRICATE_COMPATIBILITY_TO_FORCE_A_LISTING"
   },
   "publication_state": {
     "aws_registry_created": false,
@@ -75,10 +101,12 @@
     "janus_registry_record_discoverable": false,
     "live_mcp_endpoint_exists": false,
     "live_a2a_endpoint_exists": false,
+    "aws_schema_validation_executed": false,
     "publication_allowed": false
   },
   "publication_gates": [
     "TRUTHFUL_LIVE_ENDPOINT_EXISTS",
+    "AWS_CURRENTLY_LISTS_COMPATIBLE_SCHEMA_VERSION",
     "DESCRIPTOR_SCHEMA_VALID_FOR_EXACT_DECLARED_VERSION",
     "DESCRIPTOR_ENDPOINT_RESOLVES_AND_MATCHES_DECLARED_CAPABILITY",
     "TOOL_OR_SKILL_BINDINGS_MATCH_JANUS_PRODUCT_CONTRACTS",
@@ -92,6 +120,7 @@
     "DISCOVERABLE != PURCHASABLE",
     "PURCHASABLE != EXECUTION_AUTHORITY",
     "EXECUTION_AUTHORITY != EXECUTION_WITNESS",
+    "AWS_DOCS_GENERAL_SCHEMA_SUPPORT_STATEMENT != CURRENT_EXPLICIT_VERSION_COMPATIBILITY",
     "AWS_SCHEMA_SUPPORT != JANUS_SCHEMA_VALIDATION_PASS",
     "AWS_REGISTRY_AVAILABILITY != JANUS_REGISTRATION",
     "MCP_REGISTRY_CONSUMER_PROTOCOL != JANUS_SERVER_PROTOCOL",
