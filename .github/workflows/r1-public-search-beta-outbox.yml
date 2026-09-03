@@ -1,0 +1,275 @@
+name: JANUS Machine Market R1 Public SEARCH Beta Outbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/public_search_beta.py'
+      - 'runtime/r1b_shadow_buyer_query.py'
+      - 'tests/test_public_search_beta.py'
+      - '.github/workflows/r1-public-search-beta-outbox.yml'
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile and test public beta admission
+        run: |
+          set -euo pipefail
+          python -m py_compile runtime/public_search_beta.py tests/test_public_search_beta.py
+          PYTHONPATH=. python -m unittest -v tests.test_public_search_beta
+      - name: Enforce fail-closed public limits
+        run: |
+          python - <<'PY'
+          from runtime.public_search_beta import (
+              GLOBAL_DAILY_LIMIT, MAX_ANSWER_UTF8_BYTES, MAX_MESSAGE_UTF8_BYTES,
+              MAX_TURNS, PER_ACTOR_DAILY_LIMIT, PUBLIC_ORIGIN,
+          )
+          assert PUBLIC_ORIGIN == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
+          assert MAX_TURNS == 1
+          assert MAX_MESSAGE_UTF8_BYTES == 4000
+          assert MAX_ANSWER_UTF8_BYTES == 6000
+          assert PER_ACTOR_DAILY_LIMIT == 3
+          assert GLOBAL_DAILY_LIMIT == 20
+          print('PUBLIC_SEARCH_BETA_POLICY=PASS')
+          print('PUBLIC_SEARCH_BETA_MONEY_ENABLED=FALSE_BY_R1B_PACKET_CONTRACT')
+          PY
+
+  publish-public-packet:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS R1B BUYER QUERY SHADOW]') &&
+      github.event.issue.user.login != github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-market-home-outbox-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Materialize server-normalized external SEARCH request
+        id: materialize
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/r1b-live
+          PYTHONPATH=. python - <<'PY'
+          import json, os, pathlib
+          from runtime.public_search_beta import normalize_external_issue_request
+          payload=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          issue=payload['issue']
+          body=str(issue.get('body') or '')
+          begin='<!-- JANUS_BUYER_QUERY_SHADOW_JSON'
+          end='JANUS_BUYER_QUERY_SHADOW_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('PUBLIC_BETA_QUERY_JSON_MARKER_MISSING')
+          raw=json.loads(body[s+len(begin):e].strip())
+          req=normalize_external_issue_request(issue, raw, owner_login=payload['repository']['owner']['login'])
+          pathlib.Path('runtime/r1b-live/request.json').write_text(
+              json.dumps(req, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8'
+          )
+          print('PUBLIC_BETA_EXTERNAL_REQUEST_NORMALIZED=PASS')
+          print('PUBLIC_BETA_ACTOR=' + req['buyer_actor_id'])
+          PY
+          echo "buyer_actor_id=$(python -c "import json; print(json.load(open('runtime/r1b-live/request.json'))['buyer_actor_id'])")" >> "$GITHUB_OUTPUT"
+
+      - name: Build and self-verify sealed Market -> HOME packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python runtime/r1b_shadow_buyer_query.py \
+            --request runtime/r1b-live/request.json \
+            --output runtime/r1b-live/packet.json
+          python - <<'PY'
+          import json
+          p=json.load(open('runtime/r1b-live/packet.json', encoding='utf-8'))
+          assert p['request_origin'] == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
+          assert p['money_enabled'] is False
+          assert p['payment_required'] is False
+          assert p['execution_authority_granted'] is False
+          assert p['command_authority_granted'] is False
+          assert p['external_effect_authorized'] is False
+          print('PUBLIC_BETA_PACKET_SELF_VERIFY=PASS')
+          print('QUERY_ID=' + p['query_id'])
+          PY
+
+      - name: Apply create-only quota policy and publish credentialless HOME packet
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "JANUS Machine Market Public Beta"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          outbox="$RUNNER_TEMP/market-home-outbox"
+          rm -rf "$outbox"
+          if git ls-remote --exit-code --heads origin janus/market-home-outbox >/dev/null 2>&1; then
+            git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+            git worktree add -B janus-market-home-outbox-local "$outbox" origin/janus/market-home-outbox
+          else
+            git worktree add --detach "$outbox" HEAD
+            cd "$outbox"
+            git switch --orphan janus-market-home-outbox-local
+            git rm -rf --ignore-unmatch .
+            mkdir -p .janus/market-home-outbox
+            printf '%s\n' '{"schema":"janus.machine_market.home_outbox.v1","role":"CREATE_ONLY_MARKET_TO_HOME_BUYER_QUERY_PACKETS","transport":"PHYSARIUS_CREDENTIALLESS_PULL","money_enabled":false,"cross_repo_write_authority":false}' > .janus/market-home-outbox/MANIFEST.json
+            cd - >/dev/null
+          fi
+
+          OUTBOX="$outbox" PYTHONPATH=. python - <<'PY' > runtime/r1b-live/admission.json
+          import json, os
+          from pathlib import Path
+          from runtime.public_search_beta import evaluate_outbox_directory
+          packet=json.load(open('runtime/r1b-live/packet.json', encoding='utf-8'))
+          decision=evaluate_outbox_directory(packet, Path(os.environ['OUTBOX']))
+          print(json.dumps(decision, sort_keys=True))
+          PY
+          cat runtime/r1b-live/admission.json
+          admitted="$(python -c "import json; print('true' if json.load(open('runtime/r1b-live/admission.json'))['admitted'] else 'false')")"
+          reason="$(python -c "import json; print(json.load(open('runtime/r1b-live/admission.json'))['reason'])")"
+          qid="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['query_id'])")"
+          echo "admitted=$admitted" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "query_id=$qid" >> "$GITHUB_OUTPUT"
+          if [ "$admitted" != true ]; then
+            echo 'PUBLIC_BETA_OUTBOX_ADMISSION=REJECTED_FAIL_CLOSED'
+            exit 0
+          fi
+
+          target="$outbox/.janus/market-home-outbox/${qid}.packet.json"
+          mkdir -p "$(dirname "$target")"
+          new=false
+          if [ -f "$target" ]; then
+            if cmp -s runtime/r1b-live/packet.json "$target"; then
+              echo 'PUBLIC_BETA_OUTBOX_EXACT_RETRY_IDENTICAL=TRUE'
+            else
+              echo 'PUBLIC_BETA_OUTBOX_CREATE_ONLY_CONFLICT=TRUE' >&2
+              exit 2
+            fi
+          else
+            cp runtime/r1b-live/packet.json "$target"
+            new=true
+          fi
+
+          issue_id="$(python -c "import json; print(json.load(open('runtime/r1b-live/request.json'))['source_issue_id'])")"
+          admission_dir="$outbox/.janus/market-home-outbox/public-admissions"
+          mkdir -p "$admission_dir"
+          admission_target="$admission_dir/issue-${issue_id}.json"
+          PACKET_PATH=runtime/r1b-live/packet.json DECISION_PATH=runtime/r1b-live/admission.json REQUEST_PATH=runtime/r1b-live/request.json python - <<'PY' > "$RUNNER_TEMP/admission-receipt.json"
+          import json, os
+          p=json.load(open(os.environ['PACKET_PATH']))
+          d=json.load(open(os.environ['DECISION_PATH']))
+          r=json.load(open(os.environ['REQUEST_PATH']))
+          receipt={
+            'schema':'janus.machine_market.public_search_beta_admission.v1',
+            'status':'ADMITTED_CREATE_ONLY',
+            'request_origin':r['request_origin'],
+            'buyer_actor_id':r['buyer_actor_id'],
+            'source_issue_id':r['source_issue_id'],
+            'source_issue_number':r['source_issue_number'],
+            'query_id':p['query_id'],
+            'packet_hash':p['packet_hash'],
+            'decision':d,
+            'money_enabled':False,
+            'payment_required':False,
+            'execution_authority_granted':False,
+          }
+          print(json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True))
+          PY
+          if [ -f "$admission_target" ]; then
+            if ! cmp -s "$RUNNER_TEMP/admission-receipt.json" "$admission_target"; then
+              echo 'PUBLIC_BETA_ADMISSION_RECEIPT_CONFLICT=TRUE' >&2
+              exit 3
+            fi
+          else
+            cp "$RUNNER_TEMP/admission-receipt.json" "$admission_target"
+          fi
+
+          cd "$outbox"
+          git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'PUBLIC_BETA_OUTBOX_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "R1 public SEARCH beta ${qid}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+            echo 'PUBLIC_BETA_OUTBOX_COMMIT=PASS'
+          fi
+          commit="$(git rev-parse HEAD)"
+          blob="$(git hash-object ".janus/market-home-outbox/${qid}.packet.json")"
+          cd - >/dev/null
+          echo "outbox_commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "blob_sha=$blob" >> "$GITHUB_OUTPUT"
+          echo "new_packet=$new" >> "$GITHUB_OUTPUT"
+          echo 'CROSS_REPO_WRITE_CREDENTIAL_USED=FALSE'
+
+      - name: Return fail-closed quota decision to requester
+        if: steps.publish.outputs.admitted != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REASON: ${{ steps.publish.outputs.reason }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/public-beta-reject.md" <<EOF
+          ## JANUS.SEARCH · public beta request not admitted
+
+          Reason: \`${REASON}\`
+
+          The zero-price public beta is deliberately bounded: one immutable request per issue, at most 3 accepted SEARCH requests per GitHub actor per UTC day, and at most 20 accepted public SEARCH requests globally per UTC day. Payments remain disabled.
+          EOF
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/public-beta-reject.md")" >/dev/null
+
+      - name: Return accepted outbox binding to requester
+        if: steps.publish.outputs.admitted == 'true' && steps.publish.outputs.new_packet == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          QUERY_ID: ${{ steps.publish.outputs.query_id }}
+          OUTBOX_COMMIT: ${{ steps.publish.outputs.outbox_commit }}
+          BLOB_SHA: ${{ steps.publish.outputs.blob_sha }}
+          BUYER_ACTOR: ${{ steps.materialize.outputs.buyer_actor_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          packet_hash="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['packet_hash'])")"
+          purchase_id="$(python -c "import json; print(json.load(open('runtime/r1b-live/packet.json'))['purchase_grant']['purchase_id'])")"
+          cat > "$RUNNER_TEMP/public-beta-accept.md" <<EOF
+          ## JANUS.SEARCH · zero-price public beta accepted
+
+          - buyer_actor_id: \`${BUYER_ACTOR}\`
+          - query_id: \`${QUERY_ID}\`
+          - purchase_id: \`${purchase_id}\`
+          - packet_hash: \`${packet_hash}\`
+          - outbox_commit: \`${OUTBOX_COMMIT}\`
+          - git_blob_sha: \`${BLOB_SHA}\`
+          - price: \`0\`
+          - payment_required: \`false\`
+          - execution_authority_granted: \`false\`
+
+          The sealed request is now available to the credentialless persistent JANUS HOME pull. A later HOME response receipt is required before delivery is considered complete.
+          EOF
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/public-beta-accept.md")" >/dev/null
