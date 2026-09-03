@@ -7,12 +7,14 @@ on:
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
       - 'PRICING.json'
+      - 'products/JANUS.SEARCH.json'
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
       - 'runtime/commerce_search_executor.py'
       - 'runtime/paid_search_packet.py'
       - 'runtime/paid_search_checkout.py'
+      - 'runtime/paid_search_settlement.py'
       - 'schemas/grant.schema.json'
       - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
@@ -32,12 +34,14 @@ on:
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
       - 'PRICING.json'
+      - 'products/JANUS.SEARCH.json'
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
       - 'runtime/commerce_search_executor.py'
       - 'runtime/paid_search_packet.py'
       - 'runtime/paid_search_checkout.py'
+      - 'runtime/paid_search_settlement.py'
       - 'schemas/grant.schema.json'
       - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
@@ -73,10 +77,12 @@ jobs:
             runtime/purchase_ledger.py \
             runtime/commerce_search_executor.py \
             runtime/paid_search_packet.py \
-            runtime/paid_search_checkout.py
+            runtime/paid_search_checkout.py \
+            runtime/paid_search_settlement.py
       - name: JSON syntax
         run: |
           python -m json.tool COMMERCE_READINESS.json >/dev/null
+          python -m json.tool products/JANUS.SEARCH.json >/dev/null
           python -m json.tool ORDER_EXECUTION_MATRIX.json >/dev/null
           python -m json.tool schemas/grant.schema.json >/dev/null
           python -m json.tool schemas/execution-grant.schema.json >/dev/null
@@ -114,13 +120,19 @@ jobs:
           import json
           readiness=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
           witness=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          product=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
           assert witness['foreign_agent_witness'] is False, 'Update this rule only after a real persistent foreign-agent witness.'
           assert readiness['money_enabled'] is False
           assert readiness['autonomous_purchase_declared'] is False
-          assert readiness['status']=='PREPARED_BLOCKED_BY_FOREIGN_AGENT_WITNESS'
+          assert product['machine_purchase'] is False
+          assert product['live_gate']['checkout_live'] is False
+          assert readiness['status']=='PAID_SEARCH_PIPELINE_ARMED_BLOCKED_BY_FOREIGN_AGENT_WITNESS'
+          assert readiness['payment_rail']['state']=='CHECKOUT_ARMED_GATE_CLOSED'
+          assert readiness['required_live_gates']['transaction_endpoint'].endswith('ARMED_GATE_CLOSED')
+          assert readiness['required_live_gates']['persistent_janus_home_acceptor']=='MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID'
           assert readiness['payment_rail']['required_confirmations'] >= 12
           assert readiness['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
           assert readiness['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
-          print('PAID_SEARCH_PIPELINE_CONTRACT=ARMED_TESTABLE')
+          print('PAID_SEARCH_PIPELINE_CONTRACT=ARMED_CI_PROVEN')
           print('LIVE_MONEY=FAIL_CLOSED_PENDING_REAL_FOREIGN_AGENT_WITNESS')
           PY
