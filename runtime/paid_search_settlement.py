@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from runtime.commerce_authority import CommerceInvalid, receipt_payment_reference, verify_payment_receipt
+from runtime.commerce_authority import CommerceBlocked, CommerceInvalid, receipt_payment_reference, verify_payment_receipt
 from runtime.ethereum_usdt_observer import JsonRpc, observe_transaction
 from runtime.paid_search_checkout import settle_invoice
 from runtime.paid_search_packet import build_paid_home_packet, verify_paid_home_packet
@@ -79,6 +79,10 @@ def settle_proof(*, invoice_record: dict[str,Any], proof: dict[str,Any], state_r
     }
 
 
+def _public_result(out: dict[str,Any]) -> dict[str,Any]:
+    return {k:v for k,v in out.items() if k!="packet"}
+
+
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--invoice-record",required=True)
@@ -91,14 +95,27 @@ def main() -> int:
     ap.add_argument("--result-out",required=True)
     ap.add_argument("--packet-out",required=True)
     args=ap.parse_args()
-    out=settle_proof(
-        invoice_record=_load(args.invoice_record),proof=_load(args.proof),state_root=args.state_root,rpc_url=args.rpc_url,
-        readiness=_load(args.readiness),witness=_load(args.witness),product=_load(args.product),
-    )
-    Path(args.result_out).write_text(json.dumps({k:v for k,v in out.items() if k!="packet"},ensure_ascii=False,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    invoice_record=_load(args.invoice_record)
+    try:
+        out=settle_proof(
+            invoice_record=invoice_record,proof=_load(args.proof),state_root=args.state_root,rpc_url=args.rpc_url,
+            readiness=_load(args.readiness),witness=_load(args.witness),product=_load(args.product),
+        )
+    except (CommerceInvalid, CommerceBlocked) as exc:
+        invoice=invoice_record.get("invoice") or {}
+        reason=str(exc).replace("\n"," ")[:160]
+        out={
+            "schema":"janus.machine_market.paid_search_settlement_result.v1",
+            "invoice_id":str(invoice.get("invoice_id") or ""),
+            "observation":{"status":"REJECTED","confirmations":0,"reason":reason},
+            "settled":False,
+            "reason":reason,
+        }
+    public=_public_result(out)
+    Path(args.result_out).write_text(json.dumps(public,ensure_ascii=False,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     if out.get("settled"):
         Path(args.packet_out).write_text(json.dumps(out["packet"],ensure_ascii=False,indent=2,sort_keys=True)+"\n",encoding="utf-8")
-    print(json.dumps({k:v for k,v in out.items() if k!="packet"},ensure_ascii=False,sort_keys=True))
+    print(json.dumps(public,ensure_ascii=False,sort_keys=True))
     return 0
 
 
