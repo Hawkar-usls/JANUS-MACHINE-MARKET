@@ -93,9 +93,20 @@ def iter_outbox_packets(outbox_root: Path) -> Iterable[dict[str, Any]]:
     return values
 
 
+def _stable_admit() -> dict[str, Any]:
+    # This object is intentionally identical on first admission and exact retry.
+    # The create-only packet itself proves whether a write was new or a retry;
+    # mutating the admission receipt on retry would violate its immutability.
+    return {
+        "admitted": True,
+        "reason": "PUBLIC_BETA_ADMITTED",
+        "policy": "ONE_ISSUE_ONE_QUERY_CREATE_ONLY",
+    }
+
+
 def evaluate_outbox_admission(packet: dict[str, Any], existing_packets: Iterable[dict[str, Any]]) -> dict[str, Any]:
     if packet.get("request_origin") != PUBLIC_ORIGIN:
-        return {"admitted": True, "reason": "NOT_PUBLIC_BETA", "exact_retry": False}
+        return {"admitted": True, "reason": "NOT_PUBLIC_BETA", "policy": "NOT_APPLICABLE"}
 
     query = packet.get("buyer_query") or {}
     route = packet.get("return_route") or {}
@@ -119,8 +130,12 @@ def evaluate_outbox_admission(packet: dict[str, Any], existing_packets: Iterable
         prior_qid = str(prior.get("query_id") or "")
         if prior_issue_id == issue_id:
             if prior_qid == qid:
-                return {"admitted": True, "reason": "EXACT_RETRY", "exact_retry": True}
-            return {"admitted": False, "reason": "ISSUE_ALREADY_BOUND_TO_DIFFERENT_QUERY", "exact_retry": False}
+                return _stable_admit()
+            return {
+                "admitted": False,
+                "reason": "ISSUE_ALREADY_BOUND_TO_DIFFERENT_QUERY",
+                "policy": "ONE_ISSUE_ONE_QUERY_CREATE_ONLY",
+            }
         try:
             prior_day = _utc_day(str(pquery.get("created_at") or ""))
         except PublicSearchBetaError:
@@ -135,25 +150,17 @@ def evaluate_outbox_admission(packet: dict[str, Any], existing_packets: Iterable
         return {
             "admitted": False,
             "reason": "PER_ACTOR_DAILY_LIMIT_REACHED",
-            "exact_retry": False,
-            "actor_count": actor_count,
+            "policy": "PUBLIC_BETA_DAILY_QUOTA",
             "limit": PER_ACTOR_DAILY_LIMIT,
         }
     if global_count >= GLOBAL_DAILY_LIMIT:
         return {
             "admitted": False,
             "reason": "GLOBAL_DAILY_LIMIT_REACHED",
-            "exact_retry": False,
-            "global_count": global_count,
+            "policy": "PUBLIC_BETA_DAILY_QUOTA",
             "limit": GLOBAL_DAILY_LIMIT,
         }
-    return {
-        "admitted": True,
-        "reason": "PUBLIC_BETA_ADMITTED",
-        "exact_retry": False,
-        "actor_count_before": actor_count,
-        "global_count_before": global_count,
-    }
+    return _stable_admit()
 
 
 def evaluate_outbox_directory(packet: dict[str, Any], outbox_root: Path) -> dict[str, Any]:
