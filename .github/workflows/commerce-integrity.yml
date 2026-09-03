@@ -26,6 +26,7 @@ on:
       - 'tests/test_commerce_search_executor.py'
       - 'tests/test_paid_search_packet.py'
       - 'tests/test_paid_search_checkout.py'
+      - 'tests/test_paid_search_settlement.py'
       - '.github/workflows/commerce-integrity.yml'
   push:
     branches: [main]
@@ -53,6 +54,7 @@ on:
       - 'tests/test_commerce_search_executor.py'
       - 'tests/test_paid_search_packet.py'
       - 'tests/test_paid_search_checkout.py'
+      - 'tests/test_paid_search_settlement.py'
       - '.github/workflows/commerce-integrity.yml'
 
 permissions:
@@ -97,21 +99,29 @@ jobs:
             tests/test_purchase_ledger.py \
             tests/test_commerce_search_executor.py \
             tests/test_paid_search_packet.py \
-            tests/test_paid_search_checkout.py
-      - name: Live read-only Ethereum mainnet RPC smoke
-        env:
-          ETHEREUM_RPC_URL: https://ethereum-rpc.publicnode.com
+            tests/test_paid_search_checkout.py \
+            tests/test_paid_search_settlement.py
+      - name: Live read-only Ethereum mainnet RPC quorum smoke
         run: |
           python - <<'PY'
-          import os
-          from runtime.ethereum_usdt_observer import JsonRpc, hex_int
-          rpc=JsonRpc(os.environ['ETHEREUM_RPC_URL'], timeout=15)
-          chain=hex_int(rpc.call('eth_chainId', []))
-          latest=hex_int(rpc.call('eth_blockNumber', []))
-          assert chain == 1
-          assert latest > 1_000_000
-          print('ETHEREUM_MAINNET_RPC_CHAIN_ID=PASS')
-          print('ETHEREUM_MAINNET_RPC_BLOCK_NUMBER=PASS')
+          from runtime.ethereum_usdt_observer import JsonRpc, RpcError, hex_int
+          from runtime.paid_search_settlement import DEFAULT_RPC_URLS, RPC_QUORUM, _rpc_label
+          healthy=[]; failed=[]
+          for url in DEFAULT_RPC_URLS:
+              label=_rpc_label(url)
+              try:
+                  rpc=JsonRpc(url,timeout=15)
+                  chain=hex_int(rpc.call('eth_chainId',[]))
+                  latest=hex_int(rpc.call('eth_blockNumber',[]))
+                  if chain != 1 or latest <= 1_000_000:
+                      raise RuntimeError(f'unexpected chain/tip {chain}/{latest}')
+                  healthy.append((label,latest))
+              except Exception as exc:
+                  failed.append((label,type(exc).__name__))
+          print('ETHEREUM_RPC_HEALTHY=' + str(healthy))
+          print('ETHEREUM_RPC_FAILED=' + str(failed))
+          assert len(healthy) >= RPC_QUORUM, f'RPC_QUORUM_UNAVAILABLE healthy={healthy} failed={failed}'
+          print('ETHEREUM_MAINNET_RPC_QUORUM=PASS')
           print('ETHEREUM_RPC_SEND_TRANSACTION_USED=FALSE')
           PY
       - name: Fail-closed canonical truth
