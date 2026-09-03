@@ -13,14 +13,18 @@ class StorePagesExecutionContractTests(unittest.TestCase):
     def test_pages_uses_existing_buyer_conversation_contract(self):
         owner_workflow = (ROOT / ".github/workflows/r1b-buyer-query-shadow-outbox.yml").read_text(encoding="utf-8")
         public_workflow = (ROOT / ".github/workflows/r1-public-search-beta-outbox.yml").read_text(encoding="utf-8")
+        public_policy = (ROOT / "runtime/public_search_beta.py").read_text(encoding="utf-8")
         for token in (
             "[JANUS R1B BUYER QUERY SHADOW]",
             "JANUS_BUYER_QUERY_SHADOW_JSON",
-            "janus.machine_market.buyer_query_shadow_request.v1",
         ):
             self.assertIn(token, self.js)
             self.assertIn(token, owner_workflow)
             self.assertIn(token, public_workflow)
+        schema = "janus.machine_market.buyer_query_shadow_request.v1"
+        self.assertIn(schema, self.js)
+        self.assertIn(schema, owner_workflow)
+        self.assertIn(schema, public_policy)
         self.assertIn("PHYSARIUS_CREDENTIALLESS_PULL", owner_workflow)
         self.assertIn("janus/market-home-outbox", public_workflow)
 
@@ -36,8 +40,8 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertEqual(search["global_daily_limit"], 20)
         self.assertFalse(contract["authority"]["money_enabled"])
         self.assertFalse(contract["authority"]["command_authority_granted"])
-        self.assertIn("owner-shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
-        self.assertIn("owner-shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
+        self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
+        self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
         self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW")
         self.assertIn("PUBLIC BETA", self.js)
         self.assertIn("OWNER SHADOW", self.js)
