@@ -1,7 +1,6 @@
 ---
 name: JANUS Paid Search
 about: Request one paid bounded JANUS.SEARCH turn
-name: JANUS Paid Search
 labels: ''
 assignees: ''
 title: '[JANUS PAID SEARCH] '
