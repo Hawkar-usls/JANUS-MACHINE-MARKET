@@ -6,11 +6,13 @@ on:
       - 'COMMERCE_READINESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
+      - 'PRICING.json'
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
       - 'runtime/commerce_search_executor.py'
       - 'runtime/paid_search_packet.py'
+      - 'runtime/paid_search_checkout.py'
       - 'schemas/grant.schema.json'
       - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
@@ -21,6 +23,7 @@ on:
       - 'tests/test_purchase_ledger.py'
       - 'tests/test_commerce_search_executor.py'
       - 'tests/test_paid_search_packet.py'
+      - 'tests/test_paid_search_checkout.py'
       - '.github/workflows/commerce-integrity.yml'
   push:
     branches: [main]
@@ -28,11 +31,13 @@ on:
       - 'COMMERCE_READINESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
+      - 'PRICING.json'
       - 'runtime/commerce_authority.py'
       - 'runtime/ethereum_usdt_observer.py'
       - 'runtime/purchase_ledger.py'
       - 'runtime/commerce_search_executor.py'
       - 'runtime/paid_search_packet.py'
+      - 'runtime/paid_search_checkout.py'
       - 'schemas/grant.schema.json'
       - 'schemas/execution-grant.schema.json'
       - 'schemas/payment-receipt.schema.json'
@@ -43,6 +48,7 @@ on:
       - 'tests/test_purchase_ledger.py'
       - 'tests/test_commerce_search_executor.py'
       - 'tests/test_paid_search_packet.py'
+      - 'tests/test_paid_search_checkout.py'
       - '.github/workflows/commerce-integrity.yml'
 
 permissions:
@@ -51,6 +57,7 @@ permissions:
 jobs:
   integrity:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -65,7 +72,8 @@ jobs:
             runtime/ethereum_usdt_observer.py \
             runtime/purchase_ledger.py \
             runtime/commerce_search_executor.py \
-            runtime/paid_search_packet.py
+            runtime/paid_search_packet.py \
+            runtime/paid_search_checkout.py
       - name: JSON syntax
         run: |
           python -m json.tool COMMERCE_READINESS.json >/dev/null
@@ -82,7 +90,24 @@ jobs:
             tests/test_ethereum_usdt_transaction_observer.py \
             tests/test_purchase_ledger.py \
             tests/test_commerce_search_executor.py \
-            tests/test_paid_search_packet.py
+            tests/test_paid_search_packet.py \
+            tests/test_paid_search_checkout.py
+      - name: Live read-only Ethereum mainnet RPC smoke
+        env:
+          ETHEREUM_RPC_URL: https://ethereum-rpc.publicnode.com
+        run: |
+          python - <<'PY'
+          import os
+          from runtime.ethereum_usdt_observer import JsonRpc, hex_int
+          rpc=JsonRpc(os.environ['ETHEREUM_RPC_URL'], timeout=15)
+          chain=hex_int(rpc.call('eth_chainId', []))
+          latest=hex_int(rpc.call('eth_blockNumber', []))
+          assert chain == 1
+          assert latest > 1_000_000
+          print('ETHEREUM_MAINNET_RPC_CHAIN_ID=PASS')
+          print('ETHEREUM_MAINNET_RPC_BLOCK_NUMBER=PASS')
+          print('ETHEREUM_RPC_SEND_TRANSACTION_USED=FALSE')
+          PY
       - name: Fail-closed canonical truth
         run: |
           python - <<'PY'
