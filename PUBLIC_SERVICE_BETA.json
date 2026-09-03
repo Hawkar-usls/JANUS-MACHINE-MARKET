@@ -2,7 +2,7 @@
   "schema": "janus.machine_market.public_service_beta.v1",
   "version": "1.0.0",
   "recorded_at": "2026-09-04",
-  "status": "SEARCH_PUBLIC_ZERO_PRICE_BETA_PREPARED_PENDING_MERGE_AND_EXTERNAL_ROUNDTRIP",
+  "status": "SEARCH_PUBLIC_ZERO_PRICE_BETA_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
   "purpose": "Expose one real bounded JANUS service to external GitHub principals through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
   "public_services": {
     "JANUS.SEARCH": {
