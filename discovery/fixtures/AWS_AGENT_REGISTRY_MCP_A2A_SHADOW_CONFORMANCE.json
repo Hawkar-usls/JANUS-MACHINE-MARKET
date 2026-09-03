@@ -1,0 +1,97 @@
+{
+  "schema": "janus.machine_market.aws_agent_registry_shadow_conformance.v1",
+  "recorded_at": "2026-09-03",
+  "mode": "OFFLINE_STATIC_SHADOW_NO_NETWORK_NO_AWS_CREDENTIALS",
+  "status": "FIXTURE_READY_NOT_AWS_EXECUTED",
+  "adapter": "discovery/AWS_AGENT_REGISTRY_ADAPTER.json",
+  "migration_receipt": "discovery/AWS_AGENT_REGISTRY_MIGRATION_2026-09-03.json",
+  "cases": [
+    {
+      "id": "NAMESPACE_TARGET",
+      "input": "agent-registry",
+      "expected": "PASS",
+      "assertion": "NEW_WORK_TARGETS_AGENT_REGISTRY_NAMESPACE"
+    },
+    {
+      "id": "LEGACY_NAMESPACE_WINDOW",
+      "input": "bedrock-agentcore",
+      "expected": "COMPATIBILITY_ONLY_UNTIL_2026-09-17",
+      "assertion": "DO_NOT_CREATE_NEW_JANUS_INTEGRATION_ON_PREVIEW_NAMESPACE"
+    },
+    {
+      "id": "DISCOVERY_SEARCH_CONTRACT",
+      "input": {
+        "operation": "SearchDiscoverableRegistryRecords",
+        "http": "POST /discoverable-records-search",
+        "registry_ids": 1,
+        "max_results": 20
+      },
+      "expected": "STATIC_CONTRACT_PASS",
+      "assertion": "SEARCH_CONTRACT_MATCHES_CURRENT_DATA_PLANE_DOCS"
+    },
+    {
+      "id": "AWS_REGISTRY_MCP_CONSUMER_SURFACE",
+      "input": {
+        "protocol_revision": "2025-11-25",
+        "tools": [
+          "search_discoverable_registry_records",
+          "list_discoverable_registry_records",
+          "batch_get_discoverable_registry_record"
+        ]
+      },
+      "expected": "STATIC_CONTRACT_PASS",
+      "assertion": "AWS_REGISTRY_MCP_ENDPOINT_CONTRACT_IS_SEPARATE_FROM_JANUS_SERVER_BASELINE"
+    },
+    {
+      "id": "JANUS_MCP_DESCRIPTOR_CANDIDATE",
+      "source": "discovery/MCP_PUBLICATION.json",
+      "descriptor_key": "mcpServer",
+      "payload_field": "data",
+      "schema_version_field": "dataSchemaVersion",
+      "target_schema_version": "2026-07-28",
+      "expected": "BLOCKED_NO_LIVE_MCP_RUNTIME",
+      "aws_schema_validation_executed": false,
+      "assertion": "SCHEMA_SHAPE_CAN_BE_PREPARED_BUT_MUST_NOT_BE_REGISTERED_WITHOUT_TRUTHFUL_RUNTIME"
+    },
+    {
+      "id": "JANUS_A2A_DESCRIPTOR_CANDIDATE",
+      "source": "discovery/A2A_PUBLICATION.json",
+      "descriptor_key": "a2aAgentCard",
+      "payload_field": "data",
+      "schema_version_field": "dataSchemaVersion",
+      "target_schema_version": "1.0",
+      "expected": "BLOCKED_NO_LIVE_A2A_RUNTIME",
+      "aws_schema_validation_executed": false,
+      "assertion": "AGENT_CARD_MUST_NOT_BE_REGISTERED_UNTIL_DECLARED_HTTPS_A2A_INTERFACE_EXISTS"
+    },
+    {
+      "id": "DISCOVERABILITY_LIFECYCLE",
+      "input": "DRAFT_OR_PENDING_OR_REJECTED_OR_DEPRECATED",
+      "expected": "NOT_DISCOVERABLE",
+      "assertion": "ONLY_APPROVED_LATEST_REVISION_IS_EXPOSED_BY_DISCOVERY_DATA_PLANE"
+    },
+    {
+      "id": "PAYMENT_AND_AUTHORITY_FIREWALL",
+      "input": "AWS_AGENT_REGISTRY_SUPPORT",
+      "expected": "NO_PAYMENT_NO_EXECUTION_AUTHORITY",
+      "assertion": "DISCOVERY_CHANNEL_SUPPORT_DOES_NOT_PROMOTE_COMMERCE_OR_EXECUTION_GATES"
+    }
+  ],
+  "fixture_result": {
+    "static_contract_audit": "PASS",
+    "aws_api_call_executed": false,
+    "aws_registry_created": false,
+    "aws_descriptor_validation_executed": false,
+    "janus_descriptor_published": false,
+    "janus_external_discovery_witness": false,
+    "live_conformance": "PENDING_TRUTHFUL_RUNTIME"
+  },
+  "next_live_gate": [
+    "TRUTHFUL_LIVE_MCP_OR_A2A_ENDPOINT_EXISTS",
+    "GENERATE_EXACT_DESCRIPTOR_FROM_RUNTIME",
+    "RUN_AWS_SCHEMA_VALIDATION_IN_SHADOW",
+    "VERIFY_ENDPOINT_AND_DESCRIPTOR_BINDING",
+    "ONLY_THEN_CONSIDER_REGISTRY_RECORD_CREATION"
+  ],
+  "truth_boundary": "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
+}
