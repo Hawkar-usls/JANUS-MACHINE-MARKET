@@ -1,0 +1,56 @@
+{
+  "schema": "janus.machine_market.mcp_spec_baseline.v1",
+  "recorded_at": "2026-09-03",
+  "standard": "MODEL_CONTEXT_PROTOCOL",
+  "spec_revision": "2026-07-28",
+  "release_date": "2026-07-28",
+  "status": "AUTHORITATIVE_BASELINE_RECORDED_NOT_DEPLOYED",
+  "sources": [
+    "https://blog.modelcontextprotocol.io/posts/2026-07-28/",
+    "https://ts.sdk.modelcontextprotocol.io/v2/migration/support-2026-07-28"
+  ],
+  "wire_contract": {
+    "core_model": "STATELESS_REQUEST_RESPONSE",
+    "initialize_initialized_exchange": "RETIRED_FOR_2026_07_28",
+    "mcp_session_id_header": "RETIRED_FOR_2026_07_28",
+    "protocol_version_header": "MCP-Protocol-Version",
+    "protocol_version_value": "2026-07-28",
+    "routing_headers": [
+      "Mcp-Method",
+      "Mcp-Name"
+    ],
+    "server_discover": "OPTIONAL_CAPABILITY_DISCOVERY_RPC",
+    "request_identity_and_capabilities": "PER_REQUEST_META",
+    "server_identity": "RESPONSE_META_SELF_REPORTED_NOT_SECURITY_AUTHORITY"
+  },
+  "authorization_contract": {
+    "issuer_validation": "RFC_9207_HARDENING_REQUIRED_WHEN_APPLICABLE",
+    "dynamic_client_registration": "DEPRECATED_COMPATIBILITY_ONLY",
+    "client_id_metadata_documents": "TARGET_FOR_NEW_DESIGNS",
+    "self_reported_identity_is_authority": false
+  },
+  "deprecations": {
+    "minimum_window": "12_MONTHS",
+    "legacy_http_sse": "DEPRECATED",
+    "roots": "DEPRECATED",
+    "sampling": "DEPRECATED",
+    "logging": "DEPRECATED",
+    "new_janus_implementations_must_not_depend_on_deprecated_features": true
+  },
+  "janus_publication_policy": {
+    "live_mcp_server_exists": false,
+    "public_server_json_allowed": false,
+    "public_mcp_registry_submission_allowed": false,
+    "future_runtime_must_explicitly_opt_in_or_pin_2026_07_28": true,
+    "future_runtime_must_not_depend_on_mcp_session_id": true,
+    "future_runtime_must_not_require_initialize_handshake_for_2026_07_28": true,
+    "future_gateway_may_route_on_mcp_method_and_name_only_after_runtime_validation": true
+  },
+  "truth_boundary": [
+    "SPEC_SUPPORT_DOES_NOT_PROVE_LIVE_RUNTIME",
+    "DISCOVERY_DOES_NOT_GRANT_EXECUTION_AUTHORITY",
+    "SELF_REPORTED_CLIENT_OR_SERVER_IDENTITY_IS_NOT_SECURITY_AUTHORITY",
+    "REGISTRY_PUBLICATION_REMAINS_BLOCKED_UNTIL_TRUTHFUL_RUNTIME_EXISTS",
+    "NO_PAYMENT_OR_CLOSED_SKU_GATE_IS_OPENED_BY_THIS_BASELINE"
+  ]
+}
