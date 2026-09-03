@@ -1,10 +1,26 @@
 {
   "schema": "janus.machine_market.mcp_publication.v1",
+  "version": "1.1.0",
   "standard": "MODEL_CONTEXT_PROTOCOL",
+  "target_spec_revision": "2026-07-28",
+  "spec_baseline_record": "discovery/MCP_2026_07_28_BASELINE.json",
   "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
   "current_publication_allowed": false,
   "target_registry": "https://registry.modelcontextprotocol.io",
   "planned_server_manifest": "server.json",
+  "planned_transport_contract": {
+    "core": "STATELESS_REQUEST_RESPONSE",
+    "initialize_initialized_exchange": "DO_NOT_REQUIRE_FOR_2026_07_28",
+    "mcp_session_id": "DO_NOT_DEPEND_ON_FOR_2026_07_28",
+    "protocol_version": "2026-07-28",
+    "routing_headers": [
+      "Mcp-Method",
+      "Mcp-Name"
+    ],
+    "capability_discovery": "OPTIONAL_SERVER_DISCOVER",
+    "authorization_registration_target": "CLIENT_ID_METADATA_DOCUMENTS",
+    "dynamic_client_registration": "DEPRECATED_COMPATIBILITY_ONLY"
+  },
   "planned_tools": [
     {
       "name": "janus_search",
@@ -29,6 +45,7 @@
   ],
   "publication_gates": [
     "LIVE_MCP_SERVER",
+    "MCP_2026_07_28_WIRE_CONFORMANCE_PASS",
     "SERVER_DISCOVERY_PASS",
     "TOOL_SCHEMAS_MATCH_PRODUCT_CONTRACTS",
     "ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP_PASS",
@@ -36,5 +53,12 @@
     "SERVER_JSON_VALID_FOR_CURRENT_MCP_REGISTRY",
     "REGISTRY_PUBLICATION_OBSERVED"
   ],
-  "truth_boundary": "Do not publish server.json to a public MCP registry until a resolvable MCP server exists and the advertised tools are callable under their declared authority boundaries."
+  "prohibited_premature_claims": [
+    "LIVE_MCP_RUNTIME",
+    "MCP_REGISTRY_LISTED",
+    "PURCHASABLE",
+    "EXECUTION_AUTHORITY",
+    "PAID_EXECUTION"
+  ],
+  "truth_boundary": "Do not publish server.json to a public MCP registry until a resolvable MCP server exists, conforms to the pinned 2026-07-28 runtime contract, and the advertised tools are callable under their declared authority boundaries."
 }
