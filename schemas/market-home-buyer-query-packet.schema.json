@@ -18,7 +18,7 @@
     "market_repository": {"const": "Hawkar-usls/JANUS-MACHINE-MARKET"},
     "home_repository": {"const": "Hawkar-usls/Hawkar-usls"},
     "transport_mode": {"const": "PHYSARIUS_CREDENTIALLESS_PULL"},
-    "mode": {"const": "ZERO_PRICE_SHADOW"},
+    "mode": {"enum": ["ZERO_PRICE_SHADOW", "PAID_SETTLED"]},
     "request_origin": {"type": "string", "minLength": 1},
     "request_id": {"type": "string", "minLength": 1},
     "request_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -39,9 +39,21 @@
       },
       "additionalProperties": false
     },
-    "money_enabled": {"const": false},
-    "payment_required": {"const": false},
-    "production_purchase": {"const": false},
+    "commerce": {
+      "type": "object",
+      "required": ["quote", "quote_hash", "payment_receipt", "payment_reference", "settlement_verified"],
+      "properties": {
+        "quote": {"type": "object"},
+        "quote_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "payment_receipt": {"type": "object"},
+        "payment_reference": {"type": "string", "pattern": "^0x[0-9a-f]{64}:[0-9]+$"},
+        "settlement_verified": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "money_enabled": {"type": "boolean"},
+    "payment_required": {"type": "boolean"},
+    "production_purchase": {"type": "boolean"},
     "execution_authority_granted": {"const": false},
     "command_authority_granted": {"const": false},
     "external_effect_authorized": {"const": false},
@@ -51,5 +63,29 @@
     "laws": {"type": "array", "minItems": 1, "items": {"type": "string"}},
     "packet_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   },
+  "allOf": [
+    {
+      "if": {"properties": {"mode": {"const": "ZERO_PRICE_SHADOW"}}, "required": ["mode"]},
+      "then": {
+        "properties": {
+          "money_enabled": {"const": false},
+          "payment_required": {"const": false},
+          "production_purchase": {"const": false}
+        },
+        "not": {"required": ["commerce"]}
+      }
+    },
+    {
+      "if": {"properties": {"mode": {"const": "PAID_SETTLED"}}, "required": ["mode"]},
+      "then": {
+        "required": ["commerce"],
+        "properties": {
+          "money_enabled": {"const": true},
+          "payment_required": {"const": true},
+          "production_purchase": {"const": true}
+        }
+      }
+    }
+  ],
   "additionalProperties": false
 }
