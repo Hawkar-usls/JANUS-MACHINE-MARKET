@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -95,6 +95,10 @@
     {
       "id": "MCP_REGISTRY",
       "status": "PUBLICATION_GATED_NO_LIVE_MCP_SERVER",
+      "target_spec_revision": "2026-07-28",
+      "spec_baseline_record": "discovery/MCP_2026_07_28_BASELINE.json",
+      "runtime_model": "STATELESS_REQUEST_RESPONSE",
+      "legacy_session_dependency_allowed": false,
       "publication_record": "discovery/MCP_PUBLICATION.json"
     },
     {
