@@ -53,7 +53,20 @@ def _rpc_label(url: str) -> str:
     return parsed.netloc or parsed.path or "rpc"
 
 
-def _base_observation(quote: dict[str, Any], *, status: str, confirmations: int = 0, reason: str | None = None) -> dict[str, Any]:
+def configured_rpc_urls(rpc_urls: Iterable[str]) -> tuple[str, ...]:
+    """Return caller-preferred endpoints plus the canonical public fallback pool.
+
+    This intentionally preserves backwards compatibility with the original checkout
+    workflow, which supplied one --rpc-url. A caller can prefer an endpoint but can
+    never lower the production settlement verifier below the canonical quorum pool.
+    """
+    preferred = tuple(str(x).strip() for x in rpc_urls if str(x).strip())
+    return tuple(dict.fromkeys((*preferred, *DEFAULT_RPC_URLS)))
+
+
+def _base_observation(
+    quote: dict[str, Any], *, status: str, confirmations: int = 0, reason: str | None = None
+) -> dict[str, Any]:
     out: dict[str, Any] = {
         "schema": "janus.machine_market.payment_receipt.v1",
         "quote_hash": quote.get("quote_hash"),
@@ -86,14 +99,7 @@ def consensus_payment_observation(
     *,
     required_quorum: int = RPC_QUORUM,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Conservatively combine independent read-only RPC observations.
-
-    Network failures are excluded before this function. Settlement can only become
-    CONFIRMED when at least `required_quorum` providers return the same immutable
-    payment identity and every agreeing provider independently reaches the minimum
-    confirmation threshold. A conflicting payment-bearing observation quarantines
-    the proof instead of majority-selecting a payment.
-    """
+    """Conservatively combine independent read-only RPC observations."""
     rows = [(str(label), dict(obs)) for label, obs in observations if isinstance(obs, dict)]
     quorum = {
         "schema": "janus.machine_market.rpc_quorum.v1",
@@ -133,9 +139,8 @@ def consensus_payment_observation(
         quorum["status"] = "CONFLICT"
         return _base_observation(quote, status="QUARANTINED", reason="RPC_OBSERVATION_CONFLICT"), quorum
 
-    agreeing = len(payment_rows)
     min_confirmations = min(int(obs.get("confirmations", 0)) for _, obs in payment_rows)
-    quorum["agreeing_payment_observers"] = agreeing
+    quorum["agreeing_payment_observers"] = len(payment_rows)
     quorum["min_confirmations_observed"] = min_confirmations
     quorum["status"] = "CONFIRMED" if min_confirmations >= MIN_CONFIRMATIONS else "OBSERVED"
 
@@ -148,27 +153,34 @@ def consensus_payment_observation(
 
 
 def canonical_confirmed_receipt(observation: dict[str, Any]) -> dict[str, Any]:
-    """Freeze a stable settlement receipt after the 12-confirmation threshold.
-
-    Live confirmation counts grow forever, so they cannot be part of a create-only
-    replay identity. Immutable transaction/block/quote bindings are preserved while
-    confirmations are pinned to the admission threshold.
-    """
+    """Freeze a stable settlement receipt after the 12-confirmation threshold."""
     if observation.get("status") != "CONFIRMED" or int(observation.get("confirmations", 0)) < MIN_CONFIRMATIONS:
         raise CommerceInvalid("confirmed observation required for canonical settlement receipt")
     required = {
-        "schema", "quote_hash", "chain_id", "token_contract", "to", "amount_usdt_micros",
-        "tx_hash", "log_index", "payment_reference", "block_number", "block_hash", "block_timestamp",
+        "schema",
+        "quote_hash",
+        "chain_id",
+        "token_contract",
+        "to",
+        "amount_usdt_micros",
+        "tx_hash",
+        "log_index",
+        "payment_reference",
+        "block_number",
+        "block_hash",
+        "block_timestamp",
     }
     missing = [field for field in required if observation.get(field) is None]
     if missing:
         raise CommerceInvalid("confirmed observation missing immutable fields: " + ",".join(sorted(missing)))
     receipt = {field: observation[field] for field in required}
-    receipt.update({
-        "status": "CONFIRMED",
-        "confirmations": MIN_CONFIRMATIONS,
-        "required_confirmations": MIN_CONFIRMATIONS,
-    })
+    receipt.update(
+        {
+            "status": "CONFIRMED",
+            "confirmations": MIN_CONFIRMATIONS,
+            "required_confirmations": MIN_CONFIRMATIONS,
+        }
+    )
     return receipt
 
 
@@ -182,7 +194,7 @@ def observe_transaction_quorum(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     observations: list[tuple[str, dict[str, Any]]] = []
     failures: list[dict[str, str]] = []
-    urls = tuple(dict.fromkeys(str(x).strip() for x in rpc_urls if str(x).strip()))
+    urls = configured_rpc_urls(rpc_urls)
     if len(urls) < required_quorum:
         raise CommerceInvalid("insufficient configured RPC providers for quorum")
     for url in urls:
@@ -194,15 +206,15 @@ def observe_transaction_quorum(
             observations.append((label, observation))
         except (RpcError, CommerceInvalid, OSError, ValueError) as exc:
             failures.append({"provider": label, "error_class": type(exc).__name__})
-    aggregate, quorum = consensus_payment_observation(
-        quote, observations, required_quorum=required_quorum
-    )
+    aggregate, quorum = consensus_payment_observation(quote, observations, required_quorum=required_quorum)
     quorum["configured"] = len(urls)
     quorum["failures"] = failures
     return aggregate, quorum
 
 
-def recover_purchase_for_payment(state_root: str | Path, payment_receipt: dict[str, Any]) -> dict[str, Any] | None:
+def recover_purchase_for_payment(
+    state_root: str | Path, payment_receipt: dict[str, Any]
+) -> dict[str, Any] | None:
     root = Path(state_root)
     ref = receipt_payment_reference(payment_receipt)
     payment_path = root / "state/commerce/payments" / f"{payment_key(ref)}.json"
@@ -322,13 +334,12 @@ def main() -> int:
     ap.add_argument("--packet-out", required=True)
     args = ap.parse_args()
     invoice_record = _load(args.invoice_record)
-    rpc_urls = tuple(args.rpc_urls or DEFAULT_RPC_URLS)
     try:
         out = settle_proof(
             invoice_record=invoice_record,
             proof=_load(args.proof),
             state_root=args.state_root,
-            rpc_urls=rpc_urls,
+            rpc_urls=tuple(args.rpc_urls or ()),
             readiness=_load(args.readiness),
             witness=_load(args.witness),
             product=_load(args.product),
