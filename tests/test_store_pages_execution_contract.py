@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import unittest
 
 
@@ -10,15 +11,36 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.js = (ROOT / "assets/store-exec-v1.js").read_text(encoding="utf-8")
 
     def test_pages_uses_existing_buyer_conversation_contract(self):
-        workflow = (ROOT / ".github/workflows/r1b-buyer-query-shadow-outbox.yml").read_text(encoding="utf-8")
+        owner_workflow = (ROOT / ".github/workflows/r1b-buyer-query-shadow-outbox.yml").read_text(encoding="utf-8")
+        public_workflow = (ROOT / ".github/workflows/r1-public-search-beta-outbox.yml").read_text(encoding="utf-8")
         for token in (
             "[JANUS R1B BUYER QUERY SHADOW]",
             "JANUS_BUYER_QUERY_SHADOW_JSON",
             "janus.machine_market.buyer_query_shadow_request.v1",
         ):
             self.assertIn(token, self.js)
-            self.assertIn(token, workflow)
-        self.assertIn("PHYSARIUS_CREDENTIALLESS_PULL", workflow)
+            self.assertIn(token, owner_workflow)
+            self.assertIn(token, public_workflow)
+        self.assertIn("PHYSARIUS_CREDENTIALLESS_PULL", owner_workflow)
+        self.assertIn("janus/market-home-outbox", public_workflow)
+
+    def test_public_search_beta_is_explicit_and_other_home_services_are_not_public(self):
+        contract = json.loads((ROOT / "PUBLIC_SERVICE_BETA.json").read_text(encoding="utf-8"))
+        ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
+        search = contract["public_services"]["JANUS.SEARCH"]
+        self.assertEqual(search["status"], "PUBLIC_ZERO_PRICE_BETA")
+        self.assertEqual(search["max_turns_per_issue"], 1)
+        self.assertEqual(search["max_message_utf8_bytes"], 4000)
+        self.assertEqual(search["max_answer_utf8_bytes"], 6000)
+        self.assertEqual(search["per_actor_daily_limit"], 3)
+        self.assertEqual(search["global_daily_limit"], 20)
+        self.assertFalse(contract["authority"]["money_enabled"])
+        self.assertFalse(contract["authority"]["command_authority_granted"])
+        self.assertIn("owner-shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
+        self.assertIn("owner-shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
+        self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW")
+        self.assertIn("PUBLIC BETA", self.js)
+        self.assertIn("OWNER SHADOW", self.js)
 
     def test_pages_uses_existing_repo_audit_contract(self):
         workflow = (ROOT / ".github/workflows/r2-repo-audit-shadow-outbox.yml").read_text(encoding="utf-8")
@@ -38,7 +60,7 @@ class StorePagesExecutionContractTests(unittest.TestCase):
             self.assertIn(field, self.js)
             self.assertIn(field, workflow)
 
-    def test_pages_declares_three_live_home_services_and_no_implicit_multi_sku_authority(self):
+    def test_pages_declares_three_home_routes_and_no_implicit_multi_sku_authority(self):
         for sku in ("JANUS.SEARCH", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"):
             self.assertIn(sku, self.js)
         self.assertIn("MULTI_SERVICE_NOT_YET_ATOMIC", self.js)
@@ -57,6 +79,7 @@ class StorePagesExecutionContractTests(unittest.TestCase):
             "command_authority_granted: `false`",
             "external_effect_authorized: `false`",
             "PURCHASE GRANT != EXECUTION AUTHORITY",
+            "PUBLIC INTAKE != COMPLETED SERVICE",
         ):
             self.assertIn(token, self.js)
 
@@ -64,10 +87,16 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertIn("Hawkar-usls/Hawkar-usls", self.js)
         for path in (
             ROOT / ".github/workflows/r1b-buyer-query-shadow-outbox.yml",
+            ROOT / ".github/workflows/r1-public-search-beta-outbox.yml",
             ROOT / ".github/workflows/r2-repo-audit-shadow-outbox.yml",
             ROOT / ".github/workflows/r3-dataset-scout-shadow-outbox.yml",
         ):
             self.assertIn("janus/market-home-outbox", path.read_text(encoding="utf-8"))
+
+    def test_external_customer_does_not_auto_promote_foreign_agent_witness(self):
+        contract = json.loads((ROOT / "PUBLIC_SERVICE_BETA.json").read_text(encoding="utf-8"))
+        joined = "\n".join(contract["truth_boundary"])
+        self.assertIn("EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_INDEPENDENCE_GATE_PASSES", joined)
 
 
 if __name__ == "__main__":
