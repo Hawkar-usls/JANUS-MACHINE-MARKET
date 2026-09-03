@@ -52,8 +52,8 @@
 
       <div class="truthbar" id="truthbar">
         <span class="truth live">DISCOVERY <b>LIVE</b></span>
-        <span class="truth r1">SEARCH SHADOW <b>R1</b></span>
-        <span class="truth locked">PAYMENTS <b>LOCKED</b></span>
+        <span class="truth live">PUBLIC SEARCH <b>LIVE</b></span>
+        <span class="truth prep">PAID SEARCH <b>ARMED · GATED</b></span>
         <span class="truth prep">A2A <b>PREPARED</b></span>
         <span class="truth prep">MCP <b>PREPARED</b></span>
         <span class="truth prep">x402 <b>PREPARED</b></span>
@@ -74,13 +74,14 @@
           <div class="loadout-head"><div><p class="eyebrow">YOUR INVENTORY</p><h2>Loadout</h2></div><button id="clearLoadout" class="tiny-btn">CLEAR</button></div>
           <div id="loadoutList" class="loadout-list empty">Add services from the catalog.</div>
           <div class="quote-lines">
-            <div><span>Mode</span><b>R1 SHADOW</b></div>
-            <div><span>Live price</span><b>LOADING RATECARD</b></div>
-            <div><span>Payments</span><b class="amber">LOCKED</b></div>
-            <div><span>Autonomous purchase</span><b>OFF</b></div>
+            <div><span>Mode</span><b>PUBLIC + PAID SEARCH</b></div>
+            <div><span>JANUS.SEARCH FAST</span><b>0.050000 USDT</b></div>
+            <div><span>Paid checkout</span><b class="amber">ARMED · WITNESS GATE</b></div>
+            <div><span>Autonomous purchase</span><b>OFF UNTIL GATE</b></div>
           </div>
           <button id="reviewTrade" class="gold-btn wide">REVIEW TRADE</button>
-          <p class="micro">The ratecard can calculate and freeze a quote preview. A payable invoice still requires the JANUS Commerce Authority gate.</p>
+          <p class="micro">The paid SEARCH transport, invoice, exact Ethereum-USDT observer and persistent HOME delivery path are armed. No payable invoice is issued until the independent external-witness gate is satisfied. <b>Do not send funds without a live invoice for your exact request.</b></p>
+          <a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">REQUEST PAID SEARCH / GATE CHECK ↗</a>
         </aside>
       </div>
     </section>
@@ -151,12 +152,12 @@
 
     <section id="status" class="view">
       <div class="status-grid">
-        <article class="panel"><p class="eyebrow">CURRENT GATE</p><h2>FOREIGN_AGENT_WITNESS</h2><p>Pending a real independent external machine discovery/request persistent receipt.</p><b class="status-big amber">PENDING</b></article>
-        <article class="panel"><p class="eyebrow">COMMERCE</p><h2>Payments</h2><p>No general transaction endpoint is established. Unsolicited payment grants nothing.</p><b class="status-big red">LOCKED</b></article>
+        <article class="panel"><p class="eyebrow">CURRENT GATE</p><h2>FOREIGN_AGENT_WITNESS</h2><p>Pending a genuine independent external GitHub principal completing the public Market → persistent HOME/JANUS → Market result roundtrip.</p><b class="status-big amber">PENDING</b></article>
+        <article class="panel"><p class="eyebrow">COMMERCE</p><h2>Paid JANUS.SEARCH</h2><p>The issue checkout endpoint, immutable invoice contract, exact Ethereum-mainnet USDT transaction observer, purchase ledger and persistent HOME delivery path are implemented and CI-proven. Live invoices remain witness-gated.</p><b class="status-big amber">ARMED · GATED</b></article>
         <article class="panel"><p class="eyebrow">RUNTIME</p><h2>Inference / Compute</h2><p>Both remain closed until the required target execution witness exists.</p><b class="status-big red">CLOSED</b></article>
         <article class="panel"><p class="eyebrow">DISCOVERY</p><h2>Repository beacon</h2><p>GitHub, llms.txt and JANUS-native machine discovery are public now.</p><b class="status-big cyan">LIVE</b></article>
       </div>
-      <div class="laws panel"><p class="eyebrow">JANUS LAWS</p><div><span>DISCOVERY ≠ PURCHASE</span><span>PAYMENT ≠ AUTHORITY</span><span>UNSOLICITED PAYMENT GRANTS NOTHING</span><span>SELF REQUEST ≠ FOREIGN WITNESS</span></div></div>
+      <div class="laws panel"><p class="eyebrow">JANUS LAWS</p><div><span>DISCOVERY ≠ PURCHASE</span><span>PAYMENT ≠ COMMAND</span><span>PURCHASE GRANT ≠ EXECUTION AUTHORITY</span><span>UNSOLICITED PAYMENT GRANTS NOTHING</span><span>SELF REQUEST ≠ FOREIGN WITNESS</span></div></div>
     </section>
   </main>
 
@@ -166,11 +167,11 @@
       <p class="eyebrow">LINEAGE-STYLE TWO-SIDED CONFIRMATION</p>
       <h2>JANUS TRADE WINDOW</h2>
       <div class="trade-cols">
-        <section><h3>BUYER</h3><div id="buyerTradeItems" class="trade-items"></div><div class="confirm-box pending"><span>BUYER SETTLEMENT</span><b>PAYMENTS LOCKED</b></div></section>
-        <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>PREVIEW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WAITING FOR COMMERCE GATE</b></div></section>
+        <section><h3>BUYER</h3><div id="buyerTradeItems" class="trade-items"></div><div class="confirm-box pending"><span>BUYER SETTLEMENT</span><b>LIVE INVOICE REQUIRED</b></div></section>
+        <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>PREVIEW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WITNESS GATE PENDING</b></div></section>
       </div>
-      <div class="trade-rule">The browser freezes a deterministic quote preview before invoice/payment. Only JANUS Commerce Authority may issue a payable invoice; payment still does not equal execution authority.</div>
-      <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SHADOW ISSUE</button></div>
+      <div class="trade-rule">The browser freezes a deterministic quote preview. A payable invoice is issued only by the gated JANUS Paid SEARCH Checkout for the exact external request; payment still does not equal command or execution authority.</div>
+      <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SEARCH</button><a class="gold-btn" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">REQUEST PAID SEARCH / GATE CHECK ↗</a></div>
     </div>
   </div>
 
