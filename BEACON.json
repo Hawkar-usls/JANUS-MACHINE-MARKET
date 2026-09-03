@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -16,6 +16,7 @@
     "LLM_CRAWLERS",
     "A2A_CLIENTS",
     "MCP_CLIENTS",
+    "AWS_AGENT_REGISTRY_CLIENTS",
     "X402_BUYERS"
   ],
   "machine_call_to_action": {
@@ -31,6 +32,7 @@
       "EXPECT_AUTOMATIC_EXECUTION",
       "CALL_A2A_RUNTIME",
       "CALL_MCP_RUNTIME",
+      "REGISTER_JANUS_IN_AWS_AGENT_REGISTRY",
       "MAKE_X402_PURCHASE"
     ]
   },
@@ -63,6 +65,8 @@
     "Model Context Protocol",
     "A2A agent",
     "Agent2Agent",
+    "AWS Agent Registry",
+    "agent-registry",
     "x402",
     "x402 Bazaar",
     "machine-readable catalog",
@@ -102,6 +106,20 @@
       "publication_record": "discovery/MCP_PUBLICATION.json"
     },
     {
+      "id": "AWS_AGENT_REGISTRY",
+      "status": "SHADOW_ADAPTER_READY_NOT_REGISTERED_NO_LIVE_MCP_OR_A2A_RUNTIME",
+      "namespace": "agent-registry",
+      "legacy_namespace": "bedrock-agentcore",
+      "legacy_support_end": "2026-09-17",
+      "adapter_record": "discovery/AWS_AGENT_REGISTRY_ADAPTER.json",
+      "migration_receipt": "discovery/AWS_AGENT_REGISTRY_MIGRATION_2026-09-03.json",
+      "shadow_fixture": "discovery/fixtures/AWS_AGENT_REGISTRY_MCP_A2A_SHADOW_CONFORMANCE.json",
+      "aws_registry_mcp_consumer_revision": "2025-11-25",
+      "janus_mcp_descriptor_target_revision": "2026-07-28",
+      "janus_a2a_descriptor_target_version": "1.0",
+      "current_publication_allowed": false
+    },
+    {
       "id": "X402_BAZAAR",
       "status": "PUBLICATION_GATED_NO_LIVE_X402_RESOURCE",
       "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"
@@ -118,6 +136,7 @@
     "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
     "PURCHASE_GRANT_DOES_NOT_BYPASS_EXECUTION_POLICY",
     "DELIVERY_DOES_NOT_PROVE_EXECUTION",
+    "AWS_REGISTRY_SUPPORT_DOES_NOT_MEAN_JANUS_IS_REGISTERED",
     "CLOSED_SKUS_MUST_REMAIN_MACHINE_DISCOVERABLE_BUT_MACHINE_PURCHASE_FALSE"
   ],
   "next_activation_gate": "R1_ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP"
