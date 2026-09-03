@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.machine_ingress.v1",
-  "status": "LIVE_BOUNDED_GITHUB_API_INGRESS",
-  "purpose": "Machine-native task submission into the already running JANUS HOME without opening the GitHub Issue composer UI.",
+  "status": "LIVE_BOUNDED_GITHUB_API_AND_PUBLIC_SEARCH_ISSUE_INGRESS",
+  "purpose": "Machine-native and GitHub-authenticated human task submission into the already running JANUS HOME without granting payment or command authority.",
   "transport": {
     "type": "github_issues_rest",
     "method": "POST",
@@ -26,25 +26,38 @@
       "marker": "JANUS_BUYER_QUERY_SHADOW_JSON",
       "request_schema": "janus.machine_market.buyer_query_shadow_request.v1",
       "lane": "PERSISTENT_JANUS_CONVERSATION",
-      "status": "LIVE_BOUNDED_R1"
+      "status": "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW",
+      "external_public_beta": {
+        "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
+        "accepted_event": "issues.opened",
+        "max_turns": 1,
+        "max_message_utf8_bytes": 4000,
+        "max_answer_utf8_bytes": 6000,
+        "conversation_history_turns": 0,
+        "per_actor_daily_limit": 3,
+        "global_daily_limit": 20,
+        "one_issue_one_query": true,
+        "admission_policy": "runtime/public_search_beta.py",
+        "workflow": ".github/workflows/r1-public-search-beta-outbox.yml"
+      }
     },
     "JANUS.REPO_AUDIT": {
       "title_prefix": "[JANUS REPO AUDIT SHADOW]",
       "marker": "JANUS_REPO_AUDIT_SHADOW_JSON",
       "request_schema": "janus.machine_market.repo_audit_pages_request.v1",
       "lane": "PERSISTENT_JANUS_REPOSITORY_AUDIT",
-      "status": "LIVE_BOUNDED_R1"
+      "status": "LIVE_BOUNDED_OWNER_SHADOW_NOT_PUBLIC_YET"
     },
     "JANUS.DATASET_SCOUT": {
       "title_prefix": "[JANUS DATASET SCOUT SHADOW]",
       "marker": "JANUS_DATASET_SCOUT_SHADOW_JSON",
       "request_schema": "janus.machine_market.dataset_scout_pages_request.v1",
       "lane": "PERSISTENT_JANUS_DATASET_SCOUT",
-      "status": "LIVE_BOUNDED_R1"
+      "status": "LIVE_BOUNDED_OWNER_SHADOW_NOT_PUBLIC_YET"
     }
   },
   "current_commerce_state": {
-    "price_mode": "ZERO_PRICE_OWNER_SHADOW_FOR_CURRENT_LIVE_EXECUTION_LANES",
+    "price_mode": "ZERO_PRICE_PUBLIC_BETA_FOR_SEARCH_OWNER_SHADOW_FOR_OTHER_LIVE_LANES",
     "money_enabled": false,
     "autonomous_purchase_declared": false,
     "payment_required": false,
@@ -54,12 +67,20 @@
     "compute": "CLOSED"
   },
   "browser_ingress": {
-    "status": "MANUAL_FALLBACK_UNTIL_AUTHENTICATED_BRIDGE_IS_PROVISIONED",
-    "reason": "Static GitHub Pages must not embed a repository write credential. A no-second-screen human checkout requires a trusted GitHub App/OAuth/server bridge.",
+    "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_BETA_NO_EMBEDDED_CREDENTIALS",
+    "public_now": [
+      "JANUS.SEARCH via prefilled GitHub issue composer and external issues.opened admission workflow"
+    ],
+    "owner_shadow_only": [
+      "JANUS.REPO_AUDIT",
+      "JANUS.DATASET_SCOUT"
+    ],
+    "reason": "Static GitHub Pages must not embed a repository write credential. GitHub-authenticated issue creation is the current trusted browser bridge for the zero-price SEARCH beta.",
     "forbidden": [
       "embedding PAT or GitHub token in Pages JavaScript",
       "treating unauthenticated browser POST as authority",
-      "turning payment into execution authority"
+      "turning payment into execution authority",
+      "opening public REPO_AUDIT or DATASET_SCOUT before SEARCH external roundtrip evidence"
     ]
   },
   "proof": {
@@ -80,6 +101,16 @@
       "home_response_hash": "e417960fe313d136c3aa75f0a8fe416d820740bb89bc4ad1bc1fdc6ffe6c6b9a",
       "final_janus_response_observed": true,
       "foreign_buyer_witness": false
+    },
+    "public_search_beta": {
+      "admission_contract_prepared": true,
+      "external_roundtrip_observed": false,
+      "foreign_agent_witness": false
     }
-  }
+  },
+  "truth_boundary": [
+    "PUBLIC_INTAKE != COMPLETED_SERVICE",
+    "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_GATE_PASSES",
+    "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
+  ]
 }
