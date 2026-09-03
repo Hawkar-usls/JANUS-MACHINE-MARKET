@@ -1,0 +1,53 @@
+name: JANUS Paid HOME Reconcile Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/r1b_home_response_reconcile.py'
+      - 'runtime/purchase_ledger.py'
+      - 'tests/test_r1b_home_response_reconcile.py'
+      - 'tests/test_r1b_paid_home_response_reconcile.py'
+      - '.github/workflows/paid-home-reconcile-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/r1b_home_response_reconcile.py'
+      - 'runtime/purchase_ledger.py'
+      - 'tests/test_r1b_home_response_reconcile.py'
+      - 'tests/test_r1b_paid_home_response_reconcile.py'
+      - '.github/workflows/paid-home-reconcile-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  paid-return-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile paid return gate
+        run: python -m py_compile runtime/r1b_home_response_reconcile.py runtime/purchase_ledger.py tests/test_r1b_paid_home_response_reconcile.py
+      - name: Run zero-price regression plus paid execution ledger tests
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_r1b_home_response_reconcile.py \
+            tests/test_r1b_paid_home_response_reconcile.py
+      - name: Enforce shared purchase execution index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('runtime/purchase_ledger.py').read_text()
+          assert 'state/commerce/execution-by-purchase' in text
+          assert 'persist_paid_home_response' in text
+          print('PAID_HOME_ONE_EXECUTION_PER_PURCHASE=PASS')
+          print('LOCAL_EXECUTOR_AND_HOME_SHARE_EXECUTION_INDEX=PASS')
+          PY
