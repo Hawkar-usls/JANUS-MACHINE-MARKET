@@ -1,0 +1,61 @@
+{
+  "schema": "janus.machine_market.aws_agent_registry_descriptor_template.v1",
+  "recorded_at": "2026-09-03",
+  "status": "OFFLINE_SHAPE_ONLY_NOT_PUBLISHABLE",
+  "purpose": "Preserve the current AWS Agent Registry record envelope and explicit schema-version compatibility boundary without inventing a live JANUS endpoint.",
+  "aws_current_record_envelope": {
+    "metadata_fields": [
+      "name",
+      "displayName",
+      "description",
+      "recordVersion",
+      "recordType",
+      "tags"
+    ],
+    "exactly_one_primary_descriptor": true
+  },
+  "mcp_record_shape": {
+    "recordType": "MCP",
+    "descriptors": {
+      "mcpServer": {
+        "data": null,
+        "dataSchemaVersion": "2025-12-11",
+        "additionalData": {
+          "tools": {
+            "data": null,
+            "dataSchemaVersion": "2025-11-25"
+          }
+        }
+      }
+    },
+    "shape_source": "AWS_CURRENT_EXPLICIT_SUPPORTED_VERSION_LIST",
+    "janus_live_payload_generated": false,
+    "janus_runtime_target_revision": "2026-07-28",
+    "runtime_protocol_revision_equals_server_json_schema_version": false,
+    "runtime_protocol_revision_equals_tools_schema_version": false,
+    "publication_allowed": false
+  },
+  "a2a_record_shape": {
+    "recordType": "AGENT",
+    "descriptors": {
+      "a2aAgentCard": {
+        "data": null,
+        "dataSchemaVersion": "0.3"
+      }
+    },
+    "shape_source": "AWS_CURRENT_EXPLICIT_SUPPORTED_VERSION_LIST",
+    "janus_live_payload_generated": false,
+    "janus_runtime_target_version": "1.0",
+    "direct_version_compatibility_with_current_aws_list": false,
+    "publication_allowed": false
+  },
+  "prohibited_fabrication": [
+    "DO_NOT_INSERT_PLACEHOLDER_ENDPOINT_URL",
+    "DO_NOT_DOWNGRADE_JANUS_RUNTIME_TO_MATCH_AWS_LIST",
+    "DO_NOT_LABEL_2026_07_28_AS_AWS_SERVER_JSON_SCHEMA_VERSION",
+    "DO_NOT_LABEL_A2A_1_0_AS_CURRENTLY_SUPPORTED_AWS_AGENT_CARD_SCHEMA",
+    "DO_NOT_CREATE_OR_SUBMIT_REGISTRY_RECORD_FROM_THIS_TEMPLATE"
+  ],
+  "activation_condition": "Only populate descriptor data from an independently verified live JANUS runtime after re-checking AWS current supported schema-version lists and passing endpoint/schema/authority shadow validation.",
+  "truth_boundary": "TEMPLATE_SHAPE != VALIDATED_DESCRIPTOR != PUBLISHED_RECORD != DISCOVERY_WITNESS"
+}
