@@ -5,7 +5,13 @@ from datetime import datetime, timezone
 
 from runtime.commerce_authority import MIN_CONFIRMATIONS
 from runtime.paid_search_checkout import issue_invoice
-from runtime.paid_search_settlement import canonical_confirmed_receipt, consensus_payment_observation
+from runtime.paid_search_settlement import (
+    DEFAULT_RPC_URLS,
+    RPC_QUORUM,
+    canonical_confirmed_receipt,
+    configured_rpc_urls,
+    consensus_payment_observation,
+)
 
 TX = "0x" + "ab" * 32
 BLOCK = "0x" + "cd" * 32
@@ -72,6 +78,15 @@ def observation(confirmations=12, *, block_hash=BLOCK, status=None):
         "block_timestamp": "2026-09-04T12:10:00Z",
         "confirmations": confirmations,
     }
+
+
+def test_legacy_single_rpc_argument_is_augmented_to_canonical_quorum_pool():
+    only_old = DEFAULT_RPC_URLS[0]
+    urls = configured_rpc_urls([only_old])
+    assert urls[0] == only_old
+    assert len(urls) == len(set(urls))
+    assert len(urls) >= RPC_QUORUM
+    assert set(DEFAULT_RPC_URLS).issubset(set(urls))
 
 
 def test_two_matching_confirmed_rpc_observations_form_quorum():
