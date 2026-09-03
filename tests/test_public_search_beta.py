@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import unittest
 
 from runtime.public_search_beta import (
@@ -64,14 +63,14 @@ class PublicSearchBetaTests(unittest.TestCase):
         with self.assertRaisesRegex(PublicSearchBetaError, "PUBLIC_BETA_MESSAGE_TOO_LARGE"):
             normalize_external_issue_request(self.issue(), self.raw_request("x" * (MAX_MESSAGE_UTF8_BYTES + 1)))
 
-    def test_first_request_is_admitted_and_exact_retry_is_idempotent(self):
+    def test_first_request_and_exact_retry_have_identical_admission_receipt(self):
         packet = self.packet()
         first = evaluate_outbox_admission(packet, [])
-        self.assertTrue(first["admitted"])
         retry = evaluate_outbox_admission(packet, [packet])
-        self.assertTrue(retry["admitted"])
-        self.assertTrue(retry["exact_retry"])
-        self.assertEqual(retry["reason"], "EXACT_RETRY")
+        self.assertTrue(first["admitted"])
+        self.assertEqual(first, retry)
+        self.assertEqual(first["reason"], "PUBLIC_BETA_ADMITTED")
+        self.assertEqual(first["policy"], "ONE_ISSUE_ONE_QUERY_CREATE_ONLY")
 
     def test_same_issue_cannot_be_rebound_to_changed_query(self):
         first = self.packet(message="first")
