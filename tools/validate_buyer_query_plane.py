@@ -24,13 +24,15 @@ def main() -> int:
     search = load("products/JANUS.SEARCH.json")
 
     require(
-        plane.get("status") == "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
-        "BUYER_QUERY_PLANE_STATUS_MUST_REMAIN_FAIL_CLOSED",
+        plane.get("status") == "ZERO_PRICE_LIVE_PAID_HOME_ROUTE_ARMED_WITNESS_PENDING",
+        "BUYER_QUERY_PLANE_STATUS_STALE_OR_UNSAFE",
     )
     gates = plane.get("current_gates") or {}
-    require(gates.get("payment_endpoint") == "CLOSED", "PAYMENT_ENDPOINT_MUST_REMAIN_CLOSED")
-    require(gates.get("purchase_grant_paid_witness") == "PENDING", "PAID_WITNESS_MUST_REMAIN_PENDING")
-    require(gates.get("activator_buyer_query_binding") == "PENDING", "ACTIVATOR_BINDING_MUST_REMAIN_PENDING")
+    require(gates.get("payment_endpoint") == "ARMED_GATE_CLOSED", "PAYMENT_ENDPOINT_MUST_REMAIN_GATE_CLOSED")
+    require(gates.get("purchase_grant_paid_witness") == "PENDING_REAL_PAID_SETTLEMENT", "PAID_WITNESS_MUST_REMAIN_PENDING")
+    require(gates.get("activator_buyer_query_binding") == "PASS_DUAL_MODE_ZERO_AND_PAID", "ACTIVATOR_PAID_BINDING_NOT_PROVEN")
+    require(gates.get("physarius_market_to_home_vessel") == "PASS_DUAL_MODE_PACKET_CONTRACT", "PHYSARIUS_PAID_VESSEL_NOT_PROVEN")
+    require(gates.get("foreign_buyer_query_witness") == "PENDING", "FOREIGN_BUYER_WITNESS_PREMATURE")
     require(gates.get("live_publication_allowed") is False, "LIVE_BUYER_QUERY_PUBLICATION_FORBIDDEN")
 
     laws = set(plane.get("laws") or [])
@@ -61,20 +63,27 @@ def main() -> int:
     post = search.get("post_purchase_query") or {}
     require(search.get("machine_purchase") is False, "JANUS_SEARCH_MACHINE_PURCHASE_PREMATURE")
     require(
-        post.get("status") == "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
-        "JANUS_SEARCH_POST_PURCHASE_QUERY_PREMATURE",
+        post.get("status") == "PAID_HOME_ROUTE_IMPLEMENTED_HOME_ACCEPTOR_MERGED_LIVE_PAYMENT_WITNESS_PENDING",
+        "JANUS_SEARCH_PAID_HOME_STATUS_STALE_OR_UNSAFE",
     )
     require(post.get("enabled_only_by_explicit_purchase_grant_entitlement") is True, "QUERY_ENTITLEMENT_GATE_MISSING")
     require(post.get("query_is_command") is False, "QUERY_MUST_NOT_BECOME_COMMAND")
+    require(post.get("payment_is_command") is False, "PAYMENT_MUST_NOT_BECOME_COMMAND")
+    require(post.get("purchase_grant_is_execution_authority") is False, "PURCHASE_GRANT_MUST_NOT_BECOME_EXECUTION_AUTHORITY")
     require(post.get("external_effect_authorized") is False, "QUERY_EXTERNAL_EFFECTS_FORBIDDEN")
+    require((search.get("live_gate") or {}).get("checkout_live") is False, "CHECKOUT_LIVE_PREMATURE")
 
-    require(plane.get("next_gate") == "R1B_ZERO_PRICE_BUYER_QUERY_SHADOW_ROUNDTRIP", "R1B_NEXT_GATE_MISMATCH")
+    require(
+        plane.get("next_gate") == "FIRST_REAL_EXTERNAL_MACHINE_WITNESS_THEN_LIVE_PAID_INVOICE",
+        "BUYER_QUERY_NEXT_GATE_MISMATCH",
+    )
 
     print("JANUS_BUYER_QUERY_PLANE_FAIL_CLOSED=PASS")
+    print("PAID_HOME_BUYER_QUERY_BINDING=PASS")
     print("PURCHASE_GRANT_QUERY_ENTITLEMENT_BOUNDARY=PASS")
     print("BUYER_QUERY_COMMAND_AUTHORITY=FALSE")
     print("BUYER_QUERY_EXTERNAL_EFFECT_AUTHORITY=FALSE")
-    print("R1B_LIVE_PAYMENT_QUERY=FALSE")
+    print("LIVE_PAID_CHECKOUT=FALSE_PENDING_FOREIGN_WITNESS")
     return 0
 
 
