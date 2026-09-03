@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.buyer_query_plane.v1",
-  "status": "PREPARED_NOT_LIVE_PAYMENT_AND_ACTIVATOR_BINDING_PENDING",
+  "status": "ZERO_PRICE_LIVE_PAID_HOME_ROUTE_ARMED_WITNESS_PENDING",
   "purpose": "Allow a buyer with an admitted purchase grant to submit bounded conversational questions to JANUS and receive sealed identity-bound responses without converting payment or language into command, truth, proof, write, or effect authority.",
   "analogy_sources": {
     "turing_gate": {
@@ -100,12 +100,12 @@
     "RETURN != RESET"
   ],
   "current_gates": {
-    "payment_endpoint": "CLOSED",
-    "purchase_grant_paid_witness": "PENDING",
-    "activator_buyer_query_binding": "PENDING",
-    "physarius_market_to_home_vessel": "PENDING",
+    "payment_endpoint": "ARMED_GATE_CLOSED",
+    "purchase_grant_paid_witness": "PENDING_REAL_PAID_SETTLEMENT",
+    "activator_buyer_query_binding": "PASS_DUAL_MODE_ZERO_AND_PAID",
+    "physarius_market_to_home_vessel": "PASS_DUAL_MODE_PACKET_CONTRACT",
     "foreign_buyer_query_witness": "PENDING",
     "live_publication_allowed": false
   },
-  "next_gate": "R1B_ZERO_PRICE_BUYER_QUERY_SHADOW_ROUNDTRIP"
+  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_WITNESS_THEN_LIVE_PAID_INVOICE"
 }
