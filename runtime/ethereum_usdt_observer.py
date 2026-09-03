@@ -16,6 +16,7 @@ from typing import Any, Iterable
 from runtime.commerce_authority import CHAIN_ID, MIN_CONFIRMATIONS, USDT_ETHEREUM, CommerceInvalid, normalize_address
 
 TRANSFER_TOPIC0 = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+RPC_USER_AGENT = "JANUS-MACHINE-MARKET/paid-search-observer-v1"
 
 
 class RpcError(RuntimeError):
@@ -169,7 +170,16 @@ class JsonRpc:
     def call(self, method: str, params: list[Any]) -> Any:
         self._id += 1
         payload = json.dumps({"jsonrpc": "2.0", "id": self._id, "method": method, "params": params}).encode()
-        req = urllib.request.Request(self.url, data=payload, headers={"content-type": "application/json"}, method="POST")
+        req = urllib.request.Request(
+            self.url,
+            data=payload,
+            headers={
+                "content-type": "application/json",
+                "accept": "application/json",
+                "user-agent": RPC_USER_AGENT,
+            },
+            method="POST",
+        )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 data = json.load(response)
