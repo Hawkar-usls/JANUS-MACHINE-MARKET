@@ -185,6 +185,22 @@ def test_per_buyer_pending_limit_and_global_depth_fail_closed(tmp_path: Path):
         enqueue(other_root, bundle(seed="depth-4", level=1, block=204, buyer="github:4")[-1], tiny)
 
 
+def test_completed_history_does_not_consume_pending_capacity(tmp_path: Path):
+    p = deepcopy(policy())
+    p["max_queue_depth"] = 1
+    p["max_queued_per_buyer"] = 10
+    now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
+    first = bundle(seed="history-first", level=1, block=300, buyer="github:first")[-1]
+    enqueue(tmp_path, first, p)
+    claimed = claim_next(tmp_path, p, now=now)
+    mark_dispatched(tmp_path, claimed["entry"], outbox_commit="a" * 40, dispatched_at=now)
+    complete_active(tmp_path, home_response(first), completed_at=now + timedelta(minutes=1))
+    historical = tmp_path / "state/commerce/paid-search-queue/entries" / f"{first['purchase_id']}.json"
+    assert historical.exists(), "immutable queue history must remain preserved"
+    second = bundle(seed="history-second", level=1, block=301, buyer="github:second")[-1]
+    assert enqueue(tmp_path, second, p)["queue_entry"] == "CREATED"
+
+
 def test_snapshot_exposes_position_and_estimate_not_guarantee(tmp_path: Path):
     p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
     low = bundle(seed="snap-low", level=1, block=100)[-1]
