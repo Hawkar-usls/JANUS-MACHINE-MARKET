@@ -80,12 +80,17 @@ jobs:
           p=json.load(open('PRICING.json',encoding='utf-8'))['products']['JANUS.SEARCH']['queue_levels']
           q=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
           assert q['queue_levels']==5 and q['max_active_paid_search']==1 and q['preemption'] is False
+          assert q['capacity_limit_applies_at']=='INVOICE_ADMISSION'
+          assert q['valid_paid_settlement_can_be_rejected_for_capacity'] is False
+          assert int(q['invoice_reservation_grace_minutes']) >= 0
           for level,spec in q['levels'].items():
               assert int(p[level]['multiplier_bps'])==int(spec['price_multiplier_bps'])
               assert p[level]['code']==spec['code']
           print('PAID_QUEUE_PRICE_BINDING=PASS')
           print('PAID_QUEUE_MAX_ACTIVE=1')
           print('PAID_QUEUE_PREEMPTION=FALSE')
+          print('PAID_QUEUE_CAPACITY_GATE=BEFORE_INVOICE')
+          print('VALID_PAID_SETTLEMENT_CAPACITY_REJECTION=FALSE')
           PY
       - name: Assert no transaction signing/sending code
         run: |
@@ -130,7 +135,7 @@ jobs:
           rm -rf "$state"
           git worktree add -B janus-market-paid-state "$state" origin/janus/market-state
           echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
-      - name: Normalize request and create/recover exact invoice
+      - name: Normalize request, reserve queue capacity, then create/recover exact invoice
         id: invoice
         env:
           PYTHONPATH: .
@@ -144,6 +149,7 @@ jobs:
           from runtime.commerce_authority import CommerceBlocked
           from runtime.paid_search_checkout import checkout_gate, issue_invoice, verify_invoice
           from runtime.paid_search_packet import normalize_paid_issue_request
+          from runtime.paid_search_queue import QueueInvalid, reserve_invoice_slot
           event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
           issue=event['issue']; body=str(issue.get('body') or '')
           a='<!-- JANUS_PAID_SEARCH_JSON'; b='JANUS_PAID_SEARCH_JSON -->'
@@ -159,7 +165,7 @@ jobs:
               checkout_gate(readiness=readiness,witness=witness,product=product)
           except CommerceBlocked as exc:
               print('live=false'); print('new=false'); print('reason='+str(exc).replace('\n',' ')); raise SystemExit(0)
-          state=Path(os.environ['MARKET_STATE'])
+          state=Path(os.environ['MARKET_STATE']); now=datetime.now(timezone.utc)
           target=state/'state/commerce/invoices'/f"issue-{issue['id']}.json"
           target.parent.mkdir(parents=True,exist_ok=True)
           if target.exists():
@@ -167,29 +173,43 @@ jobs:
               if record.get('request')!=request: raise SystemExit('PAID_SEARCH_INVOICE_CREATE_ONLY_REQUEST_CONFLICT')
               verify_invoice(record['invoice'],request); new=False
           else:
-              inv=issue_invoice(request=request,pricing=json.load(open('PRICING.json')),issued_at=datetime.now(timezone.utc))
+              inv=issue_invoice(request=request,pricing=json.load(open('PRICING.json')),issued_at=now)
               record={'schema':'janus.machine_market.paid_search_invoice_record.v1','issue_id':int(issue['id']),'issue_number':int(issue['number']),'issue_url':issue['html_url'],'buyer_login':issue['user']['login'],'request':request,'invoice':inv}
-              target.write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n'); new=True
+              new=True
+          queue_policy=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
+          try:
+              reserved=reserve_invoice_slot(state,request=request,invoice=record['invoice'],policy=queue_policy,now=now)
+          except QueueInvalid as exc:
+              if new:
+                  print('live=false'); print('new=false'); print('reason='+str(exc).replace('\n',' ')); raise SystemExit(0)
+              raise
+          if new:
+              target.write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
           Path('runtime/paid-invoice-record.json').write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
-          inv=record['invoice']
-          print('live=true'); print('new='+('true' if new else 'false')); print('invoice_id='+inv['invoice_id']); print('amount='+str(inv['amount_usdt_micros'])); print('expires_at='+inv['expires_at']); print('receiver='+inv['receiving_address']); print('queue_level='+str(inv['queue_level'])); print('queue_code='+str(inv['queue_code']))
+          inv=record['invoice']; cap=reserved['capacity']
+          print('live=true'); print('new='+('true' if new else 'false')); print('invoice_id='+inv['invoice_id']); print('amount='+str(inv['amount_usdt_micros'])); print('expires_at='+inv['expires_at']); print('receiver='+inv['receiving_address']); print('queue_level='+str(inv['queue_level'])); print('queue_code='+str(inv['queue_code'])); print('reservation='+reserved['reservation']); print('slots_available='+str(cap['slots_available'])); print('buyer_pending='+str(cap.get('buyer_pending') or 0))
           PY
-      - name: Commit immutable invoice record
-        if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
+      - name: Commit immutable invoice and queue reservation atomically
+        if: steps.invoice.outputs.live == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git -C "$MARKET_STATE" config user.name "JANUS Paid Search State"
           git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C "$MARKET_STATE" add state/commerce/invoices
-          git -C "$MARKET_STATE" commit -m "Paid SEARCH invoice ${{ steps.invoice.outputs.invoice_id }}"
-          git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+          git -C "$MARKET_STATE" add state/commerce/invoices state/commerce/paid-search-queue/reservations
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'PAID_INVOICE_QUEUE_RESERVATION=IDEMPOTENT_REPLAY'
+          else
+            git -C "$MARKET_STATE" commit -m "Paid SEARCH invoice reservation ${{ steps.invoice.outputs.invoice_id }}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'PAID_INVOICE_QUEUE_RESERVATION=PASS'
+          fi
       - name: Tell requester checkout is still fail-closed
         if: steps.invoice.outputs.live != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REASON: ${{ steps.invoice.outputs.reason }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid checkout is **not live**, and no payable invoice was issued. Reason: \`$REASON\`. **Do not send funds.**"
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send funds.**"
       - name: Publish exact live invoice
         if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
         env:
@@ -207,6 +227,7 @@ jobs:
           print(f"Recipient: `{q['receiving_address']}`")
           print(f"Expires: `{q['expires_at']}` — the transfer must be mined no later than this time.")
           print('Required confirmations: **12**\n')
+          print('A queue-capacity slot was reserved before this invoice was published. Capacity/per-buyer limits are invoice-admission gates, not reasons to reject a valid payment later.')
           print('After the transfer has enough confirmations, post a new comment containing:')
           print('```\n<!-- JANUS_PAYMENT_PROOF_JSON\n{"tx_hash":"0x...","log_index":0}\nJANUS_PAYMENT_PROOF_JSON -->\n```')
           print('Payment settlement creates a queue entry; it does **not** start execution immediately. Higher levels may overtake waiting requests only; the active request is never preempted.')
