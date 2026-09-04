@@ -1,12 +1,13 @@
 {
   "schema": "janus.machine_market.foreign_agent_witness_status.v1",
-  "status": "PENDING_REAL_EXTERNAL_REQUEST",
+  "status": "PENDING_REAL_EXTERNAL_PERSISTENT_HOME_REQUEST",
   "foreign_agent_witness": false,
-  "promotion_authority": "PERSISTENT_RECEIPT_ONLY",
-  "gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT",
+  "promotion_authority": "PERSISTENT_HOME_RECEIPT_ONLY",
+  "gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
   "policy": "runtime/FOREIGN_AGENT_WITNESS_POLICY.json",
-  "receipt_schema": "schemas/foreign-agent-witness-receipt.schema.json",
-  "instructions": "docs/FOREIGN_AGENT_WITNESS_GATE.md",
+  "legacy_receipt_schema": "schemas/foreign-agent-witness-receipt.schema.json",
+  "persistent_home_receipt_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
+  "persistent_home_first_receipt": "state/r1-foreign-home/FIRST.json on janus/market-state",
   "accepted_sku": "JANUS.SEARCH",
   "price": 0,
   "money_enabled": false,
@@ -14,9 +15,12 @@
   "self_owner_request_can_promote": false,
   "synthetic_request_can_promote": false,
   "workflow_dispatch_can_promote": false,
+  "legacy_local_catalog_witness_can_open_money": false,
+  "persistent_home_result_required_for_paid_promotion": true,
+  "witness_receipt_itself_enables_money": false,
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
     "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
   },
-  "law": "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL_AND_PERSISTENT_RECEIPT"
+  "law": "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_MACHINE_PRINCIPAL_PLUS_FROZEN_DISCOVERY_CLAIM_PLUS_PERSISTENT_HOME_RECEIPT"
 }

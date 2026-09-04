@@ -1,0 +1,246 @@
+name: JANUS R1E Persistent HOME Foreign Agent Witness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/persistent_home_foreign_witness.py'
+      - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
+      - 'tests/test_persistent_home_foreign_witness.py'
+      - '.github/workflows/r1e-foreign-machine-claim-freeze.yml'
+      - '.github/workflows/r1e-persistent-home-foreign-witness.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run persistent HOME foreign-witness adversarial suite
+        run: |
+          set -euo pipefail
+          python -m py_compile runtime/persistent_home_foreign_witness.py tests/test_persistent_home_foreign_witness.py
+          PYTHONPATH=. python -m pytest -q tests/test_persistent_home_foreign_witness.py
+      - name: Enforce no-money promotion boundary
+        run: |
+          python - <<'PY'
+          from runtime.persistent_home_foreign_witness import PUBLIC_ORIGIN
+          assert PUBLIC_ORIGIN == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
+          print('R1E_DISCOVERY_RUN_PRICE=ZERO')
+          print('R1E_WITNESS_RECEIPT_MONEY_AUTHORITY=FALSE')
+          print('R1E_WITNESS_RECEIPT_PROMOTION_AUTHORITY=CANDIDATE_ONLY')
+          PY
+
+  adjudicate:
+    if: github.event_name != 'pull_request'
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: read
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Mount persistent Market state and credentialless public outbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/r1e-market-state"
+          rm -rf "$state"
+          git worktree add -B r1e-market-state-local "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+
+          outbox="$RUNNER_TEMP/r1e-market-outbox"
+          rm -rf "$outbox"
+          if git -c http.extraHeader= ls-remote --exit-code --heads https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET.git janus/market-home-outbox >/dev/null 2>&1; then
+            git -c http.extraHeader= clone --quiet --depth 1 --branch janus/market-home-outbox \
+              https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET.git "$outbox"
+          else
+            mkdir -p "$outbox/.janus/market-home-outbox"
+          fi
+          echo "R1E_OUTBOX=$outbox" >> "$GITHUB_ENV"
+          echo 'R1E_CROSS_REPO_CREDENTIAL_USED=FALSE'
+
+      - name: Select first complete persistent-HOME witness candidate
+        id: select
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > runtime/r1e-selection.json
+          import json, os
+          from pathlib import Path
+          state=Path(os.environ['MARKET_STATE'])
+          outbox=Path(os.environ['R1E_OUTBOX'])/'.janus/market-home-outbox'
+          first=state/'state/r1-foreign-home/FIRST.json'
+          if first.exists():
+              print(json.dumps({'found':False,'reason':'FIRST_WITNESS_ALREADY_FROZEN'},sort_keys=True)); raise SystemExit(0)
+          chosen=None
+          for claim_path in sorted((outbox/'public-witness-claims').glob('issue-*.json')):
+              claim=json.loads(claim_path.read_text(encoding='utf-8'))
+              issue_id=int(claim.get('issue_id') or 0)
+              admission_path=outbox/'public-admissions'/f'issue-{issue_id}.json'
+              if not admission_path.exists(): continue
+              admission=json.loads(admission_path.read_text(encoding='utf-8'))
+              qid=str(admission.get('query_id') or '')
+              if not qid: continue
+              packet_path=outbox/f'{qid}.packet.json'
+              response_path=state/'state/r1b-buyer-query/receipts'/f'{qid}.json'
+              if not packet_path.exists() or not response_path.exists(): continue
+              chosen={
+                'issue_id':issue_id,
+                'issue_number':int(claim.get('issue_number') or 0),
+                'query_id':qid,
+                'claim_path':str(claim_path),
+                'admission_path':str(admission_path),
+                'packet_path':str(packet_path),
+                'response_path':str(response_path),
+              }
+              break
+          print(json.dumps({'found':chosen is not None,'reason':'COMPLETE_CANDIDATE' if chosen else 'NO_COMPLETE_CANDIDATE','chosen':chosen},sort_keys=True))
+          PY
+          cat runtime/r1e-selection.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          s=json.load(open('runtime/r1e-selection.json')); c=s.get('chosen') or {}
+          print('found=' + ('true' if s.get('found') else 'false'))
+          for key in ('issue_id','issue_number','query_id','claim_path','admission_path','packet_path','response_path'):
+              print(key + '=' + str(c.get(key) or ''))
+          PY
+
+      - name: No complete external persistent-HOME witness candidate
+        if: steps.select.outputs.found != 'true'
+        run: |
+          echo 'R1E_PERSISTENT_HOME_FOREIGN_WITNESS=NO_NEW_CANDIDATE'
+          echo 'SILENCE_IS_NEGATIVE_EVIDENCE=FALSE'
+          echo 'MONEY_ENABLED=FALSE_UNCHANGED'
+
+      - name: Fetch current GitHub issue identity
+        if: steps.select.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.select.outputs.issue_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}" > runtime/r1e-current-issue.json
+          python - <<'PY'
+          import json
+          i=json.load(open('runtime/r1e-current-issue.json'))
+          assert int(i['id']) > 0 and int(i['number']) > 0
+          assert i['user']['login'] and int(i['user']['id']) > 0
+          print('R1E_CURRENT_GITHUB_IDENTITY_FETCH=PASS')
+          PY
+
+      - name: Adjudicate and persist first qualifying witness create-only
+        if: steps.select.outputs.found == 'true'
+        env:
+          PYTHONPATH: .
+          CLAIM_PATH: ${{ steps.select.outputs.claim_path }}
+          ADMISSION_PATH: ${{ steps.select.outputs.admission_path }}
+          PACKET_PATH: ${{ steps.select.outputs.packet_path }}
+          RESPONSE_PATH: ${{ steps.select.outputs.response_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from runtime.persistent_home_foreign_witness import adjudicate_persistent_home_witness, persist_first_witness, verify_witness_receipt
+          load=lambda p: json.load(open(p,encoding='utf-8'))
+          receipt=adjudicate_persistent_home_witness(
+              packet=load(os.environ['PACKET_PATH']),
+              admission=load(os.environ['ADMISSION_PATH']),
+              ingress_claim=load(os.environ['CLAIM_PATH']),
+              home_response=load(os.environ['RESPONSE_PATH']),
+              current_issue=load('runtime/r1e-current-issue.json'),
+              policy=load('runtime/FOREIGN_AGENT_WITNESS_POLICY.json'),
+          )
+          assert verify_witness_receipt(receipt)
+          result=persist_first_witness(Path(os.environ['MARKET_STATE']),receipt)
+          Path('runtime/r1e-witness-receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('runtime/r1e-persist-result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('R1E_FOREIGN_PERSISTENT_HOME_WITNESS=PASS_CANDIDATE_ONLY')
+          print('R1E_MONEY_ENABLED=FALSE')
+          print('R1E_AUTONOMOUS_PURCHASE=FALSE')
+          PY
+
+      - name: Commit only immutable witness state
+        if: steps.select.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" config user.name "JANUS R1E Persistent HOME Witness"
+          git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$MARKET_STATE" add state/r1-foreign-home
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'R1E_WITNESS_STATE=NO_CHANGE_EXACT_REPLAY'
+          else
+            git -C "$MARKET_STATE" commit -m "R1E persistent HOME foreign witness ${{ steps.select.outputs.query_id }}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'R1E_WITNESS_STATE=CREATE_ONLY_PASS'
+          fi
+
+      - name: Fresh-checkout verify frozen first witness
+        if: steps.select.outputs.found == 'true'
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          replay="$RUNNER_TEMP/r1e-market-state-replay"
+          rm -rf "$replay"
+          git worktree add --detach "$replay" origin/janus/market-state
+          R1E_REPLAY="$replay" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from runtime.persistent_home_foreign_witness import verify_witness_receipt
+          root=Path(os.environ['R1E_REPLAY'])/'state/r1-foreign-home'
+          first=json.loads((root/'FIRST.json').read_text(encoding='utf-8'))
+          receipt=json.loads((root/'receipts'/f"{first['witness_id']}.json").read_text(encoding='utf-8'))
+          assert verify_witness_receipt(receipt)
+          assert first['receipt_hash']==receipt['receipt_hash']
+          assert receipt['foreign_agent_witness'] is True
+          assert receipt['money_enabled'] is False
+          assert receipt['promotion_authority']=='PERSISTENT_RECEIPT_CANDIDATE_ONLY'
+          print('R1E_FRESH_CHECKOUT_WITNESS_REPLAY=PASS')
+          print('R1E_FIRST_WITNESS_IMMUTABLE=PASS')
+          print('R1E_LIVE_PAYMENT_PROMOTION=STILL_REQUIRED')
+          PY
+
+      - name: Upload adjudication witness
+        if: steps.select.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-r1e-persistent-home-witness-${{ steps.select.outputs.query_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            runtime/r1e-selection.json
+            runtime/r1e-current-issue.json
+            runtime/r1e-witness-receipt.json
+            runtime/r1e-persist-result.json
+          if-no-files-found: error
