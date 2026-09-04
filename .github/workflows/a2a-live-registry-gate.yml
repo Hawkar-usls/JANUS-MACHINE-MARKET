@@ -11,6 +11,8 @@ on:
     paths:
       - 'tools/verify_and_ingest_a2a_live.mjs'
       - '.github/workflows/a2a-live-registry-gate.yml'
+  issues:
+    types: [opened]
   workflow_dispatch:
     inputs:
       base_url:
@@ -28,6 +30,10 @@ permissions:
 
 jobs:
   contract:
+    if: >-
+      github.event_name != 'issues' ||
+      (startsWith(github.event.issue.title, '[JANUS A2A LIVE GATE]') &&
+       github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -61,7 +67,11 @@ jobs:
           PY
 
   verify-and-ingest:
-    if: github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' &&
+       startsWith(github.event.issue.title, '[JANUS A2A LIVE GATE]') &&
+       github.event.issue.user.login == github.repository_owner)
     needs: contract
     concurrency:
       group: janus-machine-market-state-writer
@@ -80,11 +90,44 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Resolve trusted live-gate input
+        id: gate
+        env:
+          DISPATCH_BASE_URL: ${{ inputs.base_url }}
+          DISPATCH_INGEST: ${{ inputs.ingest_registry }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import fs from 'node:fs';
+          const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
+          let baseUrl=''; let ingest=true;
+          if (event.action === undefined) {
+            baseUrl=String(process.env.DISPATCH_BASE_URL || '');
+            ingest=String(process.env.DISPATCH_INGEST || 'true') === 'true';
+          } else {
+            const issue=event.issue || {};
+            const body=String(issue.body || '');
+            const begin='<!-- JANUS_A2A_LIVE_GATE_JSON';
+            const end='JANUS_A2A_LIVE_GATE_JSON -->';
+            const s=body.indexOf(begin); const e=body.indexOf(end);
+            if (s < 0 || e < 0 || e <= s) throw new Error('A2A_LIVE_GATE_MARKER_MISSING');
+            const raw=JSON.parse(body.slice(s+begin.length,e).trim());
+            const allowed=new Set(['schema','base_url','ingest_registry']);
+            for (const key of Object.keys(raw)) if (!allowed.has(key)) throw new Error('A2A_LIVE_GATE_UNKNOWN_FIELD:'+key);
+            if (raw.schema !== 'janus.machine_market.a2a_live_gate_request.v1') throw new Error('A2A_LIVE_GATE_SCHEMA_INVALID');
+            baseUrl=String(raw.base_url || '');
+            ingest=raw.ingest_registry !== false;
+          }
+          if (!baseUrl || /[\r\n]/.test(baseUrl)) throw new Error('A2A_LIVE_GATE_BASE_URL_INVALID');
+          console.log('base_url='+baseUrl);
+          console.log('ingest_registry='+String(ingest));
+          NODE
       - name: Verify live A2A and optionally ingest Registry
         id: live
         env:
-          BASE_URL: ${{ inputs.base_url }}
-          INGEST: ${{ inputs.ingest_registry }}
+          BASE_URL: ${{ steps.gate.outputs.base_url }}
+          INGEST: ${{ steps.gate.outputs.ingest_registry }}
         shell: bash
         run: |
           set -euo pipefail
