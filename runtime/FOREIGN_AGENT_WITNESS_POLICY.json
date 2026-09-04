@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.foreign_agent_witness_policy.v1",
   "status": "PREPARED_PENDING_REAL_EXTERNAL_REQUEST",
-  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface and the request completes through persistent JANUS HOME/HRAiN. Legacy local catalog execution may remain diagnostic evidence but cannot by itself open paid commerce.",
+  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface and the request completes through persistent JANUS HOME/HRAiN. Global A2A Registry discovery may identify how the external machine found JANUS, but registry presence never substitutes for the persistent HOME witness and never proves an A2A runtime.",
   "owner": {
     "login": "Hawkar-usls",
     "github_user_id": 242020399
@@ -41,6 +41,7 @@
   "required_discovery_claim": {
     "schema": "janus.machine_market.foreign_discovery_claim.v1",
     "allowed_surfaces": [
+      "GLOBAL_A2A_REGISTRY",
       "GITHUB_PAGES",
       "GITHUB_REPOSITORY",
       "LLMS_TXT",
@@ -50,6 +51,16 @@
     ],
     "independent_from_owner": true,
     "machine_client": true
+  },
+  "discovery_surface_semantics": {
+    "GLOBAL_A2A_REGISTRY": {
+      "acceptable_as_frozen_discovery_source": true,
+      "requires_registry_listing_to_have_been_observable_to_requester": true,
+      "proves_a2a_runtime": false,
+      "proves_execution": false,
+      "proves_purchase_authority": false,
+      "note": "The claim records where an independent machine says it discovered JANUS. A registry listing is discovery evidence only."
+    }
   },
   "execution": {
     "sku": "JANUS.SEARCH",
@@ -97,6 +108,7 @@
     "workflow_dispatch_can_promote": false,
     "synthetic_fixture_can_promote": false,
     "payment_can_promote": false,
+    "registry_listing_alone_can_promote": false,
     "legacy_local_catalog_witness_can_open_money": false,
     "only_qualifying_external_machine_public_search_persistent_home_roundtrip_can_promote_paid_commerce": true,
     "witness_receipt_itself_enables_money": false,
@@ -113,6 +125,8 @@
     "NO_PAYMENT_BEFORE_FOREIGN_AGENT_WITNESS",
     "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL",
     "FOREIGN_AGENT_WITNESS_REQUIRES_MACHINE_DISCOVERY_CLAIM",
+    "GLOBAL_A2A_REGISTRY_DISCOVERY != A2A_RUNTIME",
+    "GLOBAL_A2A_REGISTRY_LISTING != FOREIGN_AGENT_WITNESS",
     "PAID_PROMOTION_REQUIRES_PERSISTENT_HOME_RESULT",
     "SELF_OWNER_REQUEST != FOREIGN_AGENT_WITNESS",
     "SYNTHETIC_REQUEST != FOREIGN_AGENT_WITNESS",
