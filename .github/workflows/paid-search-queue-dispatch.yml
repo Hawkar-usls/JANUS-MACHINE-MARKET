@@ -1,0 +1,226 @@
+name: JANUS Paid SEARCH Queue Dispatcher
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'PAID_QUEUE_POLICY.json'
+      - 'runtime/paid_search_queue.py'
+      - 'runtime/paid_search_packet.py'
+      - 'tests/test_paid_search_queue.py'
+      - '.github/workflows/paid-search-queue-dispatch.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'PAID_QUEUE_POLICY.json'
+      - 'runtime/paid_search_queue.py'
+      - 'runtime/paid_search_packet.py'
+      - 'tests/test_paid_search_queue.py'
+      - '.github/workflows/paid-search-queue-dispatch.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile queue runtime
+        run: python -m py_compile runtime/paid_search_queue.py runtime/paid_search_packet.py tests/test_paid_search_queue.py
+      - name: Run queue adversarial suite
+        run: PYTHONPATH=. python -m pytest -q tests/test_paid_search_queue.py
+      - name: Enforce serialized non-preemptive contract
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
+          assert p['queue_levels']==5
+          assert p['max_active_paid_search']==1
+          assert p['preemption'] is False
+          assert p['current_execution_can_be_interrupted_by_higher_tier'] is False
+          assert p['aging']['enabled'] is True
+          assert p['service_time_estimate_minutes']['min'] <= p['service_time_estimate_minutes']['nominal'] <= p['service_time_estimate_minutes']['max']
+          print('PAID_SEARCH_QUEUE_LEVELS=5')
+          print('PAID_SEARCH_MAX_ACTIVE=1')
+          print('PAID_SEARCH_PREEMPTION=FALSE')
+          print('PAID_SEARCH_ETA=ESTIMATE_NOT_GUARANTEE')
+          PY
+
+  dispatch:
+    if: github.event_name != 'pull_request'
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Mount persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/paid-queue-market-state"
+          rm -rf "$state"
+          git worktree add -B paid-queue-market-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+
+      - name: Complete returned active request and select exactly one next request
+        id: select
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from runtime.paid_search_queue import active_path, claim_next, complete_active, dispatch_path, snapshot
+          state=Path(os.environ['MARKET_STATE'])
+          policy=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
+          active_file=active_path(state)
+          completed_now=False
+          if active_file.exists():
+              active=json.load(open(active_file,encoding='utf-8'))
+              qid=str(active.get('query_id') or '')
+              receipt_path=state/'state/r1b-buyer-query/receipts'/f'{qid}.json'
+              if receipt_path.exists():
+                  response=json.load(open(receipt_path,encoding='utf-8'))
+                  complete_active(state,response,completed_at=datetime.now(timezone.utc))
+                  completed_now=True
+          chosen=claim_next(state,policy,now=datetime.now(timezone.utc))
+          entry=chosen.get('entry') or {}
+          pid=str(entry.get('purchase_id') or '')
+          qid=str(entry.get('query_id') or '')
+          issue=str(entry.get('source_issue_number') or '')
+          need_publish=bool(pid) and not dispatch_path(state,pid).exists()
+          if entry:
+              Path('runtime/queue-dispatch-packet.json').write_text(json.dumps(entry['packet'],ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          snap=snapshot(state,policy,now=datetime.now(timezone.utc),focus_purchase_id=pid or None)
+          status_path=state/'state/commerce/paid-search-queue/QUEUE_STATUS.json'
+          status_path.parent.mkdir(parents=True,exist_ok=True)
+          status_path.write_text(json.dumps(snap,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          Path('runtime/queue-selection.json').write_text(json.dumps({'selection':chosen,'completed_previous_active':completed_now,'need_publish':need_publish},ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('status='+str(chosen['status']))
+          print('purchase_id='+pid)
+          print('query_id='+qid)
+          print('issue_number='+issue)
+          print('need_publish='+('true' if need_publish else 'false'))
+          print('completed_previous_active='+('true' if completed_now else 'false'))
+          PY
+
+      - name: Publish only the queue-selected packet to persistent HOME outbox
+        if: steps.select.outputs.need_publish == 'true'
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          outbox="$RUNNER_TEMP/paid-queue-outbox"
+          rm -rf "$outbox"
+          git config user.name "JANUS Paid Queue Dispatcher"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin janus/market-home-outbox >/dev/null 2>&1; then
+            git fetch origin janus/market-home-outbox:refs/remotes/origin/janus/market-home-outbox
+            git worktree add -B paid-queue-outbox "$outbox" origin/janus/market-home-outbox
+          else
+            git worktree add --detach "$outbox" HEAD
+            cd "$outbox"; git switch --orphan paid-queue-outbox; git rm -rf --ignore-unmatch .; mkdir -p .janus/market-home-outbox; cd - >/dev/null
+          fi
+          target="$outbox/.janus/market-home-outbox/${{ steps.select.outputs.query_id }}.packet.json"
+          mkdir -p "$(dirname "$target")"
+          if [ -f "$target" ]; then
+            cmp -s runtime/queue-dispatch-packet.json "$target" || { echo 'PAID_QUEUE_OUTBOX_PACKET_CONFLICT' >&2; exit 2; }
+            echo 'PAID_QUEUE_PACKET=IDEMPOTENT_REPLAY'
+          else
+            cp runtime/queue-dispatch-packet.json "$target"
+          fi
+          cd "$outbox"
+          git add .janus/market-home-outbox
+          if git diff --cached --quiet; then
+            echo 'PAID_QUEUE_OUTBOX_COMMIT=EXISTING'
+          else
+            git commit -m "Paid queue dispatch ${{ steps.select.outputs.query_id }}"
+            git push origin HEAD:refs/heads/janus/market-home-outbox
+          fi
+          head="$(git rev-parse HEAD)"
+          echo "outbox_commit=$head" >> "$GITHUB_OUTPUT"
+          echo "PAID_QUEUE_OUTBOX_HEAD=$head"
+
+      - name: Seal dispatch receipt after outbox publication
+        if: steps.select.outputs.need_publish == 'true'
+        env:
+          PYTHONPATH: .
+          OUTBOX_COMMIT: ${{ steps.publish.outputs.outbox_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from runtime.paid_search_queue import mark_dispatched, snapshot
+          state=Path(os.environ['MARKET_STATE'])
+          policy=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
+          selected=json.load(open('runtime/queue-selection.json',encoding='utf-8'))['selection']
+          entry=selected['entry']
+          mark_dispatched(state,entry,outbox_commit=os.environ['OUTBOX_COMMIT'],dispatched_at=datetime.now(timezone.utc))
+          snap=snapshot(state,policy,now=datetime.now(timezone.utc),focus_purchase_id=entry['purchase_id'])
+          (state/'state/commerce/paid-search-queue/QUEUE_STATUS.json').write_text(json.dumps(snap,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('PAID_QUEUE_DISPATCH_RECEIPT=PASS')
+          print('PAID_QUEUE_ACTIVE_NON_PREEMPTIBLE=TRUE')
+          PY
+
+      - name: Commit queue transition atomically
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" config user.name "JANUS Paid Queue State"
+          git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$MARKET_STATE" add state/commerce/paid-search-queue
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'PAID_QUEUE_STATE=NO_CHANGE'
+          else
+            git -C "$MARKET_STATE" commit -m "Paid SEARCH queue transition ${{ steps.select.outputs.status }}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'PAID_QUEUE_STATE=PASS'
+          fi
+
+      - name: Tell selected buyer execution has started
+        if: steps.select.outputs.need_publish == 'true' && steps.select.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ steps.select.outputs.issue_number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid queue: your sealed purchase \`${{ steps.select.outputs.purchase_id }}\` is now **ACTIVE** and has been dispatched to persistent JANUS HOME. The active request is non-preemptible: later higher-tier purchases cannot interrupt it. Final delivery will be posted only after immutable HOME reconcile succeeds."
+
+      - name: Queue idle/busy truth
+        if: steps.select.outputs.need_publish != 'true'
+        run: |
+          echo 'PAID_QUEUE_NEW_DISPATCH=FALSE'
+          echo 'PAID_QUEUE_SELECTION_STATUS=${{ steps.select.outputs.status }}'
+          echo 'SILENCE_IS_NEGATIVE_EVIDENCE=FALSE'
