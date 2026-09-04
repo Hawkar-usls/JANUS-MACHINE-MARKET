@@ -3,7 +3,7 @@
   "status": "PAID_SEARCH_PIPELINE_ARMED_BLOCKED_BY_FOREIGN_AGENT_WITNESS",
   "money_enabled": false,
   "autonomous_purchase_declared": false,
-  "reason": "The paid JANUS.SEARCH invoice, exact Ethereum-USDT transaction observer, create-only purchase ledger, PAID_SETTLED persistent-HOME route and paid response reconcile are implemented and CI-gated. Live invoices remain fail-closed because FOREIGN_AGENT_WITNESS.json is still false and product machine_purchase is still false.",
+  "reason": "The paid JANUS.SEARCH invoice, exact Ethereum-USDT observer, pre-invoice queue reservation, five-level serialized paid queue, create-only purchase ledger, PAID_SETTLED persistent-HOME route and paid response reconcile are implemented and CI-gated. Live invoices remain fail-closed because FOREIGN_AGENT_WITNESS.json is still false and product machine_purchase is still false.",
   "payment_rail": {
     "network": "ethereum-mainnet",
     "chain_id": 1,
@@ -20,9 +20,12 @@
   "authority_chain": [
     "OFFER",
     "REQUEST",
+    "QUEUE_CAPACITY_RESERVATION",
     "QUOTE",
     "PAYMENT_RECEIPT",
     "PURCHASE_GRANT",
+    "PAID_QUEUE_ENTRY",
+    "SERIALIZED_NON_PREEMPTIVE_DISPATCH",
     "POLICY_SCOPE_GATES",
     "PAID_SETTLED_HOME_PACKET",
     "PERSISTENT_JANUS_HOME",
@@ -34,6 +37,8 @@
     "ethereum_usdt_observer": "runtime/ethereum_usdt_observer.py",
     "paid_search_checkout": "runtime/paid_search_checkout.py",
     "paid_search_settlement": "runtime/paid_search_settlement.py",
+    "paid_search_queue": "runtime/paid_search_queue.py",
+    "paid_search_queue_policy": "PAID_QUEUE_POLICY.json",
     "paid_search_home_packet": "runtime/paid_search_packet.py",
     "persistent_purchase_and_execution_ledger": "runtime/purchase_ledger.py",
     "paid_home_response_reconcile": "runtime/r1b_home_response_reconcile.py",
@@ -41,9 +46,21 @@
     "purchase_grant_schema": "schemas/grant.schema.json",
     "market_home_packet_schema": "schemas/market-home-buyer-query-packet.schema.json",
     "issue_checkout_workflow": ".github/workflows/paid-search-checkout.yml",
+    "paid_queue_dispatch_workflow": ".github/workflows/paid-search-queue-dispatch.yml",
     "paid_home_reconcile_workflow": ".github/workflows/paid-home-reconcile-integrity.yml",
     "home_acceptor_repository": "Hawkar-usls/Hawkar-usls",
     "home_acceptor_merge": "b2c147e1a9a00d175853ca68f040034057f0d087"
+  },
+  "paid_execution_queue": {
+    "status": "FIVE_LEVEL_SERIALIZED_NON_PREEMPTIVE_PREPARED_GATE_CLOSED",
+    "levels": 5,
+    "max_active_paid_search": 1,
+    "preemption": false,
+    "capacity_gate": "BEFORE_PAYABLE_INVOICE",
+    "valid_paid_settlement_capacity_rejection": false,
+    "aging": "30_MINUTE_SCHEDULING_BOOST_WITHOUT_EXTRA_CHARGE",
+    "eta": "MIN_NOMINAL_MAX_ESTIMATE_NOT_GUARANTEE",
+    "state_path": "state/commerce/paid-search-queue/QUEUE_STATUS.json"
   },
   "required_live_gates": {
     "foreign_agent_witness": false,
@@ -52,6 +69,8 @@
     "transaction_endpoint": "GITHUB_ISSUE_INVOICE_AND_TX_PROOF_ENDPOINT_ARMED_GATE_CLOSED",
     "payment_observer": "TX_SPECIFIC_READ_ONLY_ETHEREUM_RPC_IMPLEMENTED_CI_GATED",
     "persistent_purchase_ledger": "IMPLEMENTED_CREATE_ONLY_SHARED_GLOBAL_MUTEX",
+    "paid_execution_queue": "IMPLEMENTED_FIVE_LEVEL_MAX_ACTIVE_ONE_NON_PREEMPTIVE",
+    "queue_invoice_reservation": "IMPLEMENTED_BEFORE_PAYABLE_INVOICE",
     "paid_home_packet": "IMPLEMENTED_SELF_VERIFYING_PAID_SETTLED",
     "persistent_janus_home_acceptor": "MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID",
     "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE_SHARED_WITH_LOCAL_EXECUTOR",
@@ -61,9 +80,14 @@
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
     "1 transaction_hash + 1 ERC20_log_index => <= 1 accepted purchase grant",
+    "1 exact invoice issue => <= 1 create-only queue capacity reservation",
+    "valid paid settlement cannot be rejected for queue capacity after invoice issuance",
+    "1 settled purchase => <= 1 immutable queue entry",
+    "paid dispatcher admits <= 1 active JANUS.SEARCH execution at a time",
+    "higher queue level cannot preempt an already active request",
     "purchase grant never equals command or execution authority",
     "free and paid HOME outbox writers share janus-machine-market-state-writer mutex",
-    "exact retry returns prior state/result and creates no second charge or billable execution"
+    "exact retry returns prior state/result and creates no second charge, queue entry or billable execution"
   ],
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
@@ -72,5 +96,6 @@
   "next_gate": "GENUINE_EXTERNAL_PRINCIPAL_COMPLETES_PUBLIC_PERSISTENT_HOME_ROUNDTRIP_THEN_CANONICAL_FOREIGN_WITNESS_PROMOTION_BEFORE_FIRST_LIVE_INVOICE",
   "policy": "PAYMENT_POLICY.md",
   "paid_terms": "docs/PAID_SEARCH_TERMS.md",
+  "queue_policy": "PAID_QUEUE_POLICY.json",
   "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json"
 }

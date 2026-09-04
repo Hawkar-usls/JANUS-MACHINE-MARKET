@@ -14,10 +14,7 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         owner_workflow = (ROOT / ".github/workflows/r1b-buyer-query-shadow-outbox.yml").read_text(encoding="utf-8")
         public_workflow = (ROOT / ".github/workflows/r1-public-search-beta-outbox.yml").read_text(encoding="utf-8")
         public_policy = (ROOT / "runtime/public_search_beta.py").read_text(encoding="utf-8")
-        for token in (
-            "[JANUS R1B BUYER QUERY SHADOW]",
-            "JANUS_BUYER_QUERY_SHADOW_JSON",
-        ):
+        for token in ("[JANUS R1B BUYER QUERY SHADOW]", "JANUS_BUYER_QUERY_SHADOW_JSON"):
             self.assertIn(token, self.js)
             self.assertIn(token, owner_workflow)
             self.assertIn(token, public_workflow)
@@ -28,9 +25,10 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertIn("PHYSARIUS_CREDENTIALLESS_PULL", owner_workflow)
         self.assertIn("janus/market-home-outbox", public_workflow)
 
-    def test_public_search_beta_is_explicit_and_other_home_services_are_not_public(self):
+    def test_public_search_beta_remains_explicit_when_paid_search_later_goes_live(self):
         contract = json.loads((ROOT / "PUBLIC_SERVICE_BETA.json").read_text(encoding="utf-8"))
         ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
+        witness = json.loads((ROOT / "FOREIGN_AGENT_WITNESS.json").read_text(encoding="utf-8"))
         search = contract["public_services"]["JANUS.SEARCH"]
         self.assertEqual(search["status"], "PUBLIC_ZERO_PRICE_BETA")
         self.assertEqual(search["max_turns_per_issue"], 1)
@@ -42,7 +40,11 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertFalse(contract["authority"]["command_authority_granted"])
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
-        self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW")
+        if witness["foreign_agent_witness"] is True:
+            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_PAID_ISSUE_CHECKOUT")
+            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]["status"], "LIVE_JANUS_SEARCH_ONLY")
+        else:
+            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW")
         self.assertIn("PUBLIC BETA", self.js)
         self.assertIn("OWNER SHADOW", self.js)
 
@@ -76,7 +78,7 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         bridge = html.index('src="assets/store-exec-v1.js"')
         self.assertLess(base, bridge)
 
-    def test_pages_truth_boundary_remains_zero_price_and_non_commanding(self):
+    def test_public_zero_price_path_remains_non_commanding_even_if_paid_search_is_live(self):
         for token in (
             "payment_required: `false`",
             "money_enabled: `false`",

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlparse
@@ -18,6 +19,7 @@ from runtime.commerce_authority import (
 from runtime.ethereum_usdt_observer import JsonRpc, RpcError, observe_transaction
 from runtime.paid_search_checkout import settle_invoice
 from runtime.paid_search_packet import build_paid_home_packet, verify_paid_home_packet
+from runtime.paid_search_queue import build_queue_entry, enqueue, snapshot
 from runtime.purchase_ledger import consumed_payment_references, payment_key, persist_purchase
 
 DEFAULT_RPC_URLS = (
@@ -54,12 +56,6 @@ def _rpc_label(url: str) -> str:
 
 
 def configured_rpc_urls(rpc_urls: Iterable[str]) -> tuple[str, ...]:
-    """Return caller-preferred endpoints plus the canonical public fallback pool.
-
-    This intentionally preserves backwards compatibility with the original checkout
-    workflow, which supplied one --rpc-url. A caller can prefer an endpoint but can
-    never lower the production settlement verifier below the canonical quorum pool.
-    """
     preferred = tuple(str(x).strip() for x in rpc_urls if str(x).strip())
     return tuple(dict.fromkeys((*preferred, *DEFAULT_RPC_URLS)))
 
@@ -99,7 +95,6 @@ def consensus_payment_observation(
     *,
     required_quorum: int = RPC_QUORUM,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Conservatively combine independent read-only RPC observations."""
     rows = [(str(label), dict(obs)) for label, obs in observations if isinstance(obs, dict)]
     quorum = {
         "schema": "janus.machine_market.rpc_quorum.v1",
@@ -153,7 +148,6 @@ def consensus_payment_observation(
 
 
 def canonical_confirmed_receipt(observation: dict[str, Any]) -> dict[str, Any]:
-    """Freeze a stable settlement receipt after the 12-confirmation threshold."""
     if observation.get("status") != "CONFIRMED" or int(observation.get("confirmations", 0)) < MIN_CONFIRMATIONS:
         raise CommerceInvalid("confirmed observation required for canonical settlement receipt")
     required = {
@@ -249,6 +243,7 @@ def settle_proof(
     readiness: dict[str, Any],
     witness: dict[str, Any],
     product: dict[str, Any],
+    queue_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     request = invoice_record.get("request")
     invoice = invoice_record.get("invoice")
@@ -302,6 +297,25 @@ def settle_proof(
         replayed = False
     if not verify_paid_home_packet(packet):
         raise CommerceInvalid("paid HOME packet self-verification failed")
+
+    queue_result = None
+    queue_snapshot = None
+    if queue_policy is not None:
+        entry = build_queue_entry(
+            request=request,
+            purchase_grant=grant,
+            packet=packet,
+            payment_receipt=payment_receipt,
+            policy=queue_policy,
+        )
+        queue_result = enqueue(state_root, entry, queue_policy)
+        queue_snapshot = snapshot(
+            state_root,
+            queue_policy,
+            now=datetime.now(timezone.utc),
+            focus_purchase_id=grant["purchase_id"],
+        )
+
     return {
         **result,
         "settled": True,
@@ -312,7 +326,11 @@ def settle_proof(
         "canonical_payment_receipt": payment_receipt,
         "query_id": packet["query_id"],
         "packet_hash": packet["packet_hash"],
+        "queue_level": int(request.get("queue_level", 1)),
+        "execution_started": False,
         "ledger": ledger,
+        "queue": queue_result,
+        "queue_snapshot": queue_snapshot,
         "packet": packet,
     }
 
@@ -330,6 +348,7 @@ def main() -> int:
     ap.add_argument("--readiness", required=True)
     ap.add_argument("--witness", required=True)
     ap.add_argument("--product", required=True)
+    ap.add_argument("--queue-policy")
     ap.add_argument("--result-out", required=True)
     ap.add_argument("--packet-out", required=True)
     args = ap.parse_args()
@@ -343,8 +362,9 @@ def main() -> int:
             readiness=_load(args.readiness),
             witness=_load(args.witness),
             product=_load(args.product),
+            queue_policy=_load(args.queue_policy) if args.queue_policy else None,
         )
-    except (CommerceInvalid, CommerceBlocked) as exc:
+    except (CommerceInvalid, CommerceBlocked, ValueError, RuntimeError) as exc:
         invoice = invoice_record.get("invoice") or {}
         reason = str(exc).replace("\n", " ")[:160]
         out = {

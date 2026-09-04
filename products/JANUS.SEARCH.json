@@ -6,20 +6,21 @@
   "status": "PAID_ROUTE_ARMED_WITNESS_GATE_CLOSED",
   "machine_discovery": true,
   "machine_purchase": false,
-  "summary": "One bounded read-only JANUS.SEARCH turn routed through persistent JANUS HOME/HRAiN, returning a result with immutable provenance and explicit uncertainty.",
+  "summary": "One bounded read-only JANUS.SEARCH turn routed through a five-level serialized paid queue into persistent JANUS HOME/HRAiN, returning a result with immutable provenance and explicit uncertainty.",
   "request": {
     "mode": "GITHUB_ISSUE_CHECKOUT_ARMED_NOT_LIVE",
     "paid_issue_title_prefix": "[JANUS PAID SEARCH]",
-    "input_fields": ["message_text"],
+    "input_fields": ["message_text", "queue_level"],
+    "queue_level_range": [1, 5],
     "max_turns": 1,
     "max_message_utf8_bytes": 4000,
     "max_answer_utf8_bytes": 6000,
     "conversation_history_turns": 0
   },
   "delivery": {
-    "route": "MARKET -> CREDENTIALLESS HOME OUTBOX -> PERSISTENT JANUS HOME/HRAiN -> HOME RESPONSE -> MARKET RECONCILE -> SOURCE ISSUE",
+    "route": "MARKET -> PAID QUEUE -> SERIALIZED DISPATCH -> CREDENTIALLESS HOME OUTBOX -> PERSISTENT JANUS HOME/HRAiN -> HOME RESPONSE -> MARKET RECONCILE -> SOURCE ISSUE",
     "format": "application/json",
-    "outputs": ["answer", "provenance", "receipt"],
+    "outputs": ["answer", "provenance", "receipt", "queue_position", "estimated_wait"],
     "first_real_paid_delivery": "PENDING"
   },
   "pricing": {
@@ -27,8 +28,28 @@
     "ratecard": "PRICING.json",
     "default_mode": "FAST",
     "fast_amount_usdt_micros": 50000,
+    "queue_policy": "PAID_QUEUE_POLICY.json",
+    "queue_levels": 5,
     "quote_required": true,
     "live_invoice_requires_machine_purchase_true": true
+  },
+  "queue": {
+    "status": "PREPARED_GATE_CLOSED",
+    "levels": {
+      "1": "STANDARD_1.00X",
+      "2": "PRIORITY_1.50X",
+      "3": "EXPRESS_2.25X",
+      "4": "PRIME_3.50X",
+      "5": "GATE_5.00X"
+    },
+    "max_active_paid_search": 1,
+    "preemption": false,
+    "higher_level_can_overtake": "WAITING_ONLY",
+    "aging": "ONE_SCHEDULING_LEVEL_PER_30_MINUTES_UP_TO_LEVEL_5_WITHOUT_EXTRA_CHARGE",
+    "capacity_reserved_before_invoice": true,
+    "valid_paid_settlement_can_be_rejected_for_capacity": false,
+    "eta": "MIN_NOMINAL_MAX_ESTIMATE_NOT_GUARANTEE",
+    "state": "state/commerce/paid-search-queue/QUEUE_STATUS.json"
   },
   "payment": {
     "network": "ethereum-mainnet",
@@ -38,12 +59,14 @@
     "observer": "runtime/ethereum_usdt_observer.py",
     "checkout": "runtime/paid_search_checkout.py",
     "settlement": "runtime/paid_search_settlement.py",
+    "settlement_starts_execution": false,
     "unsolicited_payment_grants_rights": false
   },
   "post_purchase_query": {
-    "status": "PAID_HOME_ROUTE_IMPLEMENTED_HOME_ACCEPTOR_MERGED_LIVE_PAYMENT_WITNESS_PENDING",
+    "status": "PAID_QUEUE_AND_HOME_ROUTE_IMPLEMENTED_HOME_ACCEPTOR_MERGED_LIVE_PAYMENT_WITNESS_PENDING",
     "plane": "BUYER_QUERY_PLANE.json",
     "enabled_only_by_explicit_purchase_grant_entitlement": true,
+    "execution_starts_only_after_queue_dispatch": true,
     "conversation_mode": "READ_ONLY_HRAIN_MEMORY_BOUND",
     "query_is_command": false,
     "payment_is_command": false,
@@ -51,11 +74,13 @@
     "response_is_world_truth": false,
     "external_effect_authorized": false,
     "exact_retry_must_not_create_second_charge": true,
+    "exact_retry_must_not_create_second_queue_entry": true,
     "exact_retry_must_not_create_second_billable_execution": true
   },
   "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
   "authority": {
     "payment_is_authority": false,
+    "queue_dispatch_is_authority": false,
     "unsolicited_payment_grants_rights": false,
     "command_authority": false,
     "shell_authority": false,
@@ -67,7 +92,8 @@
     "foreign_agent_witness": false,
     "money_enabled": false,
     "machine_purchase": false,
-    "checkout_live": false
+    "checkout_live": false,
+    "paid_queue_live": false
   },
   "terms": "docs/PAID_SEARCH_TERMS.md",
   "license": "Per-product/service terms; marketplace Apache-2.0 does not license underlying inputs, outputs, models, datasets or technology."

@@ -1,0 +1,71 @@
+{
+  "schema": "janus.machine_market.paid_search_queue_policy.v1",
+  "status": "PREPARED_FOR_SEARCH_LIVE_PROMOTION",
+  "sku": "JANUS.SEARCH",
+  "queue_levels": 5,
+  "max_active_paid_search": 1,
+  "max_queue_depth": 100,
+  "max_queued_per_buyer": 3,
+  "invoice_reservation_grace_minutes": 60,
+  "capacity_limit_applies_at": "INVOICE_ADMISSION",
+  "valid_paid_settlement_can_be_rejected_for_capacity": false,
+  "preemption": false,
+  "current_execution_can_be_interrupted_by_higher_tier": false,
+  "ordering": "EFFECTIVE_PRIORITY_DESC_THEN_PAYMENT_BLOCK_ASC_THEN_LOG_INDEX_ASC_THEN_PURCHASE_ID",
+  "payment_time_source": "CANONICAL_ETHEREUM_BLOCK_TIMESTAMP",
+  "service_time_estimate_minutes": {
+    "min": 5,
+    "nominal": 8,
+    "max": 15
+  },
+  "aging": {
+    "enabled": true,
+    "step_minutes": 30,
+    "max_boost_levels": 4,
+    "purpose": "Prevent indefinite starvation of lower paid tiers without changing the amount already paid. Aging changes scheduling priority only and never creates a new charge."
+  },
+  "levels": {
+    "1": {
+      "code": "STANDARD",
+      "label": "Level 1 · Standard",
+      "price_multiplier_bps": 10000
+    },
+    "2": {
+      "code": "PRIORITY",
+      "label": "Level 2 · Priority",
+      "price_multiplier_bps": 15000
+    },
+    "3": {
+      "code": "EXPRESS",
+      "label": "Level 3 · Express",
+      "price_multiplier_bps": 22500
+    },
+    "4": {
+      "code": "PRIME",
+      "label": "Level 4 · Prime",
+      "price_multiplier_bps": 35000
+    },
+    "5": {
+      "code": "GATE",
+      "label": "Level 5 · Gate",
+      "price_multiplier_bps": 50000
+    }
+  },
+  "laws": [
+    "PAYMENT_SETTLED != EXECUTION_STARTED",
+    "ONE_SETTLED_PURCHASE = ONE_QUEUE_ENTRY",
+    "ONE_ACTIVE_PAID_SEARCH_AT_A_TIME",
+    "HIGHER_TIER_MAY_OVERTAKE_ONLY_NOT_YET_STARTED_REQUESTS",
+    "ACTIVE_REQUEST_IS_NEVER_PREEMPTED",
+    "QUEUE_LEVEL_IS_FROZEN_IN_THE_INVOICE_AND_PAYMENT_BINDING",
+    "QUEUE_CAPACITY_IS_RESERVED_BEFORE_PAYABLE_INVOICE_PUBLICATION",
+    "QUEUE_DEPTH_AND_PER_BUYER_LIMITS_APPLY_TO_INVOICE_ADMISSION_NOT_VALID_PAID_SETTLEMENT",
+    "VALID_IN_TIME_PAYMENT_MUST_BE_ACCEPTED_EVEN_IF_PROOF_ARRIVES_AFTER_RESERVATION_GRACE",
+    "LATE_VALID_PAYMENT_MAY_TEMPORARILY_EXCEED_QUEUE_DEPTH_BUT_NEVER_ACTIVE_EXECUTION_CAPACITY",
+    "AGING_CAN_ONLY_IMPROVE_SCHEDULING_PRIORITY_AND_NEVER_CHARGE_AGAIN",
+    "QUEUE_POSITION_AND_ETA_ARE_ESTIMATES_NOT_DELIVERY_GUARANTEES",
+    "EXACT_RETRY != SECOND_QUEUE_ENTRY",
+    "EXACT_RETRY != SECOND_EXECUTION",
+    "QUEUE_DISPATCH != COMMAND_AUTHORITY"
+  ]
+}

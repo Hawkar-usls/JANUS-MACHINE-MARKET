@@ -18,7 +18,7 @@ from runtime.paid_search_packet import build_paid_home_packet
 
 SKU="JANUS.SEARCH"
 MODE="FAST"
-POLICY_VERSION="commerce-paid-search-v1"
+POLICY_VERSION="commerce-paid-search-v2-queue5"
 INVOICE_SCHEMA="janus.machine_market.paid_search_invoice.v1"
 DEFAULT_RECEIVER="0x7149081aea54fbef57effeb52a5a966b81cc03a0"
 
@@ -39,16 +39,32 @@ def checkout_gate(*, readiness: dict[str,Any], witness: dict[str,Any], product: 
         raise CommerceBlocked("JANUS.SEARCH machine purchase is not live")
 
 
-def search_price_usdt_micros(pricing: dict[str,Any], *, mode: str=MODE) -> int:
+def _queue_price_spec(pricing: dict[str,Any], queue_level: int) -> dict[str,Any]:
+    product=(pricing.get("products") or {}).get(SKU)
+    _require(isinstance(product,dict), "JANUS.SEARCH pricing missing")
+    levels=product.get("queue_levels") or {}
+    if not levels and queue_level == 1:
+        return {"code":"STANDARD","multiplier_bps":10000}
+    spec=levels.get(str(int(queue_level)))
+    _require(isinstance(spec,dict), "paid search queue level not priced")
+    _require(1 <= int(queue_level) <= 5, "paid search queue level invalid")
+    _require(int(spec.get("multiplier_bps",0)) >= 10000, "paid search queue multiplier invalid")
+    return spec
+
+
+def search_price_usdt_micros(pricing: dict[str,Any], *, mode: str=MODE, queue_level: int=1) -> int:
     _require(pricing.get("currency")=="USDT", "pricing asset invalid")
     _require(int(pricing.get("chain_id",-1))==1, "pricing chain invalid")
     product=(pricing.get("products") or {}).get(SKU)
     _require(isinstance(product,dict), "JANUS.SEARCH pricing missing")
     modes=product.get("modes") or {}
     _require(mode in modes, "paid search mode not priced")
-    base=int(product.get("base_unit_usdt_micros",0)); bps=int(modes[mode].get("multiplier_bps",0))
-    _require(base>0 and bps>0, "paid search price invalid")
-    amount=(base*bps)//10_000
+    queue=_queue_price_spec(pricing,queue_level)
+    base=int(product.get("base_unit_usdt_micros",0))
+    mode_bps=int(modes[mode].get("multiplier_bps",0))
+    queue_bps=int(queue.get("multiplier_bps",0))
+    _require(base>0 and mode_bps>0 and queue_bps>0, "paid search price invalid")
+    amount=(base*mode_bps*queue_bps)//100_000_000
     _require(amount>0, "paid search amount invalid")
     return amount
 
@@ -59,10 +75,12 @@ def issue_invoice(*, request: dict[str,Any], pricing: dict[str,Any], issued_at: 
     issued_at=issued_at.astimezone(timezone.utc)
     ttl=int(pricing.get("quote_ttl_seconds",0))
     _require(60 <= ttl <= 3600, "quote ttl outside production bounds")
-    amount=search_price_usdt_micros(pricing,mode=mode)
+    queue_level=int(request.get("queue_level",1))
+    queue_spec=_queue_price_spec(pricing,queue_level)
+    amount=search_price_usdt_micros(pricing,mode=mode,queue_level=queue_level)
     req_hash=request_hash(request)
     issued_text=issued_at.isoformat().replace("+00:00","Z")
-    nonce="paid-search-"+digest({"request_hash":req_hash,"issued_at":issued_text,"mode":mode,"policy_version":POLICY_VERSION})[:32]
+    nonce="paid-search-"+digest({"request_hash":req_hash,"issued_at":issued_text,"mode":mode,"queue_level":queue_level,"policy_version":POLICY_VERSION})[:32]
     expires=(issued_at+timedelta(seconds=ttl)).isoformat()
     quote=build_quote(request=request,sku=SKU,amount_usdt_micros=amount,receiving_address=receiving_address,expires_at=expires,nonce=nonce,policy_version=POLICY_VERSION)
     invoice_id="inv-search-"+digest({"request_hash":req_hash,"quote_hash":quote["quote_hash"]})[:40]
@@ -71,6 +89,11 @@ def issue_invoice(*, request: dict[str,Any], pricing: dict[str,Any], issued_at: 
         "invoice_id":invoice_id,
         "sku":SKU,
         "mode":mode,
+        "queue_level":queue_level,
+        "queue_code":queue_spec.get("code"),
+        "queue_multiplier_bps":int(queue_spec["multiplier_bps"]),
+        "queue_level_is_frozen":True,
+        "active_request_preemption_allowed":False,
         "buyer_actor_id":request.get("buyer_actor_id"),
         "request_id":request.get("request_id"),
         "request_hash":req_hash,
@@ -85,6 +108,7 @@ def issue_invoice(*, request: dict[str,Any], pricing: dict[str,Any], issued_at: 
         "receiving_address":quote["receiving_address"],
         "payment_required":True,
         "payment_is_execution_authority":False,
+        "payment_settled_is_execution_started":False,
         "unsolicited_payment_grants_nothing":True,
         "status":"AWAITING_PAYMENT",
     }
@@ -99,7 +123,11 @@ def verify_invoice(invoice: dict[str,Any], request: dict[str,Any]) -> None:
     _require(invoice.get("request_hash")==request_hash(request), "invoice request binding mismatch")
     _require(invoice.get("quote_hash")==invoice.get("quote",{}).get("quote_hash"), "invoice quote binding mismatch")
     _require(invoice.get("buyer_actor_id")==request.get("buyer_actor_id"), "invoice buyer binding mismatch")
+    _require(int(invoice.get("queue_level",1))==int(request.get("queue_level",1)), "invoice queue level binding mismatch")
+    _require(invoice.get("queue_level_is_frozen",True) is True, "invoice queue level must be frozen")
+    _require(invoice.get("active_request_preemption_allowed",False) is False, "invoice cannot authorize queue preemption")
     _require(invoice.get("payment_is_execution_authority") is False, "invoice authority invalid")
+    _require(invoice.get("payment_settled_is_execution_started",False) is False, "payment settlement cannot equal execution start")
     verify_quote(invoice["quote"],request,now=parse_time(invoice["issued_at"]),require_unexpired=True)
 
 
