@@ -1,0 +1,55 @@
+{
+  "schema": "janus.machine_market.a2a_runtime_candidate.v1",
+  "version": "0.1.0",
+  "status": "IMPLEMENTED_CI_PENDING_NOT_DEPLOYED",
+  "protocol": {
+    "name": "A2A",
+    "version": "1.0",
+    "binding": "HTTP+JSON",
+    "sdk": "@a2a-js/sdk@1.0.1",
+    "agent_card_path": "/.well-known/agent-card.json",
+    "interface_path": "/a2a/rest"
+  },
+  "deployment": {
+    "target": "Vercel Express Function",
+    "entrypoint": "src/index.ts",
+    "production_url": null,
+    "deployed": false,
+    "externally_verified": false
+  },
+  "agent_role": "DISCOVERY_AND_INGRESS_BRIDGE_NOT_SEARCH_EXECUTOR",
+  "skill": {
+    "id": "janus-discovery-ingress",
+    "purpose": "Return current public JANUS capability state and an exact caller-authenticated JANUS.SEARCH ingress package.",
+    "executes_persistent_home_search_itself": false
+  },
+  "identity_preservation": {
+    "gateway_accepts_github_credential": false,
+    "caller_uses_own_github_credential": true,
+    "caller_principal_preserved_for_r1e": true,
+    "global_a2a_registry_claim_prepared": true
+  },
+  "authority": {
+    "money_enabled": false,
+    "payment_authority": false,
+    "command_authority": false,
+    "repository_write_authority": false,
+    "external_effect_authority": false,
+    "a2a_message_itself_is_execution_witness": false
+  },
+  "publication_gate": [
+    "CI_PASS",
+    "VERCEL_PRODUCTION_DEPLOYMENT_RECEIPT",
+    "HTTPS_AGENT_CARD_FETCH_PASS",
+    "A2A_HTTP_JSON_SEND_MESSAGE_PASS",
+    "OFFICIAL_A2A_CLIENT_INTEROP_PASS",
+    "ONLY_THEN_MARK_A2A_PUBLICATION_LIVE"
+  ],
+  "laws": [
+    "A2A_GATEWAY != JANUS_SEARCH_EXECUTION",
+    "A2A_DISCOVERY != FOREIGN_AGENT_WITNESS",
+    "CALLER_GITHUB_IDENTITY_MUST_NOT_BE_REPLACED_BY_GATEWAY_IDENTITY",
+    "A2A_RUNTIME_DEPLOYMENT != R1E_RECEIPT",
+    "REGISTRY_LISTING != EXECUTION_WITNESS"
+  ]
+}

@@ -1,0 +1,78 @@
+name: JANUS A2A v1 Runtime Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'src/**'
+      - 'tests/a2a_runtime.test.ts'
+      - 'discovery/A2A_RUNTIME_CANDIDATE.json'
+      - '.github/workflows/a2a-v1-runtime-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'src/**'
+      - 'tests/a2a_runtime.test.ts'
+      - 'discovery/A2A_RUNTIME_CANDIDATE.json'
+      - '.github/workflows/a2a-v1-runtime-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a2a-v1-runtime-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install exact top-level runtime dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Typecheck A2A runtime
+        run: npm run typecheck
+
+      - name: Run A2A v1 adversarial and protocol tests
+        run: npm run test:a2a
+
+      - name: Enforce runtime candidate truth boundary
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const c=JSON.parse(fs.readFileSync('discovery/A2A_RUNTIME_CANDIDATE.json','utf8'));
+          if (c.status !== 'IMPLEMENTED_CI_PENDING_NOT_DEPLOYED') throw new Error('A2A_CANDIDATE_STATUS_DRIFT');
+          if (c.protocol.version !== '1.0' || c.protocol.binding !== 'HTTP+JSON') throw new Error('A2A_PROTOCOL_DRIFT');
+          if (c.deployment.deployed !== false || c.deployment.production_url !== null) throw new Error('A2A_FALSE_DEPLOYMENT_CLAIM');
+          if (c.agent_role !== 'DISCOVERY_AND_INGRESS_BRIDGE_NOT_SEARCH_EXECUTOR') throw new Error('A2A_ROLE_DRIFT');
+          if (c.identity_preservation.gateway_accepts_github_credential !== false) throw new Error('A2A_GATEWAY_MUST_NOT_ACCEPT_GITHUB_CREDENTIAL');
+          if (c.identity_preservation.caller_uses_own_github_credential !== true) throw new Error('A2A_CALLER_IDENTITY_NOT_PRESERVED');
+          for (const k of ['money_enabled','payment_authority','command_authority','repository_write_authority','external_effect_authority','a2a_message_itself_is_execution_witness']) {
+            if (c.authority[k] !== false) throw new Error('A2A_AUTHORITY_CEILING_BROKEN:'+k);
+          }
+          console.log('A2A_V1_RUNTIME_CANDIDATE_TRUTH=PASS');
+          console.log('A2A_RUNTIME_DEPLOYED=FALSE');
+          console.log('A2A_GATEWAY_GITHUB_CREDENTIAL_ACCESS=FALSE');
+          console.log('A2A_MESSAGE_EXECUTION_WITNESS=FALSE');
+          NODE
+
+      - name: Assert source contains no transaction signing or embedded credential handling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('src/index.ts').read_text(encoding='utf-8').lower()
+          forbidden=['private_key','eth_sendrawtransaction','github_token','gh_token','authorization: bearer ${','process.env.github']
+          hit=[x for x in forbidden if x in text]
+          assert not hit, hit
+          assert 'caller_supplied_github_credential_with_issues_write' in text
+          assert 'gateway_does_not_receive_or_store_caller_github_credential' in text
+          print('A2A_SECRET_AND_SIGNING_FIREWALL=PASS')
+          PY
