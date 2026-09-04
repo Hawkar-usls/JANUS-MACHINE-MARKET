@@ -46,6 +46,7 @@ export function buildAgentCard(env: NodeJS.ProcessEnv = process.env): AgentCard 
       {
         url: `${base}/a2a/rest`,
         protocolBinding: 'HTTP+JSON',
+        tenant: '',
         protocolVersion: A2A_PROTOCOL_VERSION,
       },
     ],
