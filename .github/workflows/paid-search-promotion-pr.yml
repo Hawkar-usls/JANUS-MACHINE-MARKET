@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH=. python -m pytest -q tests/test_paid_search_promotion.py tests/test_persistent_home_foreign_witness.py
-      - name: Prove canonical PR-generator branch does not itself enable money
+      - name: Validate canonical blocked or witness-backed live lifecycle
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -43,14 +43,21 @@ jobs:
           w=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
           r=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
           p=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
-          assert w['foreign_agent_witness'] is False
-          assert r['money_enabled'] is False
-          assert r['autonomous_purchase_declared'] is False
-          assert p['machine_purchase'] is False
-          assert p['live_gate']['checkout_live'] is False
+          live=w.get('foreign_agent_witness') is True
+          if live:
+              assert w['promotion_authority']=='PERSISTENT_HOME_RECEIPT_VERIFIED'
+              assert w['witness_receipt_itself_enables_money'] is False
+              assert r['money_enabled'] is True and r['autonomous_purchase_declared'] is True
+              assert p['machine_purchase'] is True and p['live_gate']['checkout_live'] is True
+              print('PROMOTION_GENERATOR_CANONICAL_STATE=SEARCH_LIVE_WITNESS_BOUND')
+          else:
+              assert r['money_enabled'] is False
+              assert r['autonomous_purchase_declared'] is False
+              assert p['machine_purchase'] is False
+              assert p['live_gate']['checkout_live'] is False
+              print('PROMOTION_GENERATOR_CANONICAL_STATE=BLOCKED_PENDING_WITNESS')
           assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
           assert r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
-          print('PROMOTION_GENERATOR_MONEY_AUTHORITY=FALSE')
           print('PROMOTION_GENERATOR_AUTO_MERGE=FALSE_BY_WORKFLOW_CONTRACT')
           PY
 
@@ -149,7 +156,6 @@ jobs:
 
       - name: Generate exact witness-bound SEARCH-only live candidate
         if: steps.witness.outputs.found == 'true' && steps.canonical.outputs.already_live != 'true'
-        id: generate
         env:
           PYTHONPATH: .
           MARKET_STATE_COMMIT: ${{ steps.witness.outputs.market_state_commit }}
