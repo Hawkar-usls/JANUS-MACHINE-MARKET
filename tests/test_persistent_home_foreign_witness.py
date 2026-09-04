@@ -37,16 +37,16 @@ def issue(login="external-agent", uid=777001, association="NONE", issue_id=90001
     }
 
 
-def claim(machine_client=True):
+def claim(machine_client=True, surface="GITHUB_PAGES"):
     return {
         "schema": "janus.machine_market.foreign_discovery_claim.v1",
-        "discovery_surface": "GITHUB_PAGES",
+        "discovery_surface": surface,
         "independent_from_owner": True,
         "machine_client": machine_client,
     }
 
 
-def bundle():
+def bundle(discovery_surface="GITHUB_PAGES"):
     i = issue()
     raw = {
         "schema": "janus.machine_market.buyer_query_shadow_request.v1",
@@ -70,7 +70,12 @@ def bundle():
         "payment_required": False,
         "execution_authority_granted": False,
     }
-    ingress = build_ingress_claim_receipt(issue=i, discovery_claim=claim(), policy=policy(), repository_id=1352027855)
+    ingress = build_ingress_claim_receipt(
+        issue=i,
+        discovery_claim=claim(surface=discovery_surface),
+        policy=policy(),
+        repository_id=1352027855,
+    )
     response = home_response()
     response["query_id"] = packet["query_id"]
     response["query_hash"] = packet["query_hash"]
@@ -112,6 +117,44 @@ def test_real_external_machine_persistent_home_bundle_passes_without_enabling_mo
     assert receipt["transport"] == "PHYSARIUS_CREDENTIALLESS_PULL"
     assert receipt["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
     assert receipt["closed_skus"]["JANUS.COMPUTE"].startswith("CLOSED_")
+
+
+def test_global_a2a_registry_can_be_frozen_as_discovery_source_but_grants_no_authority():
+    i = issue()
+    ingress = build_ingress_claim_receipt(
+        issue=i,
+        discovery_claim=claim(surface="GLOBAL_A2A_REGISTRY"),
+        policy=policy(),
+        repository_id=1352027855,
+    )
+    assert ingress["discovery_claim"]["discovery_surface"] == "GLOBAL_A2A_REGISTRY"
+    assert ingress["money_enabled"] is False
+    assert ingress["autonomous_purchase_declared"] is False
+    assert ingress["promotion_authority"] is False
+    semantics = policy()["discovery_surface_semantics"]["GLOBAL_A2A_REGISTRY"]
+    assert semantics["proves_a2a_runtime"] is False
+    assert semantics["proves_execution"] is False
+    assert semantics["proves_purchase_authority"] is False
+
+
+def test_global_a2a_registry_discovery_still_requires_full_persistent_home_roundtrip_for_witness():
+    receipt = adjudicate(bundle(discovery_surface="GLOBAL_A2A_REGISTRY"))
+    assert verify_witness_receipt(receipt)
+    assert receipt["discovery_claim"]["discovery_surface"] == "GLOBAL_A2A_REGISTRY"
+    assert receipt["foreign_agent_witness"] is True
+    assert receipt["promotion_authority"] == "PERSISTENT_RECEIPT_CANDIDATE_ONLY"
+    assert receipt["money_enabled"] is False
+    assert receipt["paid_purchase"] is False
+
+
+def test_unknown_discovery_surface_is_rejected():
+    with pytest.raises(ForeignWitnessInvalid, match="DISCOVERY_SURFACE"):
+        build_ingress_claim_receipt(
+            issue=issue(),
+            discovery_claim=claim(surface="UNTRUSTED_RANDOM_DIRECTORY"),
+            policy=policy(),
+            repository_id=1352027855,
+        )
 
 
 def test_owner_cannot_freeze_ingress_claim():

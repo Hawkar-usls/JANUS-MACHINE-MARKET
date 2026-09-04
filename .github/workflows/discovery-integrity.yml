@@ -10,6 +10,8 @@ on:
       - '.well-known/agent-market.json'
       - 'llms.txt'
       - 'discovery/**'
+      - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
+      - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
   push:
@@ -21,6 +23,8 @@ on:
       - '.well-known/agent-market.json'
       - 'llms.txt'
       - 'discovery/**'
+      - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
+      - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
   workflow_dispatch:
@@ -31,10 +35,17 @@ permissions:
 jobs:
   discovery-integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout exact snapshot
         uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
 
       - name: Validate discovery JSON syntax
         shell: bash
@@ -44,7 +55,13 @@ jobs:
           python -m json.tool AGENT_MARKET.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null
           python -m json.tool .well-known/agent-market.json >/dev/null
+          python -m json.tool runtime/FOREIGN_AGENT_WITNESS_POLICY.json >/dev/null
           for f in discovery/*.json; do python -m json.tool "$f" >/dev/null; done
 
       - name: Enforce fail-closed discovery truth
         run: python tools/validate_discovery.py
+
+      - name: Prove Global A2A Registry discovery cannot bypass R1E gates
+        env:
+          PYTHONPATH: .
+        run: python -m pytest -q tests/test_persistent_home_foreign_witness.py
