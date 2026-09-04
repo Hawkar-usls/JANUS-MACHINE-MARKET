@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -24,12 +24,13 @@
       "DISCOVER_PRODUCTS",
       "READ_PRODUCT_CONTRACTS",
       "READ_INPUT_OUTPUT_SCHEMAS",
-      "PREPARE_BOUNDED_REQUEST",
-      "WATCH_FOR_R1_TRANSACTION_ENDPOINT"
+      "DISCOVER_JANUS_VIA_GLOBAL_A2A_REGISTRY_AFTER_LISTING",
+      "USE_PUBLIC_ZERO_PRICE_JANUS_SEARCH_INGRESS",
+      "PREPARE_BOUNDED_REQUEST"
     ],
     "not_yet_authorized": [
       "SEND_UNSOLICITED_PAYMENT",
-      "EXPECT_AUTOMATIC_EXECUTION",
+      "EXPECT_AUTOMATIC_EXECUTION_FROM_DISCOVERY_ONLY",
       "CALL_A2A_RUNTIME",
       "CALL_MCP_RUNTIME",
       "REGISTER_JANUS_IN_AWS_AGENT_REGISTRY",
@@ -65,6 +66,8 @@
     "Model Context Protocol",
     "A2A agent",
     "Agent2Agent",
+    "Global A2A Registry",
+    "A2A Registry",
     "AWS Agent Registry",
     "agent-registry",
     "x402",
@@ -91,10 +94,20 @@
       "path": "llms.txt"
     },
     {
+      "id": "GLOBAL_A2A_REGISTRY",
+      "status": "SUBMISSION_READY_NOT_YET_INDEPENDENTLY_VERIFIED_AS_LISTED",
+      "record": "discovery/GLOBAL_A2A_REGISTRY.json",
+      "submit_url": "https://www.a2a-registry.org/submit",
+      "public_search_api": "https://api.a2a-registry.org/public/agents",
+      "foreign_discovery_claim_allowed": true,
+      "proves_a2a_runtime": false
+    },
+    {
       "id": "A2A_AGENT_CARD",
-      "status": "PUBLICATION_GATED_NO_LIVE_A2A_RUNTIME",
+      "status": "GLOBAL_REGISTRY_DISCOVERY_READY_AGENT_CARD_RUNTIME_GATED",
       "standard_path_after_deployment": "/.well-known/agent-card.json",
-      "publication_record": "discovery/A2A_PUBLICATION.json"
+      "publication_record": "discovery/A2A_PUBLICATION.json",
+      "current_agent_card_published": false
     },
     {
       "id": "MCP_REGISTRY",
@@ -140,9 +153,12 @@
     "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
     "PURCHASE_GRANT_DOES_NOT_BYPASS_EXECUTION_POLICY",
     "DELIVERY_DOES_NOT_PROVE_EXECUTION",
+    "GLOBAL_A2A_REGISTRY_LISTING_DOES_NOT_PROVE_A2A_RUNTIME",
+    "GLOBAL_A2A_REGISTRY_DISCOVERY_DOES_NOT_PROVE_EXECUTION",
+    "A2A_AGENT_CARD_REQUIRES_REAL_SUPPORTED_INTERFACE",
     "AWS_REGISTRY_SUPPORT_DOES_NOT_MEAN_JANUS_IS_REGISTERED",
     "AWS_SCHEMA_VERSION_GAP_DOES_NOT_AUTHORIZE_DOWNGRADING_JANUS",
     "CLOSED_SKUS_MUST_REMAIN_MACHINE_DISCOVERABLE_BUT_MACHINE_PURCHASE_FALSE"
   ],
-  "next_activation_gate": "R1_ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP"
+  "next_activation_gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT"
 }
