@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.pricing.v1",
-  "version": "2026-08-31-preview-1",
+  "version": "2026-09-04-paid-queue-1",
   "status": "PREVIEW_RATECARD_NOT_LIVE",
   "currency": "USDT",
   "decimals": 6,
@@ -9,7 +9,7 @@
   "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
   "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
   "quote_ttl_seconds": 900,
-  "pricing_law": "Displayed browser totals are deterministic preview calculations from this public ratecard. A payable invoice must be frozen and admitted by the trusted JANUS Commerce Authority. PAYMENT != EXECUTION_AUTHORITY.",
+  "pricing_law": "Displayed browser totals are deterministic preview calculations from this public ratecard. A payable invoice must be frozen and admitted by the trusted JANUS Commerce Authority. Paid SEARCH queue priority is frozen in the request before invoice creation. PAYMENT != EXECUTION_AUTHORITY.",
   "quantity_discounts": [
     {"min_quantity": 1, "discount_bps": 0},
     {"min_quantity": 5, "discount_bps": 500},
@@ -24,6 +24,14 @@
         "FAST": {"multiplier_bps": 10000},
         "STANDARD": {"multiplier_bps": 16000},
         "DEEP": {"multiplier_bps": 30000}
+      },
+      "queue_priority_policy": "PAID_QUEUE_POLICY.json",
+      "queue_levels": {
+        "1": {"code": "STANDARD", "multiplier_bps": 10000},
+        "2": {"code": "PRIORITY", "multiplier_bps": 15000},
+        "3": {"code": "EXPRESS", "multiplier_bps": 22500},
+        "4": {"code": "PRIME", "multiplier_bps": 35000},
+        "5": {"code": "GATE", "multiplier_bps": 50000}
       }
     },
     "JANUS.DATASET_SCOUT": {
