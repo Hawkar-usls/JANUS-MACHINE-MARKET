@@ -1,0 +1,300 @@
+name: JANUS Paid SEARCH Promotion PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/paid_search_promotion.py'
+      - 'runtime/persistent_home_foreign_witness.py'
+      - 'tests/test_paid_search_promotion.py'
+      - 'tests/test_persistent_home_foreign_witness.py'
+      - '.github/workflows/paid-search-promotion-pr.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile promotion and witness contracts
+        run: |
+          set -euo pipefail
+          python -m py_compile runtime/paid_search_promotion.py runtime/persistent_home_foreign_witness.py
+      - name: Run promotion and persistent witness adversarial suites
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python -m pytest -q tests/test_paid_search_promotion.py tests/test_persistent_home_foreign_witness.py
+      - name: Validate canonical blocked or witness-backed live lifecycle
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          w=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          r=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
+          p=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
+          live=w.get('foreign_agent_witness') is True
+          if live:
+              assert w['promotion_authority']=='PERSISTENT_HOME_RECEIPT_VERIFIED'
+              assert w['witness_receipt_itself_enables_money'] is False
+              assert r['money_enabled'] is True and r['autonomous_purchase_declared'] is True
+              assert p['machine_purchase'] is True and p['live_gate']['checkout_live'] is True
+              print('PROMOTION_GENERATOR_CANONICAL_STATE=SEARCH_LIVE_WITNESS_BOUND')
+          else:
+              assert r['money_enabled'] is False
+              assert r['autonomous_purchase_declared'] is False
+              assert p['machine_purchase'] is False
+              assert p['live_gate']['checkout_live'] is False
+              print('PROMOTION_GENERATOR_CANONICAL_STATE=BLOCKED_PENDING_WITNESS')
+          assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
+          assert r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
+          print('PROMOTION_GENERATOR_AUTO_MERGE=FALSE_BY_WORKFLOW_CONTRACT')
+          PY
+
+  prepare-promotion-pr:
+    if: github.event_name != 'pull_request'
+    needs: contract
+    concurrency:
+      group: janus-paid-search-promotion-pr
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout canonical Market main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Mount exact persistent Market state and detect first R1E witness
+        id: witness
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/paid-search-promotion-state"
+          rm -rf "$state"
+          git worktree add --detach "$state" origin/janus/market-state
+          state_commit="$(git -C "$state" rev-parse HEAD)"
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+          echo "market_state_commit=$state_commit" >> "$GITHUB_OUTPUT"
+          first="$state/state/r1-foreign-home/FIRST.json"
+          if [ ! -f "$first" ]; then
+            echo 'found=false' >> "$GITHUB_OUTPUT"
+            echo 'PAID_SEARCH_PROMOTION_WITNESS=ABSENT'
+            echo 'SILENCE_IS_NEGATIVE_EVIDENCE=FALSE'
+            exit 0
+          fi
+          FIRST="$first" STATE="$state" PYTHONPATH=. python - <<'PY' > runtime/promotion-witness.json
+          import json, os
+          from pathlib import Path
+          from runtime.paid_search_promotion import verify_first_witness
+          first=json.load(open(os.environ['FIRST'],encoding='utf-8'))
+          root=Path(os.environ['STATE'])/'state/r1-foreign-home'
+          receipt=json.loads((root/'receipts'/f"{first['witness_id']}.json").read_text(encoding='utf-8'))
+          verify_first_witness(first,receipt)
+          out={
+            'witness_id':first['witness_id'],
+            'receipt_hash':first['receipt_hash'],
+            'query_id':first['query_id'],
+            'home_response_hash':first['home_response_hash'],
+          }
+          print(json.dumps(out,ensure_ascii=False,sort_keys=True))
+          PY
+          wid="$(python -c "import json; print(json.load(open('runtime/promotion-witness.json'))['witness_id'])")"
+          rh="$(python -c "import json; print(json.load(open('runtime/promotion-witness.json'))['receipt_hash'])")"
+          echo 'found=true' >> "$GITHUB_OUTPUT"
+          echo "witness_id=$wid" >> "$GITHUB_OUTPUT"
+          echo "receipt_hash=$rh" >> "$GITHUB_OUTPUT"
+          echo 'PAID_SEARCH_PROMOTION_WITNESS=VERIFIED_PERSISTENT_STATE'
+
+      - name: No qualifying R1E witness yet
+        if: steps.witness.outputs.found != 'true'
+        run: |
+          echo 'PAID_SEARCH_PROMOTION_PR=NOT_CREATED'
+          echo 'MONEY_ENABLED=FALSE_UNCHANGED'
+
+      - name: Refuse duplicate or already-live canonical promotion
+        if: steps.witness.outputs.found == 'true'
+        id: canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > runtime/promotion-canonical-status.json
+          import json
+          w=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          r=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
+          p=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
+          live=(w.get('foreign_agent_witness') is True or r.get('money_enabled') is True or p.get('machine_purchase') is True)
+          print(json.dumps({'already_live_or_promoted':live},sort_keys=True))
+          PY
+          live="$(python -c "import json; print('true' if json.load(open('runtime/promotion-canonical-status.json'))['already_live_or_promoted'] else 'false')")"
+          echo "already_live=$live" >> "$GITHUB_OUTPUT"
+          if [ "$live" = true ]; then
+            echo 'PAID_SEARCH_PROMOTION=CANONICAL_ALREADY_CHANGED'
+            echo 'NO_SECOND_PROMOTION_PR=TRUE'
+          fi
+
+      - name: Generate exact witness-bound SEARCH-only live candidate
+        if: steps.witness.outputs.found == 'true' && steps.canonical.outputs.already_live != 'true'
+        env:
+          PYTHONPATH: .
+          MARKET_STATE_COMMIT: ${{ steps.witness.outputs.market_state_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > runtime/promotion-result.json
+          import json, os
+          from runtime.paid_search_promotion import write_live_promotion
+          result=write_live_promotion(
+              root='.',
+              state_root=os.environ['MARKET_STATE'],
+              market_state_commit=os.environ['MARKET_STATE_COMMIT'],
+          )
+          print(json.dumps(result,ensure_ascii=False,sort_keys=True))
+          PY
+          cat runtime/promotion-result.json
+          echo 'PAID_SEARCH_PROMOTION_DOCUMENTS=GENERATED_NOT_COMMITTED'
+
+      - name: Verify exact promotion file allowlist
+        if: steps.witness.outputs.found == 'true' && steps.canonical.outputs.already_live != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          expected={
+            'FOREIGN_AGENT_WITNESS.json',
+            'COMMERCE_READINESS.json',
+            'products/JANUS.SEARCH.json',
+            'PRICING.json',
+            'BUYER_QUERY_PLANE.json',
+            'MACHINE_INGRESS.json',
+            'index.html',
+            'PAYMENT_POLICY.md',
+          }
+          changed={x for x in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines() if x}
+          if changed != expected:
+              raise SystemExit(f'PROMOTION_CHANGED_FILE_ALLOWLIST_MISMATCH expected={sorted(expected)} actual={sorted(changed)}')
+          print('PROMOTION_CHANGED_FILE_ALLOWLIST=PASS')
+          PY
+
+      - name: Run live-candidate integrity before any branch push
+        if: steps.witness.outputs.found == 'true' && steps.canonical.outputs.already_live != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m json.tool FOREIGN_AGENT_WITNESS.json >/dev/null
+          python -m json.tool COMMERCE_READINESS.json >/dev/null
+          python -m json.tool products/JANUS.SEARCH.json >/dev/null
+          python -m json.tool PRICING.json >/dev/null
+          python -m json.tool BUYER_QUERY_PLANE.json >/dev/null
+          python -m json.tool MACHINE_INGRESS.json >/dev/null
+          PYTHONPATH=. python tools/validate_buyer_query_plane.py
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_commerce_authority.py \
+            tests/test_ethereum_usdt_observer.py \
+            tests/test_ethereum_usdt_transaction_observer.py \
+            tests/test_purchase_ledger.py \
+            tests/test_paid_search_packet.py \
+            tests/test_paid_search_checkout.py \
+            tests/test_paid_search_settlement.py \
+            tests/test_paid_search_queue.py \
+            tests/test_persistent_home_foreign_witness.py
+          python - <<'PY'
+          import json
+          w=json.load(open('FOREIGN_AGENT_WITNESS.json'))
+          r=json.load(open('COMMERCE_READINESS.json'))
+          p=json.load(open('products/JANUS.SEARCH.json'))
+          ingress=json.load(open('MACHINE_INGRESS.json'))
+          assert w['foreign_agent_witness'] is True
+          assert w['witness_receipt_itself_enables_money'] is False
+          assert r['money_enabled'] is True and r['autonomous_purchase_declared'] is True
+          assert p['machine_purchase'] is True and p['live_gate']['checkout_live'] is True and p['live_gate']['paid_queue_live'] is True
+          assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
+          assert r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
+          assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.REPO_AUDIT']['status']
+          assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.DATASET_SCOUT']['status']
+          print('PROMOTION_LIVE_CANDIDATE_SEARCH_ONLY=PASS')
+          print('PROMOTION_INFERENCE_COMPUTE=CLOSED')
+          PY
+
+      - name: Push deterministic promotion branch and open review PR
+        if: steps.witness.outputs.found == 'true' && steps.canonical.outputs.already_live != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WITNESS_ID: ${{ steps.witness.outputs.witness_id }}
+          RECEIPT_HASH: ${{ steps.witness.outputs.receipt_hash }}
+          MARKET_STATE_COMMIT: ${{ steps.witness.outputs.market_state_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          suffix="${WITNESS_ID#faw-home-}"
+          branch="commerce/live-paid-search-${suffix:0:16}"
+          existing="$(gh pr list --state all --head "$branch" --json number,state,url --limit 1)"
+          if [ "$existing" != '[]' ]; then
+            echo "PAID_SEARCH_PROMOTION_PR_ALREADY_EXISTS=$existing"
+            exit 0
+          fi
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo 'PROMOTION_BRANCH_EXISTS_WITHOUT_PR_FAIL_CLOSED=TRUE' >&2
+            exit 4
+          fi
+          git config user.name "JANUS Paid SEARCH Promotion"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add \
+            FOREIGN_AGENT_WITNESS.json \
+            COMMERCE_READINESS.json \
+            products/JANUS.SEARCH.json \
+            PRICING.json \
+            BUYER_QUERY_PLANE.json \
+            MACHINE_INGRESS.json \
+            index.html \
+            PAYMENT_POLICY.md
+          git commit -m "Promote JANUS.SEARCH from persistent HOME witness ${WITNESS_ID}"
+          git push origin "HEAD:refs/heads/$branch"
+          cat > "$RUNNER_TEMP/promotion-pr.md" <<EOF
+          ## JANUS.SEARCH paid-live promotion candidate
+
+          This PR was generated from the first qualifying external machine-client persistent-HOME witness.
+
+          - witness_id: \`${WITNESS_ID}\`
+          - witness_receipt_hash: \`${RECEIPT_HASH}\`
+          - market_state_commit: \`${MARKET_STATE_COMMIT}\`
+          - target SKU: \`JANUS.SEARCH\` only
+          - five-level paid queue: required
+          - max active paid SEARCH: \`1\`
+          - preemption: \`false\`
+          - JANUS.INFERENCE: CLOSED
+          - JANUS.COMPUTE: CLOSED
+          - REPO_AUDIT / DATASET_SCOUT: unchanged owner-shadow
+
+          **This workflow does not auto-merge.** All normal PR integrity checks must independently pass against the canonical persistent witness before paid SEARCH may become live.
+          EOF
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "Commerce: promote JANUS.SEARCH live from R1E witness ${WITNESS_ID}" \
+            --body-file "$RUNNER_TEMP/promotion-pr.md"
+          echo 'PAID_SEARCH_PROMOTION_PR=CREATED_REVIEW_REQUIRED'
+          echo 'PAID_SEARCH_PROMOTION_AUTO_MERGE=FALSE'
