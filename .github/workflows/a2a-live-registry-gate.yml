@@ -45,6 +45,7 @@ jobs:
           assert "https://api.a2a-registry.org" in text
           assert "/public/ingest" in text
           assert "manifestUrl: cardUrl" in text
+          assert "ALREADY_LISTED_NO_POST" in text
           assert "BASE_URL_MUST_BE_HTTPS" in text
           assert "GLOBAL_A2A_REGISTRY_LISTING_NOT_OBSERVED_AFTER_INGEST" in text
           assert "execution_witness: false" in text
@@ -54,6 +55,7 @@ jobs:
           lower=text.lower()
           assert not [x for x in forbidden if x.lower() in lower]
           print('A2A_LIVE_GATE_MUTATION_BOUNDARY=PASS')
+          print('A2A_REGISTRY_RETRY_PRECHECK=PASS')
           print('A2A_LIVE_GATE_CAN_MUTATE_ONLY_PUBLIC_REGISTRY=TRUE')
           print('A2A_LIVE_GATE_MONEY_AUTHORITY=FALSE')
           PY
@@ -107,9 +109,11 @@ jobs:
           rm -rf "$state"
           git worktree add -B janus-a2a-live-state "$state" origin/janus/market-state
           echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
-      - name: Persist immutable A2A live/Registry receipt
+      - name: Persist immutable A2A live/Registry observation and first listing witness
         env:
           RECEIPT_HASH: ${{ steps.live.outputs.receipt_hash }}
+          REGISTRY_LISTED: ${{ steps.live.outputs.registry_listed }}
+          CARD_URL: ${{ steps.live.outputs.card_url }}
         shell: bash
         run: |
           set -euo pipefail
@@ -117,18 +121,36 @@ jobs:
           dir="$MARKET_STATE/state/a2a-live/receipts"
           mkdir -p "$dir"
           target="$dir/$RECEIPT_HASH.json"
+          if [ -e "$target" ]; then cmp -s "$receipt" "$target" || { echo 'A2A_LIVE_RECEIPT_HASH_CONFLICT'; exit 1; }; else cp "$receipt" "$target"; fi
+
           first="$MARKET_STATE/state/a2a-live/FIRST.json"
-          if [ -e "$target" ]; then cmp -s "$receipt" "$target" || { echo 'A2A_LIVE_RECEIPT_CONFLICT'; exit 1; }; else cp "$receipt" "$target"; fi
-          if [ -e "$first" ]; then cmp -s "$receipt" "$first" || { echo 'A2A_LIVE_FIRST_RECEIPT_CONFLICT'; exit 1; }; else mkdir -p "$(dirname "$first")"; cp "$receipt" "$first"; fi
+          if [ "$REGISTRY_LISTED" = 'true' ]; then
+            if [ -e "$first" ]; then
+              FIRST="$first" CARD_URL="$CARD_URL" node --input-type=module <<'NODE'
+              import fs from 'node:fs';
+              const first=JSON.parse(fs.readFileSync(process.env.FIRST,'utf8'));
+              if (first.registry?.public_listing_observed !== true) throw new Error('A2A_LIVE_FIRST_NOT_LISTED');
+              if (first.a2a?.agent_card_url !== process.env.CARD_URL) throw new Error('A2A_LIVE_FIRST_CARD_URL_CONFLICT');
+              console.log('A2A_LIVE_FIRST=IMMUTABLE_EXISTING');
+              NODE
+            else
+              mkdir -p "$(dirname "$first")"
+              cp "$receipt" "$first"
+              echo 'A2A_LIVE_FIRST=CREATED_FROM_PUBLIC_LISTING_WITNESS'
+            fi
+          else
+            echo 'A2A_LIVE_FIRST=NOT_CREATED_WITHOUT_PUBLIC_REGISTRY_LISTING'
+          fi
+
           git -C "$MARKET_STATE" config user.name "JANUS A2A Live Gate"
           git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$MARKET_STATE" add state/a2a-live
           if git -C "$MARKET_STATE" diff --cached --quiet; then
-            echo 'A2A_LIVE_RECEIPT=IDEMPOTENT_REPLAY'
+            echo 'A2A_LIVE_OBSERVATION=IDEMPOTENT_NO_STATE_CHANGE'
           else
-            git -C "$MARKET_STATE" commit -m "A2A live Registry receipt $RECEIPT_HASH"
+            git -C "$MARKET_STATE" commit -m "A2A live Registry observation $RECEIPT_HASH"
             git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
-            echo 'A2A_LIVE_RECEIPT=PERSISTED'
+            echo 'A2A_LIVE_OBSERVATION=PERSISTED'
           fi
       - name: Final authority ceiling
         env:
