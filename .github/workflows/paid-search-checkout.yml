@@ -54,6 +54,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PAID_QUEUE_STATUS_URL: https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/janus/market-state/state/commerce/paid-search-queue/QUEUE_STATUS.json
+
 jobs:
   contract:
     runs-on: ubuntu-24.04
@@ -92,7 +95,7 @@ jobs:
           print('PAID_QUEUE_CAPACITY_GATE=BEFORE_INVOICE')
           print('VALID_PAID_SETTLEMENT_CAPACITY_REJECTION=FALSE')
           PY
-      - name: Assert no transaction signing/sending code
+      - name: Assert no transaction signing or sending code
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -135,7 +138,7 @@ jobs:
           rm -rf "$state"
           git worktree add -B janus-market-paid-state "$state" origin/janus/market-state
           echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
-      - name: Normalize request, reserve queue capacity, then create/recover exact invoice
+      - name: Normalize request, reserve queue capacity, then create or recover exact invoice
         id: invoice
         env:
           PYTHONPATH: .
@@ -209,7 +212,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REASON: ${{ steps.invoice.outputs.reason }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send funds.**"
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS paid checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send funds.**"
       - name: Publish exact live invoice
         if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
         env:
@@ -231,6 +235,7 @@ jobs:
           print('After the transfer has enough confirmations, post a new comment containing:')
           print('```\n<!-- JANUS_PAYMENT_PROOF_JSON\n{"tx_hash":"0x...","log_index":0}\nJANUS_PAYMENT_PROOF_JSON -->\n```')
           print('Payment settlement creates a queue entry; it does **not** start execution immediately. Higher levels may overtake waiting requests only; the active request is never preempted.')
+          print('Live queue status: ' + __import__('os').environ['PAID_QUEUE_STATUS_URL'])
           PY
           gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/invoice-comment.md"
 
@@ -308,7 +313,8 @@ jobs:
         if: steps.settle.outputs.settled != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment proof observed with status **${{ steps.settle.outputs.status }}** and **${{ steps.settle.outputs.confirmations }}/12 confirmations**. No purchase, queue entry or execution was admitted."
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment proof observed with status **${{ steps.settle.outputs.status }}** and **${{ steps.settle.outputs.confirmations }}/12 confirmations**. No purchase, queue entry or execution was admitted."
       - name: Commit settled purchase and queue entry atomically
         if: steps.settle.outputs.settled == 'true'
         shell: bash
@@ -317,10 +323,16 @@ jobs:
           git -C "$MARKET_STATE" config user.name "JANUS Paid Search State"
           git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$MARKET_STATE" add state/commerce
-          if git -C "$MARKET_STATE" diff --cached --quiet; then echo 'PAID_PURCHASE_QUEUE_LEDGER=IDEMPOTENT_REPLAY'; else git -C "$MARKET_STATE" commit -m "Paid SEARCH queued ${{ steps.settle.outputs.purchase_id }}"; git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state; echo 'PAID_PURCHASE_QUEUE_LEDGER=PASS'; fi
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'PAID_PURCHASE_QUEUE_LEDGER=IDEMPOTENT_REPLAY'
+          else
+            git -C "$MARKET_STATE" commit -m "Paid SEARCH queued ${{ steps.settle.outputs.purchase_id }}"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'PAID_PURCHASE_QUEUE_LEDGER=PASS'
+          fi
       - name: Confirm purchase accepted into serialized queue
         if: steps.settle.outputs.settled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment is **CONFIRMED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; requests ahead before start: **${{ steps.settle.outputs.ahead }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min** (nominal ~${{ steps.settle.outputs.wait_nominal }} min). This ETA is an estimate, not a guarantee. The queue runs one paid SEARCH at a time; higher tiers can overtake waiting requests but cannot interrupt the active request. Settlement is **not execution start**. Exact retry creates neither a second queue entry nor a second charge."
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "Payment is **CONFIRMED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; requests ahead before start: **${{ steps.settle.outputs.ahead }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min** (nominal ~${{ steps.settle.outputs.wait_nominal }} min). This ETA is an estimate, not a guarantee. The queue runs one paid SEARCH at a time; higher tiers can overtake waiting requests but cannot interrupt the active request. Settlement is **not execution start**. Exact retry creates neither a second queue entry nor a second charge. Live queue status: $PAID_QUEUE_STATUS_URL"
