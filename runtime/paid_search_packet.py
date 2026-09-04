@@ -26,6 +26,8 @@ PAID_ORIGIN = "FOREIGN_PAID_SEARCH"
 SKU = "JANUS.SEARCH"
 MARKET_REPOSITORY = "Hawkar-usls/JANUS-MACHINE-MARKET"
 HOME_REPOSITORY = "Hawkar-usls/Hawkar-usls"
+QUEUE_LEVELS = 5
+QUEUE_CONTRACT_VERSION = "paid-search-queue-v1"
 
 
 class PaidSearchPacketError(ValueError):
@@ -54,6 +56,11 @@ def normalize_paid_issue_request(issue: dict[str, Any], raw: dict[str, Any], *, 
     message=str(raw.get("message_text") or "").strip()
     _require(bool(message), "PAID_SEARCH_MESSAGE_REQUIRED")
     _require(len(message.encode("utf-8")) <= PAID_SEARCH_MAX_MESSAGE_UTF8_BYTES, "PAID_SEARCH_MESSAGE_TOO_LARGE")
+    try:
+        queue_level=int(raw.get("queue_level", 1))
+    except (TypeError, ValueError) as exc:
+        raise PaidSearchPacketError("PAID_SEARCH_QUEUE_LEVEL_INVALID") from exc
+    _require(1 <= queue_level <= QUEUE_LEVELS, "PAID_SEARCH_QUEUE_LEVEL_OUT_OF_RANGE")
     issue_id=int(issue.get("id") or 0); issue_number=int(issue.get("number") or 0)
     _require(issue_id > 0 and issue_number > 0, "PAID_SEARCH_ISSUE_IDENTITY_INVALID")
     created_at=str(issue.get("created_at") or "").strip()
@@ -74,12 +81,19 @@ def normalize_paid_issue_request(issue: dict[str, Any], raw: dict[str, Any], *, 
         "source_issue_number": issue_number,
         "source_issue_id": issue_id,
         "request_origin": PAID_ORIGIN,
+        "queue_level": queue_level,
     }
 
 
 def validate_paid_purchase(*, request: dict[str, Any], purchase_grant: dict[str, Any], quote: dict[str, Any], payment_receipt: dict[str, Any]) -> None:
     _require(request.get("schema") == REQUEST_SCHEMA and request.get("sku") == SKU, "PAID_SEARCH_REQUEST_INVALID")
     _require(request.get("request_origin") == PAID_ORIGIN, "PAID_SEARCH_ORIGIN_INVALID")
+    if "queue_level" in request:
+        try:
+            queue_level=int(request.get("queue_level"))
+        except (TypeError, ValueError) as exc:
+            raise PaidSearchPacketError("PAID_SEARCH_QUEUE_LEVEL_INVALID") from exc
+        _require(1 <= queue_level <= QUEUE_LEVELS, "PAID_SEARCH_QUEUE_LEVEL_OUT_OF_RANGE")
     _require(purchase_grant.get("schema") == GRANT_SCHEMA, "PAID_SEARCH_GRANT_SCHEMA_INVALID")
     _require(purchase_grant.get("status") == "PURCHASE_SETTLED", "PAID_SEARCH_PURCHASE_NOT_SETTLED")
     _require(purchase_grant.get("sku") == SKU, "PAID_SEARCH_GRANT_SKU_INVALID")
@@ -128,6 +142,7 @@ def build_paid_home_packet(*, request: dict[str, Any], purchase_grant: dict[str,
         "created_at":request["created_at"],
     }
     query["query_hash"]=digest(query)
+    queue_bound="queue_level" in request
     offer={
         "schema":"janus.machine_market.paid_search_offer.v1",
         "sku":SKU,
@@ -137,6 +152,9 @@ def build_paid_home_packet(*, request: dict[str, Any], purchase_grant: dict[str,
         "production_purchase":True,
         "buyer_query_turns":PAID_SEARCH_MAX_TURNS,
     }
+    if queue_bound:
+        offer["queue_level"]=int(request["queue_level"])
+        offer["queue_contract_version"]=QUEUE_CONTRACT_VERSION
     packet={
         "schema":PACKET_SCHEMA,
         "market_repository":MARKET_REPOSITORY,
@@ -185,6 +203,14 @@ def build_paid_home_packet(*, request: dict[str, Any], purchase_grant: dict[str,
             "EXACT_RETRY != SECOND_CHARGE",
         ],
     }
+    if queue_bound:
+        packet["queue_level"]=int(request["queue_level"])
+        packet["queue_contract_version"]=QUEUE_CONTRACT_VERSION
+        packet["laws"].extend([
+            "PAYMENT_SETTLED != EXECUTION_STARTED",
+            "ACTIVE_PAID_REQUEST_IS_NEVER_PREEMPTED",
+            "QUEUE_DISPATCH != COMMAND_AUTHORITY",
+        ])
     packet["packet_hash"]=digest(packet)
     return packet
 
@@ -204,13 +230,25 @@ def verify_paid_home_packet(packet: dict[str, Any]) -> bool:
             return False
         if any(packet.get(k) is not False for k in ("execution_authority_granted","command_authority_granted","external_effect_authorized","physical_runtime_effect_authorized","scientific_evidence_authority_granted","world_truth_authority_granted")):
             return False
-        grant=packet.get("purchase_grant"); query=packet.get("buyer_query"); commerce=packet.get("commerce")
-        if not isinstance(grant,dict) or not isinstance(query,dict) or not isinstance(commerce,dict):
+        grant=packet.get("purchase_grant"); query=packet.get("buyer_query"); commerce=packet.get("commerce"); offer=packet.get("offer")
+        if not isinstance(grant,dict) or not isinstance(query,dict) or not isinstance(commerce,dict) or not isinstance(offer,dict):
             return False
-        validate_paid_purchase(request={
+        request={
             "schema":REQUEST_SCHEMA,"request_id":packet["request_id"],"sku":SKU,"buyer_actor_id":query["buyer_actor_id"],"conversation_id":query["conversation_id"],"turn_index":query["turn_index"],"message_text":query["message_text"],"created_at":query["created_at"],"max_turns":grant["buyer_query_entitlement"]["max_turns"],"max_message_utf8_bytes":grant["buyer_query_entitlement"]["max_message_utf8_bytes"],"max_answer_utf8_bytes":grant["buyer_query_entitlement"]["max_answer_utf8_bytes"],"conversation_history_turns":grant["buyer_query_entitlement"]["conversation_history_turns"],"source_issue_number":packet["return_route"].get("source_issue_number"),"source_issue_id":packet["return_route"].get("source_issue_id"),"request_origin":packet["request_origin"]
-        },purchase_grant=grant,quote=commerce["quote"],payment_receipt=commerce["payment_receipt"])
+        }
+        if "queue_level" in packet:
+            queue_level=int(packet["queue_level"])
+            if not (1 <= queue_level <= QUEUE_LEVELS):
+                return False
+            if packet.get("queue_contract_version") != QUEUE_CONTRACT_VERSION:
+                return False
+            if int(offer.get("queue_level",0)) != queue_level or offer.get("queue_contract_version") != QUEUE_CONTRACT_VERSION:
+                return False
+            request["queue_level"]=queue_level
+        validate_paid_purchase(request=request,purchase_grant=grant,quote=commerce["quote"],payment_receipt=commerce["payment_receipt"])
         if packet["purchase_grant_hash"]!=grant["grant_hash"] or packet["query_id"]!=query["query_id"] or packet["query_hash"]!=query["query_hash"]:
+            return False
+        if packet.get("offer_hash") != digest(offer):
             return False
         q=dict(query); qh=str(q.pop("query_hash", ""))
         if digest(q)!=qh:
@@ -220,4 +258,4 @@ def verify_paid_home_packet(packet: dict[str, Any]) -> bool:
         return False
 
 
-__all__=["PAID_MODE","PAID_ORIGIN","PaidSearchPacketError","build_paid_home_packet","normalize_paid_issue_request","validate_paid_purchase","verify_paid_home_packet"]
+__all__=["PAID_MODE","PAID_ORIGIN","QUEUE_CONTRACT_VERSION","QUEUE_LEVELS","PaidSearchPacketError","build_paid_home_packet","normalize_paid_issue_request","validate_paid_purchase","verify_paid_home_packet"]
