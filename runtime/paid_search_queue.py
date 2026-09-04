@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from runtime.commerce_authority import CommerceInvalid, digest, parse_time, receipt_payment_reference
+from runtime.commerce_authority import digest, parse_time, receipt_payment_reference
 from runtime.paid_search_packet import verify_paid_home_packet
 
 ENTRY_SCHEMA = "janus.machine_market.paid_search_queue_entry.v1"
@@ -44,10 +44,8 @@ def _create_only(path: Path, value: Any) -> str:
             fh.flush()
             os.fsync(fh.fileno())
     except Exception:
-        try:
-            path.unlink(missing_ok=True)
-        finally:
-            raise
+        path.unlink(missing_ok=True)
+        raise
     return "CREATED"
 
 
@@ -65,14 +63,27 @@ def queue_root(state_root: str | Path) -> Path:
     return Path(state_root) / "state/commerce/paid-search-queue"
 
 
+def active_path(state_root: str | Path) -> Path:
+    return queue_root(state_root) / "ACTIVE.json"
+
+
+def dispatch_path(state_root: str | Path, purchase_id: str) -> Path:
+    return queue_root(state_root) / "dispatches" / f"{purchase_id}.json"
+
+
+def completion_path(state_root: str | Path, purchase_id: str) -> Path:
+    return queue_root(state_root) / "completions" / f"{purchase_id}.json"
+
+
 def level_spec(policy: Mapping[str, Any], level: int) -> dict[str, Any]:
-    levels = policy.get("levels") or {}
-    spec = levels.get(str(int(level)))
+    level = int(level)
+    total = int(policy.get("queue_levels", 0))
+    if level < 1 or level > total:
+        raise QueueInvalid("QUEUE_LEVEL_OUT_OF_RANGE")
+    spec = (policy.get("levels") or {}).get(str(level))
     if not isinstance(spec, Mapping):
         raise QueueInvalid("QUEUE_LEVEL_INVALID")
     out = dict(spec)
-    if int(level) < 1 or int(level) > int(policy.get("queue_levels", 0)):
-        raise QueueInvalid("QUEUE_LEVEL_OUT_OF_RANGE")
     if int(out.get("price_multiplier_bps", 0)) < 10_000:
         raise QueueInvalid("QUEUE_LEVEL_MULTIPLIER_INVALID")
     return out
@@ -89,9 +100,8 @@ def effective_level(entry: Mapping[str, Any], policy: Mapping[str, Any], *, now:
         raise QueueInvalid("QUEUE_AGING_STEP_INVALID")
     max_boost = max(0, int(aging.get("max_boost_levels", 0)))
     paid_at = parse_time(str(entry.get("payment_block_timestamp") or ""))
-    elapsed_minutes = max(0, int((now.astimezone(timezone.utc) - paid_at).total_seconds() // 60))
-    boost = min(max_boost, elapsed_minutes // step)
-    return min(int(policy.get("queue_levels", 5)), base + boost)
+    elapsed = max(0, int((now.astimezone(timezone.utc) - paid_at).total_seconds() // 60))
+    return min(int(policy.get("queue_levels", 5)), base + min(max_boost, elapsed // step))
 
 
 def build_queue_entry(
@@ -182,52 +192,49 @@ def verify_queue_entry(entry: Mapping[str, Any], policy: Mapping[str, Any]) -> b
         return False
 
 
-def enqueue(state_root: str | Path, entry: Mapping[str, Any], policy: Mapping[str, Any]) -> dict[str, Any]:
-    if not verify_queue_entry(entry, policy):
-        raise QueueInvalid("QUEUE_ENTRY_INVALID")
-    root = queue_root(state_root)
-    entries = root / "entries"
-    purchase_id = str(entry["purchase_id"])
-    target = entries / f"{purchase_id}.json"
-    existing = [p for p in entries.glob("*.json")] if entries.exists() else []
-    if not target.exists() and len(existing) >= int(policy.get("max_queue_depth", 100)):
-        raise QueueInvalid("QUEUE_DEPTH_LIMIT_REACHED")
-    buyer = str(entry.get("buyer_actor_id") or "")
-    if not target.exists() and buyer:
-        same_buyer = 0
-        for path in existing:
-            row = _load(path)
-            if row.get("buyer_actor_id") == buyer and not completion_path(state_root, str(row.get("purchase_id") or "")).exists():
-                same_buyer += 1
-        if same_buyer >= int(policy.get("max_queued_per_buyer", 3)):
-            raise QueueInvalid("QUEUE_BUYER_PENDING_LIMIT_REACHED")
-    status = _create_only(target, dict(entry))
-    return {"queue_entry": status, "path": str(target), "purchase_id": purchase_id, "query_id": entry.get("query_id")}
-
-
-def active_path(state_root: str | Path) -> Path:
-    return queue_root(state_root) / "ACTIVE.json"
-
-
-def dispatch_path(state_root: str | Path, purchase_id: str) -> Path:
-    return queue_root(state_root) / "dispatches" / f"{purchase_id}.json"
-
-
-def completion_path(state_root: str | Path, purchase_id: str) -> Path:
-    return queue_root(state_root) / "completions" / f"{purchase_id}.json"
-
-
 def _entries(state_root: str | Path, policy: Mapping[str, Any]) -> list[dict[str, Any]]:
     root = queue_root(state_root) / "entries"
     if not root.is_dir():
         return []
-    rows = []
+    rows: list[dict[str, Any]] = []
     for path in root.glob("*.json"):
         row = _load(path)
         if not verify_queue_entry(row, policy):
             raise QueueInvalid(f"QUEUE_STORED_ENTRY_INVALID:{path.name}")
         rows.append(row)
     return rows
+
+
+def _pending_entries(state_root: str | Path, policy: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [
+        row
+        for row in _entries(state_root, policy)
+        if not completion_path(state_root, str(row.get("purchase_id") or "")).exists()
+    ]
+
+
+def enqueue(state_root: str | Path, entry: Mapping[str, Any], policy: Mapping[str, Any]) -> dict[str, Any]:
+    if not verify_queue_entry(entry, policy):
+        raise QueueInvalid("QUEUE_ENTRY_INVALID")
+    root = queue_root(state_root)
+    entries_dir = root / "entries"
+    purchase_id = str(entry["purchase_id"])
+    target = entries_dir / f"{purchase_id}.json"
+    if target.exists():
+        status = _create_only(target, dict(entry))
+        return {"queue_entry": status, "path": str(target), "purchase_id": purchase_id, "query_id": entry.get("query_id")}
+
+    # Capacity is a limit on unfinished work, never on immutable historical receipts.
+    pending = _pending_entries(state_root, policy)
+    if len(pending) >= int(policy.get("max_queue_depth", 100)):
+        raise QueueInvalid("QUEUE_DEPTH_LIMIT_REACHED")
+    buyer = str(entry.get("buyer_actor_id") or "")
+    if buyer:
+        same_buyer = sum(1 for row in pending if str(row.get("buyer_actor_id") or "") == buyer)
+        if same_buyer >= int(policy.get("max_queued_per_buyer", 3)):
+            raise QueueInvalid("QUEUE_BUYER_PENDING_LIMIT_REACHED")
+    status = _create_only(target, dict(entry))
+    return {"queue_entry": status, "path": str(target), "purchase_id": purchase_id, "query_id": entry.get("query_id")}
 
 
 def _sort_key(entry: Mapping[str, Any], policy: Mapping[str, Any], now: datetime) -> tuple[Any, ...]:
@@ -260,20 +267,21 @@ def claim_next(state_root: str | Path, policy: Mapping[str, Any], *, now: dateti
     path = active_path(state_root)
     active = _live_active(state_root)
     if active is not None:
-        purchase_id = str(active["purchase_id"])
-        entries = {str(x["purchase_id"]): x for x in _entries(state_root, policy)}
-        entry = entries.get(purchase_id)
+        entries = {str(row["purchase_id"]): row for row in _entries(state_root, policy)}
+        entry = entries.get(str(active["purchase_id"]))
         if entry is None:
             raise QueueInvalid("QUEUE_ACTIVE_ENTRY_MISSING")
         return {"status": "ACTIVE_REPLAY", "entry": entry, "active": active}
     if path.exists():
-        # The prior active request has a completion receipt. Clearing this pointer is
-        # safe because completion is immutable and the shared workflow mutex serializes writers.
         path.unlink()
-    candidates = [e for e in _entries(state_root, policy) if not completion_path(state_root, str(e["purchase_id"])).exists() and not dispatch_path(state_root, str(e["purchase_id"])).exists()]
+    candidates = [
+        row
+        for row in _pending_entries(state_root, policy)
+        if not dispatch_path(state_root, str(row["purchase_id"])).exists()
+    ]
     if not candidates:
         return {"status": "EMPTY", "entry": None, "active": None}
-    candidates.sort(key=lambda e: _sort_key(e, policy, now))
+    candidates.sort(key=lambda row: _sort_key(row, policy, now))
     entry = candidates[0]
     body = {
         "schema": ACTIVE_SCHEMA,
@@ -291,7 +299,13 @@ def claim_next(state_root: str | Path, policy: Mapping[str, Any], *, now: dateti
     return {"status": "CLAIMED", "entry": entry, "active": active}
 
 
-def mark_dispatched(state_root: str | Path, entry: Mapping[str, Any], *, outbox_commit: str, dispatched_at: datetime) -> dict[str, Any]:
+def mark_dispatched(
+    state_root: str | Path,
+    entry: Mapping[str, Any],
+    *,
+    outbox_commit: str,
+    dispatched_at: datetime,
+) -> dict[str, Any]:
     active = _live_active(state_root)
     if active is None or active.get("purchase_id") != entry.get("purchase_id") or active.get("packet_hash") != entry.get("packet_hash"):
         raise QueueInvalid("QUEUE_DISPATCH_REQUIRES_MATCHING_ACTIVE_LOCK")
@@ -313,7 +327,12 @@ def mark_dispatched(state_root: str | Path, entry: Mapping[str, Any], *, outbox_
     return {"dispatch": status, "receipt": receipt}
 
 
-def complete_active(state_root: str | Path, home_response: Mapping[str, Any], *, completed_at: datetime) -> dict[str, Any]:
+def complete_active(
+    state_root: str | Path,
+    home_response: Mapping[str, Any],
+    *,
+    completed_at: datetime,
+) -> dict[str, Any]:
     active = _live_active(state_root)
     if active is None:
         purchase_id = str(home_response.get("purchase_id") or "")
@@ -351,22 +370,28 @@ def complete_active(state_root: str | Path, home_response: Mapping[str, Any], *,
     return {"completion": status, "receipt": completion}
 
 
-def snapshot(state_root: str | Path, policy: Mapping[str, Any], *, now: datetime, focus_purchase_id: str | None = None) -> dict[str, Any]:
+def snapshot(
+    state_root: str | Path,
+    policy: Mapping[str, Any],
+    *,
+    now: datetime,
+    focus_purchase_id: str | None = None,
+) -> dict[str, Any]:
     now = now.astimezone(timezone.utc)
     active = _live_active(state_root)
-    rows = [e for e in _entries(state_root, policy) if not completion_path(state_root, str(e["purchase_id"])).exists()]
+    rows = _pending_entries(state_root, policy)
     active_id = str(active.get("purchase_id") or "") if active else None
-    waiting = [e for e in rows if str(e["purchase_id"]) != active_id]
-    waiting.sort(key=lambda e: _sort_key(e, policy, now))
-    slot_min = int((policy.get("service_time_estimate_minutes") or {}).get("min", 5))
-    slot_nominal = int((policy.get("service_time_estimate_minutes") or {}).get("nominal", 8))
-    slot_max = int((policy.get("service_time_estimate_minutes") or {}).get("max", 15))
+    waiting = [row for row in rows if str(row["purchase_id"]) != active_id]
+    waiting.sort(key=lambda row: _sort_key(row, policy, now))
+    estimate = policy.get("service_time_estimate_minutes") or {}
+    slot_min = int(estimate.get("min", 5))
+    slot_nominal = int(estimate.get("nominal", 8))
+    slot_max = int(estimate.get("max", 15))
     if not (0 < slot_min <= slot_nominal <= slot_max):
         raise QueueInvalid("QUEUE_SERVICE_TIME_ESTIMATE_INVALID")
-    public_rows = []
+    public_rows: list[dict[str, Any]] = []
     for idx, entry in enumerate(waiting, start=1):
-        active_ahead = 1 if active_id else 0
-        ahead = active_ahead + idx - 1
+        ahead = (1 if active_id else 0) + idx - 1
         public_rows.append({
             "position": idx,
             "purchase_id": entry["purchase_id"],
@@ -393,9 +418,15 @@ def snapshot(state_root: str | Path, policy: Mapping[str, Any], *, now: datetime
                 "purchase_id": focus_purchase_id,
             }
         else:
-            focus = next((dict(x, state="QUEUED") for x in public_rows if x["purchase_id"] == focus_purchase_id), None)
+            focus = next((dict(row, state="QUEUED") for row in public_rows if row["purchase_id"] == focus_purchase_id), None)
             if focus is None and completion_path(state_root, focus_purchase_id).exists():
-                focus = {"state": "DELIVERED", "purchase_id": focus_purchase_id, "position": None, "people_ahead_before_start": 0, "estimated_wait_minutes": {"min": 0, "nominal": 0, "max": 0}}
+                focus = {
+                    "state": "DELIVERED",
+                    "purchase_id": focus_purchase_id,
+                    "position": None,
+                    "people_ahead_before_start": 0,
+                    "estimated_wait_minutes": {"min": 0, "nominal": 0, "max": 0},
+                }
     result = {
         "schema": SNAPSHOT_SCHEMA,
         "status": "ACTIVE" if active_id else ("QUEUED" if public_rows else "EMPTY"),
@@ -423,13 +454,17 @@ def snapshot(state_root: str | Path, policy: Mapping[str, Any], *, now: datetime
 __all__ = [
     "QueueConflict",
     "QueueInvalid",
+    "active_path",
     "build_queue_entry",
     "claim_next",
     "complete_active",
+    "completion_path",
+    "dispatch_path",
     "effective_level",
     "enqueue",
     "level_spec",
     "mark_dispatched",
+    "queue_root",
     "snapshot",
     "verify_queue_entry",
 ]
