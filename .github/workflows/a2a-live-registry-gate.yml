@@ -1,0 +1,146 @@
+name: JANUS A2A Live + Global Registry Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/verify_and_ingest_a2a_live.mjs'
+      - '.github/workflows/a2a-live-registry-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/verify_and_ingest_a2a_live.mjs'
+      - '.github/workflows/a2a-live-registry-gate.yml'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Exact HTTPS origin of the deployed JANUS A2A gateway, e.g. https://example.vercel.app'
+        required: true
+        type: string
+      ingest_registry:
+        description: 'After live A2A verification, submit the canonical Agent Card to Global A2A Registry and require public listing.'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check live gate
+        run: node --check tools/verify_and_ingest_a2a_live.mjs
+      - name: Enforce mutation boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('tools/verify_and_ingest_a2a_live.mjs').read_text(encoding='utf-8')
+          assert "https://api.a2a-registry.org" in text
+          assert "/public/ingest" in text
+          assert "manifestUrl: cardUrl" in text
+          assert "BASE_URL_MUST_BE_HTTPS" in text
+          assert "GLOBAL_A2A_REGISTRY_LISTING_NOT_OBSERVED_AFTER_INGEST" in text
+          assert "execution_witness: false" in text
+          assert "foreign_agent_witness: false" in text
+          assert "money_enabled: false" in text
+          forbidden=['private_key','eth_sendrawtransaction','VERCEL_TOKEN','GITHUB_TOKEN','GH_TOKEN']
+          lower=text.lower()
+          assert not [x for x in forbidden if x.lower() in lower]
+          print('A2A_LIVE_GATE_MUTATION_BOUNDARY=PASS')
+          print('A2A_LIVE_GATE_CAN_MUTATE_ONLY_PUBLIC_REGISTRY=TRUE')
+          print('A2A_LIVE_GATE_MONEY_AUTHORITY=FALSE')
+          PY
+
+  verify-and-ingest:
+    if: github.event_name == 'workflow_dispatch'
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout canonical Market main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify live A2A and optionally ingest Registry
+        id: live
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          INGEST: ${{ inputs.ingest_registry }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--base-url "$BASE_URL" --output "$RUNNER_TEMP/a2a-live-registry-receipt.json")
+          if [ "$INGEST" = 'true' ]; then args+=(--ingest); fi
+          node tools/verify_and_ingest_a2a_live.mjs "${args[@]}" > "$RUNNER_TEMP/a2a-live-registry-stdout.json"
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/a2a-live-registry-receipt.json','utf8'));
+          console.log('receipt_hash='+r.receipt_hash);
+          console.log('status='+r.status);
+          console.log('base_url='+r.a2a.base_url);
+          console.log('card_url='+r.a2a.agent_card_url);
+          console.log('registry_listed='+String(r.registry.public_listing_observed));
+          NODE
+      - name: Mount persistent Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/a2a-live-market-state"
+          rm -rf "$state"
+          git worktree add -B janus-a2a-live-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+      - name: Persist immutable A2A live/Registry receipt
+        env:
+          RECEIPT_HASH: ${{ steps.live.outputs.receipt_hash }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="$RUNNER_TEMP/a2a-live-registry-receipt.json"
+          dir="$MARKET_STATE/state/a2a-live/receipts"
+          mkdir -p "$dir"
+          target="$dir/$RECEIPT_HASH.json"
+          first="$MARKET_STATE/state/a2a-live/FIRST.json"
+          if [ -e "$target" ]; then cmp -s "$receipt" "$target" || { echo 'A2A_LIVE_RECEIPT_CONFLICT'; exit 1; }; else cp "$receipt" "$target"; fi
+          if [ -e "$first" ]; then cmp -s "$receipt" "$first" || { echo 'A2A_LIVE_FIRST_RECEIPT_CONFLICT'; exit 1; }; else mkdir -p "$(dirname "$first")"; cp "$receipt" "$first"; fi
+          git -C "$MARKET_STATE" config user.name "JANUS A2A Live Gate"
+          git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$MARKET_STATE" add state/a2a-live
+          if git -C "$MARKET_STATE" diff --cached --quiet; then
+            echo 'A2A_LIVE_RECEIPT=IDEMPOTENT_REPLAY'
+          else
+            git -C "$MARKET_STATE" commit -m "A2A live Registry receipt $RECEIPT_HASH"
+            git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state
+            echo 'A2A_LIVE_RECEIPT=PERSISTED'
+          fi
+      - name: Final authority ceiling
+        env:
+          RECEIPT: ${{ runner.temp }}/a2a-live-registry-receipt.json
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.RECEIPT,'utf8'));
+          if (r.authority.money_enabled !== false) throw new Error('A2A_LIVE_GATE_MONEY_AUTHORITY_FORBIDDEN');
+          if (r.authority.execution_witness !== false) throw new Error('A2A_LIVE_GATE_EXECUTION_WITNESS_FORBIDDEN');
+          if (r.authority.foreign_agent_witness !== false) throw new Error('A2A_LIVE_GATE_FOREIGN_WITNESS_FORBIDDEN');
+          console.log('A2A_LIVE_DEPLOYMENT_WITNESS=PASS');
+          console.log('GLOBAL_A2A_REGISTRY_LISTING='+(r.registry.public_listing_observed?'PASS':'NOT_REQUESTED_OR_NOT_OBSERVED'));
+          console.log('FOREIGN_AGENT_WITNESS=FALSE_PENDING_REAL_EXTERNAL_PERSISTENT_HOME_ROUNDTRIP');
+          NODE
