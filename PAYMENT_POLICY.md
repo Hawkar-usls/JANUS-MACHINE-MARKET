@@ -6,16 +6,19 @@
 
 A blockchain transfer, card charge, x402 response, invoice settlement, or other payment proof is never by itself an execution command, a license grant, a claim of ownership, or a right to access JANUS internals.
 
-The intended authority chain is:
+The intended authority chain for paid `JANUS.SEARCH` is:
 
 ```text
 OFFER
 → REQUEST
+→ QUEUE CAPACITY RESERVATION
 → QUOTE / INVOICE
 → PAYMENT RECEIPT
 → PURCHASE GRANT
+→ PAID QUEUE ENTRY
+→ SERIALIZED QUEUE DISPATCH
 → POLICY / SCOPE GATES
-→ EXECUTION GRANT
+→ PERSISTENT HOME EXECUTION
 → RESULT
 → RESULT RECEIPT
 ```
@@ -39,9 +42,28 @@ The market adopts this commercial invariant:
 
 ```text
 1 purchase_id => <= 1 billable execution
+1 settled purchase => <= 1 paid queue entry
+1 paid SEARCH runtime => <= 1 ACTIVE paid execution at a time
 ```
 
-A retry with the same accepted `purchase_id` and `request_hash` must return the prior accepted state, prior result reference, or an idempotent status. It must not silently create a second chargeable execution.
+A retry with the same accepted `purchase_id` and `request_hash` must return the prior accepted state, prior queue/dispatch state, prior result reference, or an idempotent status. It must not silently create a second chargeable execution.
+
+## Paid SEARCH queue boundary
+
+The five-level scheduler is governed by `PAID_QUEUE_POLICY.json`.
+
+A queue level changes only the order among requests that have **not started**. It does not grant command authority, broaden the product scope, or permit an active request to be interrupted. The current active execution cap is exactly one paid `JANUS.SEARCH` request.
+
+Queue-depth and per-buyer limits are checked before a payable invoice is published. A create-only reservation binds capacity to the exact issue/request/invoice. Once an exact payment was validly mined within the invoice deadline and independently verified, later queue fullness is not a lawful reason to discard the purchase.
+
+```text
+QUEUE CAPACITY LIMIT = INVOICE ADMISSION LIMIT
+PAYMENT_SETTLED != EXECUTION_STARTED
+HIGHER_QUEUE_LEVEL != PREEMPT_ACTIVE_EXECUTION
+QUEUE_DISPATCH != COMMAND_AUTHORITY
+```
+
+After settlement, execution starts only when the serialized queue dispatcher selects that purchase and publishes its exact paid HOME packet. Waiting position and ETA are planning estimates, not a guaranteed completion time.
 
 ## Post-purchase buyer queries
 
