@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'runtime/persistent_home_foreign_witness.py'
+      - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
       - 'tests/test_persistent_home_foreign_witness.py'
       - '.github/workflows/r1e-foreign-machine-claim-freeze.yml'
       - '.github/workflows/r1e-persistent-home-foreign-witness.yml'
@@ -34,7 +35,7 @@ jobs:
       - name: Enforce no-money promotion boundary
         run: |
           python - <<'PY'
-          from runtime.persistent_home_foreign_witness import PUBLIC_ORIGIN, RPC_QUORUM if False else PUBLIC_ORIGIN
+          from runtime.persistent_home_foreign_witness import PUBLIC_ORIGIN
           assert PUBLIC_ORIGIN == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
           print('R1E_DISCOVERY_RUN_PRICE=ZERO')
           print('R1E_WITNESS_RECEIPT_MONEY_AUTHORITY=FALSE')
