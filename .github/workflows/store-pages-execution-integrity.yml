@@ -65,6 +65,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
       - name: Compile contract tests
         run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py runtime/paid_search_promotion.py
       - name: Verify public SEARCH beta admission and quotas
