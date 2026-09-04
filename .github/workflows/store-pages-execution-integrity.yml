@@ -6,10 +6,14 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'products/JANUS.SEARCH.json'
       - 'PUBLIC_SERVICE_BETA.json'
       - 'MACHINE_INGRESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'runtime/public_search_beta.py'
+      - 'runtime/paid_search_promotion.py'
       - 'assets/site.js'
       - 'assets/site.css'
       - 'assets/store-exec-v1.js'
@@ -18,6 +22,7 @@ on:
       - 'tests/test_public_search_beta.py'
       - 'tests/test_store_pages_execution_contract.py'
       - 'tests/test_pricing_ui_contract.py'
+      - 'tests/test_paid_search_promotion.py'
       - '.github/workflows/r1-public-search-beta-outbox.yml'
       - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
       - '.github/workflows/store-pages-execution-integrity.yml'
@@ -26,10 +31,14 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'products/JANUS.SEARCH.json'
       - 'PUBLIC_SERVICE_BETA.json'
       - 'MACHINE_INGRESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'runtime/public_search_beta.py'
+      - 'runtime/paid_search_promotion.py'
       - 'assets/site.js'
       - 'assets/site.css'
       - 'assets/store-exec-v1.js'
@@ -38,6 +47,7 @@ on:
       - 'tests/test_public_search_beta.py'
       - 'tests/test_store_pages_execution_contract.py'
       - 'tests/test_pricing_ui_contract.py'
+      - 'tests/test_paid_search_promotion.py'
       - '.github/workflows/r1-public-search-beta-outbox.yml'
       - '.github/workflows/r1b-buyer-query-shadow-outbox.yml'
       - '.github/workflows/store-pages-execution-integrity.yml'
@@ -49,41 +59,60 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Compile contract tests
-        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py
+        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py runtime/paid_search_promotion.py
       - name: Verify public SEARCH beta admission and quotas
         run: PYTHONPATH=. python -m unittest -v tests.test_public_search_beta
       - name: Verify Pages -> Market -> HOME ingress contract
         run: python -m unittest -v tests.test_store_pages_execution_contract
-      - name: Verify deterministic dynamic pricing and quote-preview boundary
+      - name: Verify deterministic pricing and browser invoice boundary
         run: python -m unittest -v tests.test_pricing_ui_contract
-      - name: Preserve canonical commerce boundary
+      - name: Verify prospective witness-backed live storefront transformation
+        run: PYTHONPATH=. python -m pytest -q tests/test_paid_search_promotion.py
+      - name: Preserve canonical blocked/live commerce boundary
         run: |
           python - <<'PY'
           import json
           readiness=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
           witness=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
+          product=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
           pricing=json.load(open('PRICING.json',encoding='utf-8'))
           beta=json.load(open('PUBLIC_SERVICE_BETA.json',encoding='utf-8'))
           ingress=json.load(open('MACHINE_INGRESS.json',encoding='utf-8'))
-          assert witness['foreign_agent_witness'] is False
-          assert readiness['money_enabled'] is False
-          assert readiness['autonomous_purchase_declared'] is False
-          assert pricing['status'] == 'PREVIEW_RATECARD_NOT_LIVE'
+          html=open('index.html',encoding='utf-8').read()
+          live=witness['foreign_agent_witness'] is True
           assert beta['authority']['money_enabled'] is False
           assert beta['authority']['command_authority_granted'] is False
-          assert ingress['live_services']['JANUS.SEARCH']['status'] == 'LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW'
           assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.REPO_AUDIT']['status']
           assert 'OWNER_SHADOW' in ingress['live_services']['JANUS.DATASET_SCOUT']['status']
+          if live:
+              assert readiness['money_enabled'] is True
+              assert readiness['autonomous_purchase_declared'] is True
+              assert product['machine_purchase'] is True
+              assert product['live_gate']['checkout_live'] is True
+              assert pricing['status']=='MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW'
+              assert ingress['live_services']['JANUS.SEARCH']['paid_checkout']['status']=='LIVE_JANUS_SEARCH_ONLY'
+              assert 'PAID SEARCH <b>LIVE</b>' in html
+              assert 'LIVE · EXACT INVOICE' in html
+              assert 'ON · JANUS.SEARCH ONLY' in html
+              assert 'INFERENCE <b>CLOSED</b>' in html and 'COMPUTE <b>CLOSED</b>' in html
+              print('PAGES_PAID_SEARCH=LIVE_WITNESS_BOUND')
+          else:
+              assert readiness['money_enabled'] is False
+              assert readiness['autonomous_purchase_declared'] is False
+              assert product['machine_purchase'] is False
+              assert product['live_gate']['checkout_live'] is False
+              assert pricing['status']=='PREVIEW_RATECARD_NOT_LIVE'
+              assert ingress['live_services']['JANUS.SEARCH']['status']=='LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW'
+              assert 'PAID SEARCH <b>ARMED · GATED</b>' in html
+              print('PAGES_PAID_SEARCH=ARMED_GATE_CLOSED')
           print('PAGES_TO_JANUS_PUBLIC_SEARCH_BETA=WIRED')
           print('REPO_AUDIT_DATASET_SCOUT=OWNER_SHADOW_ONLY')
-          print('DYNAMIC_PRICING=PREVIEW_RATECARD')
-          print('PAYMENTS=LOCKED')
-          print('FOREIGN_AGENT_WITNESS=PENDING_SEPARATE_GATE')
+          print('PAYMENT_COMMAND_AUTHORITY=FALSE')
           PY
