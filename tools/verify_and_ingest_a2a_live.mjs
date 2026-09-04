@@ -157,26 +157,32 @@ async function main() {
   if (!send.response.ok) fail('A2A_SEND_MESSAGE_FAILED', String(send.response.status));
   const payload = extractGatewayPayload(send.json);
 
+  let listing = await verifyPublicListing(cardUrl);
   let ingest = null;
   if (args.ingest) {
-    const ingestResult = await getJson(`${REGISTRY_BASE}/public/ingest`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ manifestUrl: cardUrl }),
-    });
-    if (!ingestResult.response.ok) fail('GLOBAL_A2A_REGISTRY_INGEST_FAILED', String(ingestResult.response.status));
-    ingest = {
-      status: ingestResult.response.status,
-      response: ingestResult.json,
-      response_hash: sha256(ingestResult.json),
-    };
-  }
-
-  let listing = await verifyPublicListing(cardUrl);
-  if (args.ingest && !listing.listed) {
-    for (let attempt = 1; attempt <= 5 && !listing.listed; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (listing.listed) {
+      ingest = {
+        status: 'ALREADY_LISTED_NO_POST',
+        response: null,
+        response_hash: null,
+      };
+    } else {
+      const ingestResult = await getJson(`${REGISTRY_BASE}/public/ingest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manifestUrl: cardUrl }),
+      });
+      if (!ingestResult.response.ok) fail('GLOBAL_A2A_REGISTRY_INGEST_FAILED', String(ingestResult.response.status));
+      ingest = {
+        status: ingestResult.response.status,
+        response: ingestResult.json,
+        response_hash: sha256(ingestResult.json),
+      };
       listing = await verifyPublicListing(cardUrl);
+      for (let attempt = 1; attempt <= 12 && !listing.listed; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        listing = await verifyPublicListing(cardUrl);
+      }
     }
   }
   if (args.ingest && !listing.listed) fail('GLOBAL_A2A_REGISTRY_LISTING_NOT_OBSERVED_AFTER_INGEST');
@@ -216,6 +222,7 @@ async function main() {
       'A2A_RUNTIME_LIVE != R1E_FOREIGN_AGENT_WITNESS',
       'GLOBAL_A2A_REGISTRY_LISTED != EXECUTION_WITNESS',
       'REGISTRY_DISCOVERY != PURCHASE_AUTHORITY',
+      'REGISTRY_RETRY_MUST_RECOVER_FROM_ALREADY_LISTED_WITHOUT_SECOND_POST',
     ],
   };
   body.receipt_hash = sha256(body);
