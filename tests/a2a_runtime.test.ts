@@ -48,12 +48,15 @@ describe('JANUS A2A v1 Agent Card', () => {
       {
         url: 'https://janus-a2a.vercel.app/a2a/rest',
         protocolBinding: 'HTTP+JSON',
+        tenant: '',
         protocolVersion: '1.0',
       },
     ]);
-    expect(card.capabilities.streaming).toBe(false);
-    expect(card.capabilities.pushNotifications).toBe(false);
-    expect(card.capabilities.extendedAgentCard).toBe(false);
+    expect(card.capabilities).toBeDefined();
+    const capabilities = card.capabilities!;
+    expect(capabilities.streaming).toBe(false);
+    expect(capabilities.pushNotifications).toBe(false);
+    expect(capabilities.extendedAgentCard).toBe(false);
     expect(card.skills.map((skill) => skill.id)).toEqual(['janus-discovery-ingress']);
     expect(card.skills[0].description).toContain('does not itself execute JANUS.SEARCH');
   });
