@@ -23,10 +23,26 @@
   },
   "discovery_protocols": {
     "janus_native": {"status": "ACTIVE_IN_REPOSITORY", "pointer": ".well-known/agent-market.json"},
-    "a2a": {"status": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME", "publication_record": "discovery/A2A_PUBLICATION.json"},
+    "a2a": {
+      "status": "GLOBAL_REGISTRY_DISCOVERY_READY_AGENT_CARD_RUNTIME_GATED",
+      "global_registry_record": "discovery/GLOBAL_A2A_REGISTRY.json",
+      "agent_card_publication_record": "discovery/A2A_PUBLICATION.json",
+      "registry_listing_verified": false,
+      "a2a_runtime_live": false,
+      "agent_card_published": false
+    },
     "mcp": {"status": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER", "publication_record": "discovery/MCP_PUBLICATION.json"},
     "x402_bazaar": {"status": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE", "publication_record": "discovery/X402_BAZAAR_PUBLICATION.json"},
     "openapi": {"status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API", "publication_record": "discovery/OPENAPI_PUBLICATION.json"}
+  },
+  "external_discovery": {
+    "global_a2a_registry": {
+      "status": "SUBMISSION_READY_NOT_YET_INDEPENDENTLY_VERIFIED_AS_LISTED",
+      "record": "discovery/GLOBAL_A2A_REGISTRY.json",
+      "acceptable_foreign_discovery_claim_surface": true,
+      "proves_a2a_runtime": false,
+      "proves_execution": false
+    }
   },
   "x402": {"status": "PLANNED_NOT_ACTIVE"},
   "payment_routes": [{
