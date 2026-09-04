@@ -1,0 +1,19 @@
+{
+  "active": null,
+  "active_request_can_be_preempted": false,
+  "capacity_limit_applies_at": "INVOICE_ADMISSION",
+  "eta_is_estimate_not_guarantee": true,
+  "focus": null,
+  "generated_at": "2026-09-04T00:34:47.871336Z",
+  "higher_tier_can_overtake_waiting_only": true,
+  "invoice_slots_available": 100,
+  "max_active_paid_search": 1,
+  "preemption": false,
+  "schema": "janus.machine_market.paid_search_queue_snapshot.v1",
+  "snapshot_hash": "f845df4759688966e9be85f4c4534b84104856400a98d308daad83ef96e4104b",
+  "status": "EMPTY",
+  "unpaid_reserved_count": 0,
+  "valid_paid_settlement_can_be_rejected_for_capacity": false,
+  "waiting": [],
+  "waiting_count": 0
+}
