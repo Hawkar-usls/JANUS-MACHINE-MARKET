@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.foreign_agent_witness_policy.v1",
   "status": "PREPARED_PENDING_REAL_EXTERNAL_REQUEST",
-  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface, while keeping payment, autonomous purchase, JANUS.INFERENCE, and JANUS.COMPUTE closed.",
+  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface and the request completes through persistent JANUS HOME/HRAiN. Legacy local catalog execution may remain diagnostic evidence but cannot by itself open paid commerce.",
   "owner": {
     "login": "Hawkar-usls",
     "github_user_id": 242020399
@@ -11,6 +11,19 @@
     "title_prefix": "[JANUS FOREIGN MACHINE REQUEST]",
     "request_marker": "JANUS_MACHINE_REQUEST_JSON",
     "discovery_marker": "JANUS_DISCOVERY_WITNESS_JSON"
+  },
+  "persistent_home_promotion_ingress": {
+    "event": "issues.opened",
+    "title_prefix": "[JANUS R1B BUYER QUERY SHADOW]",
+    "request_marker": "JANUS_BUYER_QUERY_SHADOW_JSON",
+    "discovery_marker": "JANUS_DISCOVERY_WITNESS_JSON",
+    "server_normalized_request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
+    "claim_must_be_frozen_on_initial_issue_open": true,
+    "public_admission_receipt_required": true,
+    "credentialless_home_pull_required": true,
+    "persistent_home_response_required": true,
+    "hrain_bound_result_required": true,
+    "legacy_local_catalog_witness_sufficient_for_paid_promotion": false
   },
   "independence_gate": {
     "requester_login_must_differ_from_owner": true,
@@ -52,8 +65,11 @@
     "persistent_state_branch": "janus/market-state"
   },
   "persistent_receipt": {
-    "schema": "janus.machine_market.foreign_agent_witness_receipt.v1",
-    "path_template": "state/r1-foreign/receipts/{witness_id}.json",
+    "legacy_schema": "janus.machine_market.foreign_agent_witness_receipt.v1",
+    "paid_promotion_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
+    "legacy_path_template": "state/r1-foreign/receipts/{witness_id}.json",
+    "paid_promotion_path_template": "state/r1-foreign-home/receipts/{witness_id}.json",
+    "first_paid_promotion_witness": "state/r1-foreign-home/FIRST.json",
     "immutable": true,
     "binds": [
       "repository_id",
@@ -63,21 +79,28 @@
       "requester_github_user_id",
       "author_association",
       "discovery_claim_hash",
+      "public_admission_packet_hash",
       "request_hash",
+      "query_id",
       "purchase_id",
       "purchase_grant_hash",
-      "execution_id",
-      "result_sha256",
-      "result_receipt"
+      "persistent_home_response_hash",
+      "resident_uuid",
+      "hrain_context_receipt_hash",
+      "execution_identity",
+      "response_hash"
     ]
   },
   "promotion_law": {
-    "FOREIGN_AGENT_WITNESS": "PENDING_UNTIL_PERSISTENT_EXTERNAL_RECEIPT",
+    "FOREIGN_AGENT_WITNESS": "PENDING_UNTIL_PERSISTENT_EXTERNAL_HOME_RECEIPT",
     "owner_self_request_can_promote": false,
     "workflow_dispatch_can_promote": false,
     "synthetic_fixture_can_promote": false,
     "payment_can_promote": false,
-    "only_qualifying_external_issue_roundtrip_can_promote": true
+    "legacy_local_catalog_witness_can_open_money": false,
+    "only_qualifying_external_machine_public_search_persistent_home_roundtrip_can_promote_paid_commerce": true,
+    "witness_receipt_itself_enables_money": false,
+    "separate_canonical_promotion_required": true
   },
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
@@ -89,11 +112,15 @@
     "PAYMENT != AUTHORITY",
     "NO_PAYMENT_BEFORE_FOREIGN_AGENT_WITNESS",
     "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL",
+    "FOREIGN_AGENT_WITNESS_REQUIRES_MACHINE_DISCOVERY_CLAIM",
+    "PAID_PROMOTION_REQUIRES_PERSISTENT_HOME_RESULT",
     "SELF_OWNER_REQUEST != FOREIGN_AGENT_WITNESS",
     "SYNTHETIC_REQUEST != FOREIGN_AGENT_WITNESS",
+    "LOCAL_CATALOG_EXECUTION != PERSISTENT_HOME_WITNESS",
+    "WITNESS_RECEIPT != MONEY_AUTHORITY",
     "ONE_REQUEST_IDENTITY <= ONE_EXECUTION_IDENTITY",
     "JANUS.INFERENCE_REMAINS_CLOSED",
     "JANUS.COMPUTE_REMAINS_CLOSED"
   ],
-  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_DISCOVERY_REQUEST_PERSISTENT_RECEIPT"
+  "next_gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT"
 }
