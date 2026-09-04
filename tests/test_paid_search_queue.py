@@ -18,8 +18,11 @@ from runtime.paid_search_queue import (
     effective_level,
     enqueue,
     mark_dispatched,
+    queue_capacity,
+    reserve_invoice_slot,
     snapshot,
     verify_queue_entry,
+    verify_reservation,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,13 +89,7 @@ def bundle(*, seed: str = "a", level: int = 1, block: int = 100, log: int = 1, p
         witness={"foreign_agent_witness": True},
         product={"sku": "JANUS.SEARCH", "machine_purchase": True},
     )
-    entry = build_queue_entry(
-        request=req,
-        purchase_grant=grant,
-        packet=packet,
-        payment_receipt=receipt,
-        policy=policy(),
-    )
+    entry = build_queue_entry(request=req, purchase_grant=grant, packet=packet, payment_receipt=receipt, policy=policy())
     assert verify_queue_entry(entry, policy())
     return req, inv, receipt, grant, packet, entry
 
@@ -103,11 +100,7 @@ def home_response(entry: dict) -> dict:
         "purchase_id": entry["purchase_id"],
         "query_id": entry["query_id"],
         "home_response_hash": "b" * 64,
-        "buyer_query_receipt": {
-            "status": "DELIVERED",
-            "execution_identity": "tr-" + entry["purchase_id"],
-            "response_hash": "c" * 64,
-        },
+        "buyer_query_receipt": {"status": "DELIVERED", "execution_identity": "tr-" + entry["purchase_id"], "response_hash": "c" * 64},
     }
 
 
@@ -118,45 +111,83 @@ def test_invoice_and_packet_freeze_queue_level_and_price():
     assert inv5["amount_usdt_micros"] == 250_000
     assert inv1["queue_level"] == packet1["queue_level"] == 1
     assert inv5["queue_level"] == packet5["queue_level"] == 5
-    assert packet1["queue_contract_version"] == "paid-search-queue-v1"
-    assert packet5["queue_contract_version"] == "paid-search-queue-v1"
+    assert packet1["queue_contract_version"] == packet5["queue_contract_version"] == "paid-search-queue-v1"
+
+
+def test_invoice_reservation_is_create_only_and_idempotent(tmp_path: Path):
+    p = policy(); now = datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc)
+    req, inv, *_ = bundle(seed="reserve", level=3, paid_at=now)
+    first = reserve_invoice_slot(tmp_path, request=req, invoice=inv, policy=p, now=now)
+    second = reserve_invoice_slot(tmp_path, request=req, invoice=inv, policy=p, now=now + timedelta(minutes=1))
+    assert first["reservation"] == "CREATED"
+    assert second["reservation"] == "IDEMPOTENT_REPLAY"
+    assert verify_reservation(first["record"], p)
+    assert first["record"]["queue_level"] == 3
+
+
+def test_capacity_and_per_buyer_limits_apply_before_invoice_not_at_settlement(tmp_path: Path):
+    p = deepcopy(policy()); p["max_queue_depth"] = 2; p["max_queued_per_buyer"] = 1
+    now = datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc)
+    req1, inv1, *_ = bundle(seed="r1", level=1, paid_at=now, buyer="github:same")
+    reserve_invoice_slot(tmp_path, request=req1, invoice=inv1, policy=p, now=now)
+    req2, inv2, *_ = bundle(seed="r2", level=2, paid_at=now, buyer="github:same")
+    with pytest.raises(QueueInvalid, match="BUYER_INVOICE_PENDING_LIMIT"):
+        reserve_invoice_slot(tmp_path, request=req2, invoice=inv2, policy=p, now=now)
+    req3, inv3, *_ = bundle(seed="r3", level=2, paid_at=now, buyer="github:other")
+    reserve_invoice_slot(tmp_path, request=req3, invoice=inv3, policy=p, now=now)
+    req4, inv4, *_ = bundle(seed="r4", level=5, paid_at=now, buyer="github:third")
+    with pytest.raises(QueueInvalid, match="QUEUE_INVOICE_CAPACITY_FULL"):
+        reserve_invoice_slot(tmp_path, request=req4, invoice=inv4, policy=p, now=now)
+
+
+def test_expired_unpaid_reservation_stops_consuming_invoice_capacity(tmp_path: Path):
+    p = deepcopy(policy()); p["max_queue_depth"] = 1; p["max_queued_per_buyer"] = 10; p["invoice_reservation_grace_minutes"] = 0
+    now = datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc)
+    req1, inv1, *_ = bundle(seed="expire-1", level=1, paid_at=now, buyer="github:first")
+    reserve_invoice_slot(tmp_path, request=req1, invoice=inv1, policy=p, now=now)
+    assert queue_capacity(tmp_path, p, now=now)["slots_available"] == 0
+    later = now + timedelta(minutes=16)
+    assert queue_capacity(tmp_path, p, now=later)["slots_available"] == 1
+    req2, inv2, *_ = bundle(seed="expire-2", level=1, paid_at=later, buyer="github:second")
+    assert reserve_invoice_slot(tmp_path, request=req2, invoice=inv2, policy=p, now=later)["reservation"] == "CREATED"
+
+
+def test_valid_paid_settlement_is_never_rejected_for_queue_capacity(tmp_path: Path):
+    p = deepcopy(policy()); p["max_queue_depth"] = 1; p["max_queued_per_buyer"] = 1
+    first = bundle(seed="paid-first", level=1, block=100, buyer="github:first")[-1]
+    second = bundle(seed="paid-late", level=5, block=101, buyer="github:second")[-1]
+    assert enqueue(tmp_path, first, p)["queue_entry"] == "CREATED"
+    # Even though invoice-admission capacity is now full, an already-valid paid
+    # settlement is owed queue admission. Runtime load stays bounded by one ACTIVE slot.
+    assert queue_capacity(tmp_path, p, now=datetime(2026, 9, 4, 0, 1, tzinfo=timezone.utc))["global_invoice_admission_available"] is False
+    assert enqueue(tmp_path, second, p)["queue_entry"] == "CREATED"
 
 
 def test_higher_level_overtakes_waiting_but_never_active(tmp_path: Path):
     p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    low = bundle(seed="low", level=1, block=100)[-1]
-    high = bundle(seed="high", level=5, block=101)[-1]
-    enqueue(tmp_path, low, p)
-    first = claim_next(tmp_path, p, now=now)
+    low = bundle(seed="low", level=1, block=100)[-1]; high = bundle(seed="high", level=5, block=101)[-1]
+    enqueue(tmp_path, low, p); first = claim_next(tmp_path, p, now=now)
     assert first["entry"]["purchase_id"] == low["purchase_id"]
-    enqueue(tmp_path, high, p)
-    replay = claim_next(tmp_path, p, now=now + timedelta(minutes=1))
-    assert replay["status"] == "ACTIVE_REPLAY"
-    assert replay["entry"]["purchase_id"] == low["purchase_id"]
+    enqueue(tmp_path, high, p); replay = claim_next(tmp_path, p, now=now + timedelta(minutes=1))
+    assert replay["status"] == "ACTIVE_REPLAY" and replay["entry"]["purchase_id"] == low["purchase_id"]
 
 
 def test_priority_then_chain_order_is_deterministic(tmp_path: Path):
     p = policy(); now = datetime(2026, 9, 4, 0, 5, tzinfo=timezone.utc)
-    e1 = bundle(seed="b", level=3, block=101, log=0)[-1]
-    e2 = bundle(seed="a", level=3, block=100, log=9)[-1]
-    e3 = bundle(seed="c", level=5, block=999, log=0)[-1]
+    e1 = bundle(seed="b", level=3, block=101, log=0)[-1]; e2 = bundle(seed="a", level=3, block=100, log=9)[-1]; e3 = bundle(seed="c", level=5, block=999, log=0)[-1]
     for e in (e1, e2, e3): enqueue(tmp_path, e, p)
-    picked = claim_next(tmp_path, p, now=now)
-    assert picked["entry"]["purchase_id"] == e3["purchase_id"]
+    assert claim_next(tmp_path, p, now=now)["entry"]["purchase_id"] == e3["purchase_id"]
 
 
 def test_equal_priority_uses_payment_block_then_log_index(tmp_path: Path):
     p = policy(); now = datetime(2026, 9, 4, 0, 5, tzinfo=timezone.utc)
-    later_block = bundle(seed="later", level=3, block=101, log=0)[-1]
-    earlier_block = bundle(seed="earlier", level=3, block=100, log=9)[-1]
-    enqueue(tmp_path, later_block, p); enqueue(tmp_path, earlier_block, p)
-    picked = claim_next(tmp_path, p, now=now)
-    assert picked["entry"]["purchase_id"] == earlier_block["purchase_id"]
+    later = bundle(seed="later", level=3, block=101, log=0)[-1]; earlier = bundle(seed="earlier", level=3, block=100, log=9)[-1]
+    enqueue(tmp_path, later, p); enqueue(tmp_path, earlier, p)
+    assert claim_next(tmp_path, p, now=now)["entry"]["purchase_id"] == earlier["purchase_id"]
 
 
 def test_aging_prevents_permanent_low_tier_starvation():
-    p = policy(); paid = datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc)
-    low = bundle(seed="aging", level=1, block=100, paid_at=paid)[-1]
+    p = policy(); paid = datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc); low = bundle(seed="aging", level=1, block=100, paid_at=paid)[-1]
     assert effective_level(low, p, now=paid + timedelta(minutes=29)) == 1
     assert effective_level(low, p, now=paid + timedelta(minutes=30)) == 2
     assert effective_level(low, p, now=paid + timedelta(minutes=120)) == 5
@@ -170,78 +201,44 @@ def test_exact_enqueue_is_idempotent_and_tamper_fails(tmp_path: Path):
     with pytest.raises(QueueInvalid): enqueue(tmp_path, bad, p)
 
 
-def test_per_buyer_pending_limit_and_global_depth_fail_closed(tmp_path: Path):
-    p = policy()
-    for idx in range(3):
-        enqueue(tmp_path, bundle(seed=f"buyer-{idx}", level=1, block=100+idx, buyer="github:same")[-1], p)
-    with pytest.raises(QueueInvalid, match="BUYER_PENDING_LIMIT"):
-        enqueue(tmp_path, bundle(seed="buyer-4", level=1, block=104, buyer="github:same")[-1], p)
-
-    tiny = deepcopy(p); tiny["max_queue_depth"] = 3; tiny["max_queued_per_buyer"] = 100
-    other_root = tmp_path / "depth"
-    for idx in range(3):
-        enqueue(other_root, bundle(seed=f"depth-{idx}", level=1, block=200+idx, buyer=f"github:{idx}")[-1], tiny)
-    with pytest.raises(QueueInvalid, match="DEPTH_LIMIT"):
-        enqueue(other_root, bundle(seed="depth-4", level=1, block=204, buyer="github:4")[-1], tiny)
+def test_completed_history_does_not_consume_invoice_capacity(tmp_path: Path):
+    p = deepcopy(policy()); p["max_queue_depth"] = 1; p["max_queued_per_buyer"] = 10
+    now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc); first = bundle(seed="history-first", level=1, block=300, buyer="github:first")[-1]
+    enqueue(tmp_path, first, p); claimed = claim_next(tmp_path, p, now=now); mark_dispatched(tmp_path, claimed["entry"], outbox_commit="a" * 40, dispatched_at=now); complete_active(tmp_path, home_response(first), completed_at=now + timedelta(minutes=1))
+    assert (tmp_path / "state/commerce/paid-search-queue/entries" / f"{first['purchase_id']}.json").exists()
+    assert queue_capacity(tmp_path, p, now=now + timedelta(minutes=2))["slots_available"] == 1
 
 
-def test_completed_history_does_not_consume_pending_capacity(tmp_path: Path):
-    p = deepcopy(policy())
-    p["max_queue_depth"] = 1
-    p["max_queued_per_buyer"] = 10
-    now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    first = bundle(seed="history-first", level=1, block=300, buyer="github:first")[-1]
-    enqueue(tmp_path, first, p)
-    claimed = claim_next(tmp_path, p, now=now)
-    mark_dispatched(tmp_path, claimed["entry"], outbox_commit="a" * 40, dispatched_at=now)
-    complete_active(tmp_path, home_response(first), completed_at=now + timedelta(minutes=1))
-    historical = tmp_path / "state/commerce/paid-search-queue/entries" / f"{first['purchase_id']}.json"
-    assert historical.exists(), "immutable queue history must remain preserved"
-    second = bundle(seed="history-second", level=1, block=301, buyer="github:second")[-1]
-    assert enqueue(tmp_path, second, p)["queue_entry"] == "CREATED"
-
-
-def test_snapshot_exposes_position_and_estimate_not_guarantee(tmp_path: Path):
+def test_snapshot_exposes_position_estimate_and_reservation_count(tmp_path: Path):
     p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    low = bundle(seed="snap-low", level=1, block=100)[-1]
-    high = bundle(seed="snap-high", level=2, block=101)[-1]
+    low = bundle(seed="snap-low", level=1, block=100)[-1]; high = bundle(seed="snap-high", level=2, block=101)[-1]
     enqueue(tmp_path, low, p); enqueue(tmp_path, high, p)
+    req, inv, *_ = bundle(seed="snap-reserved", level=3, paid_at=now, buyer="github:reserved")
+    reserve_invoice_slot(tmp_path, request=req, invoice=inv, policy=p, now=now)
     s = snapshot(tmp_path, p, now=now, focus_purchase_id=low["purchase_id"])
-    assert s["focus"]["state"] == "QUEUED"
-    assert s["focus"]["people_ahead_before_start"] == 1
+    assert s["focus"]["state"] == "QUEUED" and s["focus"]["people_ahead_before_start"] == 1
     assert s["focus"]["estimated_wait_minutes"] == {"min": 5, "nominal": 8, "max": 15}
-    assert s["eta_is_estimate_not_guarantee"] is True
-    assert s["active_request_can_be_preempted"] is False
+    assert s["unpaid_reserved_count"] == 1
+    assert s["eta_is_estimate_not_guarantee"] is True and s["active_request_can_be_preempted"] is False
 
 
 def test_completion_releases_only_matching_active_slot_and_retry_is_idempotent(tmp_path: Path):
-    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    e = bundle(seed="complete", level=4, block=100)[-1]
-    enqueue(tmp_path, e, p)
-    claimed = claim_next(tmp_path, p, now=now)
-    mark_dispatched(tmp_path, claimed["entry"], outbox_commit="a" * 40, dispatched_at=now)
-    home = home_response(e)
-    done = complete_active(tmp_path, home, completed_at=now + timedelta(minutes=3))
-    assert done["completion"] == "CREATED"
-    replay = complete_active(tmp_path, home, completed_at=now + timedelta(minutes=4))
-    assert replay["completion"] == "IDEMPOTENT_REPLAY"
+    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc); e = bundle(seed="complete", level=4, block=100)[-1]
+    enqueue(tmp_path, e, p); claimed = claim_next(tmp_path, p, now=now); mark_dispatched(tmp_path, claimed["entry"], outbox_commit="a" * 40, dispatched_at=now)
+    home = home_response(e); assert complete_active(tmp_path, home, completed_at=now + timedelta(minutes=3))["completion"] == "CREATED"
+    assert complete_active(tmp_path, home, completed_at=now + timedelta(minutes=4))["completion"] == "IDEMPOTENT_REPLAY"
     assert claim_next(tmp_path, p, now=now + timedelta(minutes=5))["status"] == "EMPTY"
 
 
 def test_wrong_purchase_cannot_release_active_slot(tmp_path: Path):
-    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    e = bundle(seed="active", level=4, block=100)[-1]
-    enqueue(tmp_path, e, p); claim_next(tmp_path, p, now=now)
-    bad = home_response(e); bad["purchase_id"] = "jp-other"
-    with pytest.raises(QueueInvalid, match="QUEUE_COMPLETION_PURCHASE_MISMATCH"):
-        complete_active(tmp_path, bad, completed_at=now)
+    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc); e = bundle(seed="active", level=4, block=100)[-1]
+    enqueue(tmp_path, e, p); claim_next(tmp_path, p, now=now); bad = home_response(e); bad["purchase_id"] = "jp-other"
+    with pytest.raises(QueueInvalid, match="QUEUE_COMPLETION_PURCHASE_MISMATCH"): complete_active(tmp_path, bad, completed_at=now)
 
 
 def test_second_conflicting_dispatch_receipt_fails_closed(tmp_path: Path):
-    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc)
-    e = bundle(seed="dispatch", level=2, block=100)[-1]
+    p = policy(); now = datetime(2026, 9, 4, 0, 10, tzinfo=timezone.utc); e = bundle(seed="dispatch", level=2, block=100)[-1]
     enqueue(tmp_path, e, p); claim_next(tmp_path, p, now=now)
-    assert mark_dispatched(tmp_path, e, outbox_commit="a"*40, dispatched_at=now)["dispatch"] == "CREATED"
-    assert mark_dispatched(tmp_path, e, outbox_commit="a"*40, dispatched_at=now)["dispatch"] == "IDEMPOTENT_REPLAY"
-    with pytest.raises(QueueConflict):
-        mark_dispatched(tmp_path, e, outbox_commit="b"*40, dispatched_at=now)
+    assert mark_dispatched(tmp_path, e, outbox_commit="a" * 40, dispatched_at=now)["dispatch"] == "CREATED"
+    assert mark_dispatched(tmp_path, e, outbox_commit="a" * 40, dispatched_at=now)["dispatch"] == "IDEMPOTENT_REPLAY"
+    with pytest.raises(QueueConflict): mark_dispatched(tmp_path, e, outbox_commit="b" * 40, dispatched_at=now)
