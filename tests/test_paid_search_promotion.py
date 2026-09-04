@@ -23,6 +23,15 @@ def load(rel):
     return json.loads((ROOT / rel).read_text(encoding="utf-8"))
 
 
+def canonical_live() -> bool:
+    return load("FOREIGN_AGENT_WITNESS.json").get("foreign_agent_witness") is True
+
+
+def require_blocked() -> None:
+    if canonical_live():
+        pytest.skip("canonical JANUS.SEARCH is already witness-backed live; prospective promotion simulation is no longer applicable")
+
+
 def evidence():
     receipt = adjudicate()
     first = {
@@ -41,6 +50,7 @@ def evidence():
 
 
 def promoted():
+    require_blocked()
     first, receipt = evidence()
     return build_live_documents(
         first=first,
@@ -54,6 +64,60 @@ def promoted():
         machine_ingress=load("MACHINE_INGRESS.json"),
         market_state_commit="a" * 40,
     )
+
+
+def test_canonical_live_state_if_promoted_is_search_only_and_witness_bound():
+    if not canonical_live():
+        pytest.skip("canonical JANUS.SEARCH is still blocked pending a real R1E persistent-HOME witness")
+
+    witness = load("FOREIGN_AGENT_WITNESS.json")
+    readiness = load("COMMERCE_READINESS.json")
+    product = load("products/JANUS.SEARCH.json")
+    pricing = load("PRICING.json")
+    ingress = load("MACHINE_INGRESS.json")
+    queue = load("PAID_QUEUE_POLICY.json")
+
+    assert witness["status"] == "PERSISTENT_HOME_EXTERNAL_MACHINE_WITNESS_CONFIRMED"
+    assert witness["foreign_agent_witness"] is True
+    assert witness["promotion_authority"] == "PERSISTENT_HOME_RECEIPT_VERIFIED"
+    assert witness["witness_id"].startswith("faw-home-")
+    assert len(witness["witness_receipt_hash"]) == 64
+    assert len(witness["witness_state_commit"]) == 40
+    assert witness["witness_receipt_itself_enables_money"] is False
+    assert witness["money_enabled"] is False
+
+    assert readiness["status"] == "PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING"
+    assert readiness["money_enabled"] is True
+    assert readiness["autonomous_purchase_declared"] is True
+    assert readiness["promotion_evidence"]["witness_id"] == witness["witness_id"]
+    assert readiness["promotion_evidence"]["witness_receipt_hash"] == witness["witness_receipt_hash"]
+    assert readiness["promotion_evidence"]["market_state_commit"] == witness["witness_state_commit"]
+    assert readiness["paid_execution_queue"]["max_active_paid_search"] == 1
+    assert readiness["paid_execution_queue"]["preemption"] is False
+    assert readiness["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
+    assert readiness["closed_skus"]["JANUS.COMPUTE"].startswith("CLOSED_")
+
+    assert product["machine_purchase"] is True
+    assert product["live_gate"]["checkout_live"] is True
+    assert product["live_gate"]["paid_queue_live"] is True
+    assert product["live_gate"]["witness_id"] == witness["witness_id"]
+    assert product["queue"]["max_active_paid_search"] == 1
+    assert product["queue"]["preemption"] is False
+    checkout_gate(readiness=readiness, witness=witness, product=product)
+
+    assert pricing["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
+    assert pricing["live_skus"] == ["JANUS.SEARCH"]
+    assert "JANUS.REPO_AUDIT" in pricing["preview_only_skus"]
+    assert "JANUS.DATASET_SCOUT" in pricing["preview_only_skus"]
+
+    assert queue["queue_levels"] == 5
+    assert queue["max_active_paid_search"] == 1
+    assert queue["preemption"] is False
+    assert queue["valid_paid_settlement_can_be_rejected_for_capacity"] is False
+
+    assert ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]["status"] == "LIVE_JANUS_SEARCH_ONLY"
+    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.REPO_AUDIT"]["status"]
+    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.DATASET_SCOUT"]["status"]
 
 
 def test_valid_persistent_home_witness_promotes_only_search_commerce_with_queue():
@@ -102,6 +166,7 @@ def test_buyer_plane_and_machine_ingress_become_search_live_only_with_queue():
 
 
 def test_pages_promotion_rewrites_only_exact_known_truth_sentinels():
+    require_blocked()
     before = (ROOT / "index.html").read_text(encoding="utf-8"); after = promote_pages_html(before)
     assert "PAID SEARCH <b>LIVE</b>" in after
     assert "LIVE · 5-LEVEL QUEUE" in after
@@ -112,6 +177,7 @@ def test_pages_promotion_rewrites_only_exact_known_truth_sentinels():
 
 
 def test_payment_policy_changes_only_to_search_specific_live_route():
+    require_blocked()
     before = (ROOT / "PAYMENT_POLICY.md").read_text(encoding="utf-8"); after = promote_payment_policy(before)
     assert "JANUS.SEARCH has a live issue-based exact-invoice purchase route with serialized paid queue dispatch" in after
     assert "no other general JANUS MACHINE MARKET purchase endpoint is active" in after
@@ -119,12 +185,14 @@ def test_payment_policy_changes_only_to_search_specific_live_route():
 
 
 def test_wrong_first_receipt_hash_blocks_promotion():
+    require_blocked()
     first, receipt = evidence(); first = deepcopy(first); first["receipt_hash"] = "0" * 64
     with pytest.raises(PaidSearchPromotionInvalid, match="WITNESS_HASH"):
         build_live_documents(first=first,receipt=receipt,witness_status=load("FOREIGN_AGENT_WITNESS.json"),readiness=load("COMMERCE_READINESS.json"),product=load("products/JANUS.SEARCH.json"),pricing=load("PRICING.json"),queue_policy=load("PAID_QUEUE_POLICY.json"),buyer_plane=load("BUYER_QUERY_PLANE.json"),machine_ingress=load("MACHINE_INGRESS.json"),market_state_commit="a"*40)
 
 
 def test_synthetic_state_cannot_promote_if_canonical_money_already_changed():
+    require_blocked()
     first, receipt = evidence(); readiness = load("COMMERCE_READINESS.json"); readiness["money_enabled"] = True
     with pytest.raises(PaidSearchPromotionInvalid, match="COMMERCE_ALREADY_LIVE"):
         build_live_documents(first=first,receipt=receipt,witness_status=load("FOREIGN_AGENT_WITNESS.json"),readiness=readiness,product=load("products/JANUS.SEARCH.json"),pricing=load("PRICING.json"),queue_policy=load("PAID_QUEUE_POLICY.json"),buyer_plane=load("BUYER_QUERY_PLANE.json"),machine_ingress=load("MACHINE_INGRESS.json"),market_state_commit="a"*40)
