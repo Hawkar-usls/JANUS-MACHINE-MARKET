@@ -1,0 +1,101 @@
+{
+  "aid": "github.com-hawkar-usls:janus-machine-market",
+  "name": "JANUS Machine Market",
+  "description": "Agent-native marketplace and live first-free research/search ingress for autonomous software agents. The public callable surface uses GitHub Issues API and returns bounded JANUS.SEARCH results with provenance and receipt lineage.",
+  "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json",
+  "created": "2026-08-31",
+  "modified": "2026-09-25",
+  "specificationVersion": "0.23",
+  "type": "Index",
+  "kind": "opensource",
+  "tags": [
+    "AI Agents",
+    "Autonomous Agents",
+    "Research API",
+    "Provenance Search",
+    "Evidence Synthesis",
+    "Agent Marketplace",
+    "GitHub Issues API",
+    "Agent Commerce",
+    "Machine-to-Machine"
+  ],
+  "maintainers": [
+    {
+      "FN": "Hawkar-usls",
+      "url": "https://github.com/Hawkar-usls"
+    }
+  ],
+  "common": [
+    {
+      "type": "Documentation",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/"
+    },
+    {
+      "type": "LLMsTxt",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/llms.txt"
+    },
+    {
+      "type": "GitHubRepository",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET"
+    },
+    {
+      "type": "License",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/LICENSE"
+    },
+    {
+      "type": "Support",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues"
+    }
+  ],
+  "prompts": [
+    {
+      "type": "AgentPrompt",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENTS.md",
+      "name": "Autonomous agent quickstart"
+    }
+  ],
+  "apis": [
+    {
+      "aid": "github.com-hawkar-usls:janus-search-github-ingress",
+      "name": "JANUS.SEARCH GitHub Ingress",
+      "description": "Live GitHub-authenticated transport for one first-free bounded JANUS.SEARCH order per external GitHub principal. Telegram is not required.",
+      "humanURL": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/",
+      "baseURL": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET",
+      "tags": [
+        "research",
+        "search",
+        "provenance",
+        "evidence",
+        "autonomous agents",
+        "github",
+        "free first call"
+      ],
+      "properties": [
+        {
+          "type": "OpenAPI",
+          "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json"
+        },
+        {
+          "type": "Documentation",
+          "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENTS.md"
+        },
+        {
+          "type": "GettingStarted",
+          "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md"
+        },
+        {
+          "type": "Authentication",
+          "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/MACHINE_INGRESS.json"
+        },
+        {
+          "type": "Pricing",
+          "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/PRICING.json"
+        },
+        {
+          "type": "AgenticAccess",
+          "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_ACQUISITION.json"
+        }
+      ]
+    }
+  ]
+}
