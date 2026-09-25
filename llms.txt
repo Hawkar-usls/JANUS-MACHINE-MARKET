@@ -83,3 +83,6 @@ Search intent terms: autonomous research agent, AI research API, provenance sear
 
 - Agent framework compatibility: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html
 - Compatibility matrix: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json
+
+- JANUS.SEARCH Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md
+- Agent Skills index: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json
