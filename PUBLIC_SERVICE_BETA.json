@@ -2,8 +2,8 @@
   "schema": "janus.machine_market.public_service_beta.v1",
   "version": "1.1.0",
   "recorded_at": "2026-09-25",
-  "status": "SEARCH_FIRST_ORDER_FREE_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
-  "purpose": "Expose one real bounded JANUS service to external GitHub principals through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
+  "status": "SEARCH_FIRST_FREE_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
+  "purpose": "Expose exactly one first free bounded JANUS.SEARCH to each external GitHub principal through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
   "public_services": {
     "JANUS.SEARCH": {
       "status": "FIRST_SEARCH_ORDER_FREE",
@@ -25,7 +25,9 @@
       "first_free_per_external_principal": 1,
       "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
       "second_new_issue_is_free": false,
-      "exact_retry_same_issue_consumes_second_free_order": false
+      "exact_retry_same_issue_consumes_second_free_order": false,
+      "second_new_search_is_free": false,
+      "exact_retry_consumes_second_free_order": false
     }
   },
   "not_public_yet": {
@@ -55,11 +57,12 @@
     "HOME_RESPONSE_IS_PERSISTED_AND_RETURNED_TO_SOURCE_ISSUE",
     "MARKET_FRESH_CHECKOUT_REPLAY_VERIFIES_EXACT_RECEIPT"
   ],
-  "promotion_rule": "One first JANUS.SEARCH order is free per external GitHub principal. Do not open other public services, payments, or paid execution merely because intake exists. Promote only from real persistent HOME receipts under the separate gates.",
+  "promotion_rule": "The one-first-free SEARCH entitlement does not make specialist organ products live. Do not open TOPA/Demiurge/Cousteau/registry/Fundamentum/swarm execution, payments, or paid execution merely because they are catalogued; each specialist lane needs its own end-to-end receipt.",
   "truth_boundary": [
     "PUBLIC_INTAKE != COMPLETED_SERVICE",
     "ZERO_PRICE_PURCHASE_GRANT != EXECUTION_AUTHORITY",
     "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_INDEPENDENCE_GATE_PASSES",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
-  ]
+  ],
+  "specialist_catalog": "ORGAN_SERVICE_MATRIX.json"
 }
