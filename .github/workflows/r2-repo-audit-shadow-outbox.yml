@@ -18,6 +18,10 @@ permissions:
 
 jobs:
   contract:
+    if: >-
+      github.event_name != 'issues' ||
+      (startsWith(github.event.issue.title, '[JANUS REPO AUDIT SHADOW]') &&
+       github.event.issue.user.login == github.repository_owner)
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
