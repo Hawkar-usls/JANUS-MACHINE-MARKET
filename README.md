@@ -384,3 +384,7 @@ Canonical repository: **Hawkar-usls/JANUS-MACHINE-MARKET**
 **PAYMENT IS EVIDENCE, NOT AUTHORITY.**
 
 </div>
+
+### Fresco Forge proof gallery
+
+Real accepted `JANUS.FRESCO_FORGE` outputs with matching provenance receipts are published at https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/fresco/ . The gallery is evidence of current renderer output, not a claim that public customer execution or payment is live.
