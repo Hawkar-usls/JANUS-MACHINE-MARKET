@@ -1,0 +1,135 @@
+{
+  "schema": "janus.machine_market.telegram_gateway.v1",
+  "version": "1.0.0",
+  "recorded_at": "2026-09-25",
+  "status": "PREPARED_NOT_LIVE_CONNECTION_SECRETS_AND_SITE_BINDING_PENDING",
+  "frontend": {
+    "chatgpt_site": "https://tg-pomoyka.hawkarlol.chatgpt.site",
+    "ownership": "USER_PROVIDED_EXISTING_SITE",
+    "automated_fetch_verified": false,
+    "role": "UX_AND_TELEGRAM_ENTRYPOINT_ONLY",
+    "secret_material_allowed_in_browser": false
+  },
+  "transports": {
+    "telegram_webhook": {
+      "status": "PREPARED_NOT_BOUND",
+      "method": "POST",
+      "endpoint": "/v1/telegram/webhook",
+      "required_header": "X-Telegram-Bot-Api-Secret-Token",
+      "allowed_updates": [
+        "message",
+        "callback_query"
+      ],
+      "order_creation_default": "PRIVATE_CHAT_ONLY",
+      "bot_to_bot": "SUPPORTED_ONLY_WHEN_TELEGRAM_BOT_TO_BOT_MODE_IS_EXPLICITLY_ENABLED_AND_LOOP_GUARDS_PASS"
+    },
+    "machine_http": {
+      "status": "PREPARED_NOT_BOUND",
+      "method": "POST",
+      "endpoint": "/v1/orders",
+      "authentication": "HMAC_SHA256_KEY_ID_TIMESTAMP_NONCE_BODY_HASH",
+      "max_clock_skew_seconds": 300,
+      "idempotency_key_required": true
+    },
+    "result_callback": {
+      "status": "PREPARED_NOT_BOUND",
+      "method": "POST",
+      "endpoint": "/v1/internal/results",
+      "authentication": "SEPARATE_HMAC_CALLBACK_SECRET",
+      "source": "JANUS_MARKET_RECONCILE_ONLY"
+    }
+  },
+  "market_bridge": {
+    "target_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "write_identity": "DEDICATED_GITHUB_APP_INSTALLATION_TOKEN_PREFERRED",
+    "minimum_permission": "issues:write",
+    "arbitrary_repo_write": false,
+    "order_record": "GITHUB_ISSUE_PLUS_MARKET_RECEIPTS",
+    "telegram_is_execution_authority": false,
+    "chatgpt_site_is_execution_authority": false
+  },
+  "principal_model": {
+    "telegram_human": "telegram:user:{user_id}",
+    "telegram_bot": "telegram:bot:{bot_id}",
+    "machine_api": "machine:key:{key_id}",
+    "linked_aliases": "OPTIONAL_EXPLICIT_ACCOUNT_LINK_ONLY",
+    "cross_transport_identity_guessing": false
+  },
+  "first_free_search": {
+    "entitlement": "ONE_FIRST_FREE_JANUS.SEARCH_PER_EXTERNAL_PRINCIPAL",
+    "amount": 1,
+    "second_new_search_free": false,
+    "exact_retry_is_new_order": false,
+    "specialist_products_create_extra_free_entitlement": false,
+    "cross_transport_dedup": "ONLY_WHEN_PRINCIPAL_ALIASES_ARE_EXPLICITLY_LINKED"
+  },
+  "abuse_controls": {
+    "max_http_body_bytes": 65536,
+    "max_search_text_utf8_bytes": 4000,
+    "max_answer_utf8_bytes": 6000,
+    "per_principal_active_orders": 1,
+    "per_principal_new_order_cooldown_seconds": 30,
+    "global_first_free_daily_safety_cap": 20,
+    "telegram_update_id_dedup": true,
+    "machine_nonce_dedup": true,
+    "nonce_retention_seconds": 2592000,
+    "machine_request_max_hops": 1,
+    "telegram_bot_to_bot_max_hops": 1,
+    "automatic_response_reingestion": false,
+    "duplicate_idempotency_returns_prior_receipt": true,
+    "allow_arbitrary_shell": false,
+    "allow_repository_write_from_order_text": false,
+    "allow_secret_access": false,
+    "allow_external_effects": false,
+    "deny_unknown_sku": true,
+    "deny_edited_order_messages": true,
+    "paid_invoice_before_money_required": true
+  },
+  "sku_policy": {
+    "live_first_free": [
+      "JANUS.SEARCH"
+    ],
+    "catalogued_not_live": [
+      "JANUS.TOPA_HUNT",
+      "JANUS.DEMIURGE_SCOUT",
+      "JANUS.COUSTEAU_SCAN",
+      "JANUS.META_REGISTRY_SEARCH",
+      "JANUS.FUNDAMENTUM_AUDIT",
+      "JANUS.SWARM_RESEARCH"
+    ],
+    "closed": [
+      "JANUS.INFERENCE",
+      "JANUS.COMPUTE"
+    ]
+  },
+  "secrets_required": [
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_WEBHOOK_SECRET",
+    "JANUS_MACHINE_HMAC_KEYS",
+    "JANUS_RESULT_CALLBACK_SECRET",
+    "GITHUB_APP_ID",
+    "GITHUB_APP_PRIVATE_KEY_OR_EQUIVALENT_SCOPED_ISSUES_WRITE_CREDENTIAL"
+  ],
+  "secrets_must_not_be_committed": true,
+  "activation_gates": [
+    "GATEWAY_HTTPS_DEPLOYED",
+    "TELEGRAM_WEBHOOK_SECRET_VERIFIED",
+    "BOT_TOKEN_STORED_SERVER_SIDE_ONLY",
+    "GITHUB_WRITE_IDENTITY_SCOPED_TO_MARKET_ISSUES",
+    "IDEMPOTENCY_LEDGER_PERSISTENT",
+    "FIRST_FREE_LEDGER_PERSISTENT",
+    "RATE_LIMIT_STATE_PERSISTENT",
+    "TELEGRAM_TEST_UPDATE_TO_MARKET_ISSUE_PASS",
+    "MARKET_RESULT_CALLBACK_TO_SAME_TELEGRAM_PRINCIPAL_PASS",
+    "BOT_TO_BOT_LOOP_NEGATIVE_CONTROL_PASS_IF_ENABLED"
+  ],
+  "truth_boundary": [
+    "SITE_REACHABLE != GATEWAY_LIVE",
+    "TELEGRAM_MESSAGE != COMMAND",
+    "BOT_IDENTITY != PAYMENT_AUTHORITY",
+    "BOT_TO_BOT_MESSAGE != INDEPENDENT_FOREIGN_AGENT_WITNESS",
+    "GATEWAY_ACCEPTED != HOME_EXECUTED",
+    "MARKET_RECEIPT != SCIENTIFIC_TRUTH",
+    "PAYMENT != EXECUTION_AUTHORITY"
+  ]
+}
