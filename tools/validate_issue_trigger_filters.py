@@ -24,6 +24,14 @@ RULES = {
         "prefix": "[JANUS R1B BUYER QUERY SHADOW]",
         "actor": "github.event.issue.user.login != github.repository_owner",
     },
+    ".github/workflows/r1-foreign-agent-witness.yml": {
+        "prefix": "[JANUS FOREIGN MACHINE REQUEST]",
+        "actor": "github.event.issue.user.login != github.repository_owner",
+    },
+    ".github/workflows/r1-shadow-durable.yml": {
+        "prefix": "[JANUS SEARCH SHADOW]",
+        "actor": "github.event.issue.user.login == github.repository_owner",
+    },
     ".github/workflows/r2-repo-audit-shadow-outbox.yml": {
         "prefix": "[JANUS REPO AUDIT SHADOW]",
         "actor": "github.event.issue.user.login == github.repository_owner",

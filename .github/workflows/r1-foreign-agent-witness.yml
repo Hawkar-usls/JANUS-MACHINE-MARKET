@@ -19,6 +19,10 @@ permissions:
 
 jobs:
   contract:
+    if: >-
+      github.event_name != 'issues' ||
+      (startsWith(github.event.issue.title, '[JANUS FOREIGN MACHINE REQUEST]') &&
+       github.event.issue.user.login != github.repository_owner)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
