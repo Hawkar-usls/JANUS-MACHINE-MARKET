@@ -19,7 +19,10 @@
       "per_actor_daily_limit": 3,
       "global_daily_limit": 20,
       "one_issue_can_bind_more_than_one_query": false,
-      "exact_retry_creates_second_cognition": false
+      "exact_retry_creates_second_cognition": false,
+      "direct_issue_template": ".github/ISSUE_TEMPLATE/janus-search-free-beta.md",
+      "direct_issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
+      "github_auth_required": true
     }
   },
   "not_public_yet": {
