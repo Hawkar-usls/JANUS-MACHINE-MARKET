@@ -1,0 +1,93 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.FRESCO_FORGE",
+  "title": "JANUS Fresco Forge",
+  "class": "creative_visualization",
+  "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Content-addressed canonical JSON-to-monumental-fresco visualization with semantic projection, anti-collapse quality gates, deterministic provenance hashes, retry/quarantine logic and a per-image execution receipt.",
+  "source": {
+    "repository": "Hawkar-usls/janus-meta-registry",
+    "ref": "main",
+    "workflow": ".github/workflows/janus-fresco-forge.yml",
+    "renderer": "modules/fresco_forge/v5_4_story_renderer.py",
+    "artifact_root": "artifacts/janus-fresco-forge"
+  },
+  "demonstrated_capability": {
+    "evidence_date": "2026-09-25",
+    "accepted_canonical_images": 56,
+    "matching_provenance_receipts": 56,
+    "calibration_failure_artifacts": 36,
+    "latest_verified_generator": "JANUS-FRESCO-FORGE-v5.4-central-narrative-anti-architecture-collapse",
+    "latest_success_commit": "2626482cf94ddee10cfeb9431422d822159ad7a6",
+    "latest_success_at": "2026-09-25T11:57:35Z",
+    "latest_example_source_sha256": "a7fa39a8071d7013ba038b57003f6c202f735c326e0242c54653fdf9a3b96bdb",
+    "latest_example_visual_quality_gate_pass": true
+  },
+  "request": {
+    "mode": "SPECIALIST_ROUTER_PREPARED_NOT_PUBLIC_LIVE",
+    "intended_input": "bounded canonical JSON record or explicitly admitted customer JSON payload",
+    "current_native_source_scope": "janus-meta-registry registry/**/*.json",
+    "max_outputs_per_current_github_cpu_run": 1,
+    "customer_payload_ingress_live": false
+  },
+  "delivery": {
+    "intended_format": "image/png + application/json",
+    "outputs": [
+      "accepted_fresco_png",
+      "source_sha256",
+      "visual_projection_sha256",
+      "scene_plan_sha256",
+      "story_plan_sha256",
+      "prompt_sha256",
+      "quality_gate_metrics",
+      "render_attempts",
+      "provenance_receipt"
+    ],
+    "canonical_delivery_live": false
+  },
+  "differentiation": [
+    "CONTENT_ADDRESSED_JSON_IDENTITY",
+    "SEMANTIC_PROJECTION_BEFORE_IMAGE_PROMPT",
+    "FALSE_PERSONIFICATION_AND_PHYSICAL_GATE_FIREWALLS",
+    "MONUMENTAL_FRESCO_ART_DIRECTION",
+    "ANTI_GRID_AND_ANTI_ARCHITECTURE_COLLAPSE_GATES",
+    "RETRY_AND_QUARANTINE_ON_VISUAL_FAILURE",
+    "APPEND_ONLY_DEDUPE_LEDGER",
+    "PER_OUTPUT_PROVENANCE_RECEIPT"
+  ],
+  "pricing": {
+    "mode": "REFERENCE_ONLY_NOT_LIVE",
+    "preview_unit_usdt_micros": 250000,
+    "billing_unit": "accepted_fresco",
+    "payable_quote": false,
+    "rationale": "Reference value includes semantic compilation, render attempts, quality gating and provenance receipt; not merely raw image inference."
+  },
+  "execution": {
+    "public_live": false,
+    "paid_execution": false,
+    "route": "MARKET -> HOME/Activator -> isolated Fresco Forge input staging -> v5.4 render/gate -> immutable receipt -> HOME -> Market reconcile",
+    "blocker": "DEDICATED_CUSTOMER_INPUT_SANDBOX_PLUS_MARKET_TO_FRESCO_DISPATCH_PLUS_RETURN_RECEIPT_AND_LICENSE_POLICY"
+  },
+  "third_party_model": {
+    "current_workflow_model": "Lykon/dreamshaper-8",
+    "declared_model_license": "creativeml-openrail-m",
+    "policy": "Underlying model license and source/input rights remain binding; Market listing does not grant rights in third-party material or guarantee exclusive copyright in generated output."
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "command_authority": false,
+    "repository_write_authority": false,
+    "external_effect_authority": false,
+    "generated_image_is_evidence": false,
+    "generated_image_is_scientific_truth": false
+  },
+  "truth_boundary": [
+    "CATALOG_LISTING != LIVE_EXECUTION",
+    "VISUALIZATION != EVIDENCE",
+    "QUALITY_GATE_PASS != SEMANTIC_TRUTH",
+    "MODEL_OUTPUT != EXCLUSIVE_COPYRIGHT_GUARANTEE",
+    "PAYMENT != EXECUTION_AUTHORITY"
+  ]
+}
