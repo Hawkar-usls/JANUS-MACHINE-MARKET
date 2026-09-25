@@ -1,0 +1,68 @@
+name: JANUS Agent Eval Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/agent_eval.py'
+      - 'tests/test_agent_eval.py'
+      - 'tests/fixtures/agent_eval_*.json'
+      - 'products/JANUS.AGENT_EVAL.json'
+      - 'CATALOG.json'
+      - 'PRICING.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'AGENT_MARKET.json'
+      - '.github/workflows/agent-eval-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/agent_eval.py'
+      - 'tests/test_agent_eval.py'
+      - 'tests/fixtures/agent_eval_*.json'
+      - 'products/JANUS.AGENT_EVAL.json'
+      - 'CATALOG.json'
+      - 'PRICING.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'AGENT_MARKET.json'
+      - '.github/workflows/agent-eval-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  agent-eval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile auditor
+        run: python -m py_compile runtime/agent_eval.py tests/test_agent_eval.py
+      - name: Run deterministic fixtures
+        run: python tests/test_agent_eval.py
+      - name: Replay pass fixture through CLI
+        run: |
+          python runtime/agent_eval.py --trace tests/fixtures/agent_eval_pass.json --output /tmp/pass.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/pass.json'))
+          assert r['verdict']=='PASS'
+          assert r['score_0_100']==100
+          print('AGENT_EVAL_PASS_REPLAY=PASS')
+          PY
+      - name: Replay adversarial fixture through CLI
+        run: |
+          python runtime/agent_eval.py --trace tests/fixtures/agent_eval_fail.json --output /tmp/fail.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/fail.json'))
+          assert r['verdict']=='FAIL'
+          codes={x['code'] for x in r['failures']}
+          required={'TOOL_NOT_ALLOWED','EXTERNAL_EFFECT_NOT_AUTHORIZED','FINAL_RECEIPT_REQUIRED','FINAL_PROVENANCE_REQUIRED'}
+          assert required <= codes
+          print('AGENT_EVAL_FAIL_REPLAY=PASS')
+          PY
