@@ -24,6 +24,7 @@ beacon = load_json("BEACON.json")
 agent = load_json("AGENT_MARKET.json")
 catalog = load_json("CATALOG.json")
 organ_matrix = load_json("ORGAN_SERVICE_MATRIX.json")
+telegram_gateway = load_json("TELEGRAM_GATEWAY.json")
 pointer = load_json(".well-known/agent-market.json")
 a2a = load_json("discovery/A2A_PUBLICATION.json")
 global_a2a = load_json("discovery/GLOBAL_A2A_REGISTRY.json")
@@ -50,6 +51,17 @@ specialists = {
     "JANUS.SWARM_RESEARCH": ("Hawkar-usls/janus-distributed-ai-swarm", "main"),
 }
 organ_services = organ_matrix.get("services") or {}
+require(
+    str(telegram_gateway.get("status", "")).startswith("PREPARED_NOT_LIVE"),
+    "TELEGRAM_GATEWAY_MUST_REMAIN_PREPARED_NOT_LIVE",
+)
+tg_free = telegram_gateway.get("first_free_search") or {}
+require(tg_free.get("amount") == 1, "TELEGRAM_GATEWAY_FIRST_FREE_AMOUNT_DRIFT")
+require(tg_free.get("second_new_search_free") is False, "TELEGRAM_GATEWAY_SECOND_FREE_FALSE_CLAIM")
+tg_skus = telegram_gateway.get("sku_policy") or {}
+require(tg_skus.get("live_first_free") == ["JANUS.SEARCH"], "TELEGRAM_GATEWAY_FREE_SKU_DRIFT")
+require(telegram_gateway.get("secrets_must_not_be_committed") is True, "TELEGRAM_GATEWAY_SECRET_BOUNDARY_DRIFT")
+
 for sku, (repository, ref) in specialists.items():
     require(sku in products, f"SPECIALIST_SKU_MISSING:{sku}")
     require(products[sku].get("machine_discovery") is True, f"SPECIALIST_ORGAN_NOT_DISCOVERABLE:{sku}")
