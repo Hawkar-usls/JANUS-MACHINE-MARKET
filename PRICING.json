@@ -197,6 +197,17 @@
         }
       },
       "payable_quote": false
+    },
+    "JANUS.PR_REVIEW": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "billing_unit": "pull_request_review",
+      "base_unit_usdt_micros": 250000,
+      "modes": {
+        "STRUCTURAL_GUARD": {
+          "multiplier_bps": 10000
+        }
+      },
+      "payable_quote": false
     }
   },
   "alternative_payment_routes": {
