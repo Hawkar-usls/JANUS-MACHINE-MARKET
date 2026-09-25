@@ -65,6 +65,11 @@
     {
       "type": "ContentSignal",
       "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/robots.txt"
+    },
+    {
+      "type": "AgentSkill",
+      "name": "JANUS.SEARCH Agent Skill",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md"
     }
   ],
   "prompts": [
