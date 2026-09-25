@@ -3,12 +3,12 @@
   "sku": "JANUS.PR_REVIEW",
   "title": "JANUS PR Guard",
   "class": "repository_analysis",
-  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+  "status": "LIVE_FIRST_REVIEW_FREE_EXTERNAL_ROUNDTRIP_PENDING",
   "machine_discovery": true,
   "machine_purchase": false,
   "summary": "Bounded GitHub pull-request structural and policy-risk review bound to exact base/head commit SHAs, returning machine-readable findings and a durable receipt without executing target repository code.",
   "request": {
-    "mode": "OWNER_SHADOW_PUBLIC_REPOSITORY_PR_ONLY",
+    "mode": "LIVE_PUBLIC_FIRST_FREE_PUBLIC_REPOSITORY_PR_ONLY",
     "schema": "janus.pr_review.shadow_request.v1",
     "input_fields": [
       "repository",
@@ -58,10 +58,11 @@
     "executor": "runtime/pr_review.py",
     "workflow": ".github/workflows/pr-review-integrity.yml",
     "owner_shadow": true,
-    "public_live": false,
+    "public_live": true,
     "paid_execution": false,
     "target_repository_code_executed": false,
-    "blocker": "PUBLIC_QUOTA_PRIVACY_POLICY_AND_REAL_EXTERNAL_PRINCIPAL_RECEIPT"
+    "blocker": "FIRST_REAL_EXTERNAL_PRINCIPAL_PR_REVIEW_RECEIPT_THEN_PAID_COMMERCE_GATE",
+    "public_beta_workflow": ".github/workflows/pr-review-public-beta.yml"
   },
   "authority": {
     "payment_is_authority": false,
@@ -97,5 +98,17 @@
     "target_repository_code_executed": false,
     "production_money_used": false,
     "foreign_agent_witness": false
+  },
+  "first_free_public_order": {
+    "enabled": true,
+    "price": 0,
+    "entitlement": "ONE_FIRST_FREE_PR_REVIEW_PER_EXTERNAL_GITHUB_PRINCIPAL",
+    "amount": 1,
+    "second_new_order_free": false,
+    "exact_retry_same_issue_is_second_order": false,
+    "public_repositories_only": true,
+    "max_changed_files": 300,
+    "global_daily_limit": 10,
+    "issue_template": ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md"
   }
 }

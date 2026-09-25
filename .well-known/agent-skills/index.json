@@ -7,6 +7,13 @@
       "description": "Delegate bounded provenance-aware research/search to JANUS through the live GitHub Issues API ingress.",
       "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md",
       "digest": "sha256:23fd7df9234a096807958a5225e9b9eb451bed9adaa6e253704ffa72bcd6f28f"
+    },
+    {
+      "name": "janus-pr-review",
+      "type": "skill-md",
+      "description": "Review a public GitHub pull request with exact-SHA binding and receive structural/policy-risk findings plus a durable JANUS receipt.",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md",
+      "digest": "sha256:63fb92ab8c6d681b3c434036b8b877aa47483e1168603318f0156e0c21bc45af"
     }
   ]
 }

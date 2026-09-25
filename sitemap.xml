@@ -14,4 +14,7 @@
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/index.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/janus-search/SKILL.md</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/fresco/</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/janus-pr-review/SKILL.md</loc></url>
 </urlset>

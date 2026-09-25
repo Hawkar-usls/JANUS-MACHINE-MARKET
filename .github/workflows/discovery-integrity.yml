@@ -79,6 +79,7 @@ jobs:
           python -m json.tool skills/index.json >/dev/null
           python -m json.tool .well-known/agent-skills/index.json >/dev/null
           python -m json.tool discovery/GITHUB_ISSUES_INGRESS.openapi.json >/dev/null
+          python -m json.tool discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json >/dev/null
           python -m json.tool AGENT_MARKET.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null
           python -m json.tool ORGAN_SERVICE_MATRIX.json >/dev/null

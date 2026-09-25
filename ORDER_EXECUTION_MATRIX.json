@@ -95,14 +95,15 @@
       "blocker": "PUBLIC_AGENT_TRACE_INGRESS_PLUS_PRIVACY_TERMS_PLUS_END_TO_END_MARKET_RECEIPT"
     },
     "JANUS.PR_REVIEW": {
-      "current_mode": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+      "current_mode": "ONE_FIRST_FREE_PUBLIC_REVIEW_PER_EXTERNAL_GITHUB_PRINCIPAL_PLUS_OWNER_SHADOW",
       "capability": "exact-SHA-bound public GitHub PR structural/policy-risk audit with durable result receipt",
       "executor": "runtime/pr_review.py",
       "workflow": ".github/workflows/pr-review-integrity.yml",
       "target_repository_code_executed": false,
       "paid_execution": false,
-      "public_execution": false,
-      "blocker": "PUBLIC_QUOTA_PRIVACY_POLICY_AND_REAL_EXTERNAL_PRINCIPAL_RECEIPT"
+      "public_execution": true,
+      "blocker": "FIRST_REAL_EXTERNAL_PRINCIPAL_PR_REVIEW_RECEIPT_THEN_PAID_COMMERCE_GATE",
+      "public_beta_workflow": ".github/workflows/pr-review-public-beta.yml"
     }
   },
   "public_beta_promotion_requirements": [

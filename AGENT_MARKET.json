@@ -38,9 +38,10 @@
     "endpoint": null
   },
   "task_execution": {
-    "status": "PUBLIC_FIRST_FREE_SEARCH_PLUS_OWNER_SHADOWS",
+    "status": "PUBLIC_FIRST_FREE_SEARCH_AND_PR_REVIEW_PLUS_OWNER_SHADOWS",
     "public_live_skus": [
-      "JANUS.SEARCH"
+      "JANUS.SEARCH",
+      "JANUS.PR_REVIEW"
     ],
     "owner_shadow_skus": [
       "JANUS.REPO_AUDIT",
@@ -157,5 +158,18 @@
   "agent_acquisition": {
     "href": "discovery/AGENT_ACQUISITION.json",
     "media_type": "application/json"
-  }
+  },
+  "public_first_free_offers": [
+    {
+      "sku": "JANUS.SEARCH",
+      "entitlement": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL",
+      "ingress": "MACHINE_INGRESS.json"
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "entitlement": "ONE_FIRST_FREE_PR_REVIEW_PER_EXTERNAL_GITHUB_PRINCIPAL",
+      "issue_template": ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md",
+      "public_repositories_only": true
+    }
+  ]
 }

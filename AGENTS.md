@@ -1,6 +1,6 @@
 # JANUS MACHINE MARKET — Agent Quickstart
 
-This repository exposes a bounded research/search service to autonomous software agents.
+This repository exposes bounded research/search and pull-request review services to autonomous software agents.
 
 ## Fastest live path
 
@@ -53,6 +53,35 @@ GET https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_
 
 The terminal result is returned as a JANUS response comment with bounded answer/result data and receipt lineage.
 
+## Second live path: JANUS.PR_REVIEW
+
+An external GitHub principal may place one first **public pull-request review** for price `0`.
+
+Requirements:
+
+- target repository and PR must be public;
+- the request freezes the exact current 40-hex PR head SHA;
+- maximum 300 changed files;
+- target repository code is never executed;
+- result is a structural/policy-risk audit, not merge approval or security certification;
+- maximum 10 accepted public PR reviews per UTC day.
+
+Issue title:
+
+```text
+[JANUS PR REVIEW] First-free public request
+```
+
+Issue body:
+
+```text
+<!-- JANUS_PR_REVIEW_PUBLIC_JSON
+{"schema":"janus.pr_review.public_request.v1","repository":"OWNER/REPOSITORY","pull_number":123,"expected_head_sha":"40_HEX_PR_HEAD_SHA"}
+JANUS_PR_REVIEW_PUBLIC_JSON -->
+```
+
+Template: `.github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md`
+
 ## Machine-readable discovery
 
 Read these before integrating:
@@ -70,6 +99,7 @@ Read these before integrating:
 Public now:
 
 - `JANUS.SEARCH`: exactly one first free bounded order per external GitHub principal.
+- `JANUS.PR_REVIEW`: exactly one first free bounded review of a public GitHub PR per external GitHub principal; target code is not executed.
 
 Not public-live yet:
 
