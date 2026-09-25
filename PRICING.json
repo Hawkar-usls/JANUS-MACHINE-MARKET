@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.pricing.v1",
-  "version": "2026-09-04-paid-queue-1",
+  "version": "2026-09-25-btt-route-1",
   "status": "PREVIEW_RATECARD_NOT_LIVE",
   "currency": "USDT",
   "decimals": 6,
@@ -9,71 +9,128 @@
   "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
   "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
   "quote_ttl_seconds": 900,
-  "pricing_law": "Displayed browser totals are deterministic preview calculations from this public ratecard. A payable invoice must be frozen and admitted by the trusted JANUS Commerce Authority. Paid SEARCH queue priority is frozen in the request before invoice creation. PAYMENT != EXECUTION_AUTHORITY.",
+  "pricing_law": "USDT remains the canonical reference ratecard. The declared BTT/TRON route applies a 50% discount to the otherwise-applicable USDT reference value, but no exact BTT amount is payable until a trusted invoice freezes a BTT/USD price source, timestamp, rounding rule and exact atomic amount. PAYMENT != EXECUTION_AUTHORITY.",
   "quantity_discounts": [
-    {"min_quantity": 1, "discount_bps": 0},
-    {"min_quantity": 5, "discount_bps": 500},
-    {"min_quantity": 10, "discount_bps": 1000},
-    {"min_quantity": 25, "discount_bps": 1500}
+    {
+      "min_quantity": 1,
+      "discount_bps": 0
+    },
+    {
+      "min_quantity": 5,
+      "discount_bps": 500
+    },
+    {
+      "min_quantity": 10,
+      "discount_bps": 1000
+    },
+    {
+      "min_quantity": 25,
+      "discount_bps": 1500
+    }
   ],
   "products": {
     "JANUS.SEARCH": {
       "billing_unit": "request",
       "base_unit_usdt_micros": 50000,
       "modes": {
-        "FAST": {"multiplier_bps": 10000},
-        "STANDARD": {"multiplier_bps": 16000},
-        "DEEP": {"multiplier_bps": 30000}
+        "FAST": {
+          "multiplier_bps": 10000
+        },
+        "STANDARD": {
+          "multiplier_bps": 16000
+        },
+        "DEEP": {
+          "multiplier_bps": 30000
+        }
       },
       "queue_priority_policy": "PAID_QUEUE_POLICY.json",
       "queue_levels": {
-        "1": {"code": "STANDARD", "multiplier_bps": 10000},
-        "2": {"code": "PRIORITY", "multiplier_bps": 15000},
-        "3": {"code": "EXPRESS", "multiplier_bps": 22500},
-        "4": {"code": "PRIME", "multiplier_bps": 35000},
-        "5": {"code": "GATE", "multiplier_bps": 50000}
+        "1": {
+          "code": "STANDARD",
+          "multiplier_bps": 10000
+        },
+        "2": {
+          "code": "PRIORITY",
+          "multiplier_bps": 15000
+        },
+        "3": {
+          "code": "EXPRESS",
+          "multiplier_bps": 22500
+        },
+        "4": {
+          "code": "PRIME",
+          "multiplier_bps": 35000
+        },
+        "5": {
+          "code": "GATE",
+          "multiplier_bps": 50000
+        }
       }
     },
     "JANUS.DATASET_SCOUT": {
       "billing_unit": "job",
       "base_unit_usdt_micros": 250000,
       "modes": {
-        "DISCOVERY": {"multiplier_bps": 10000},
-        "LICENSE-DEEP": {"multiplier_bps": 20000}
+        "DISCOVERY": {
+          "multiplier_bps": 10000
+        },
+        "LICENSE-DEEP": {
+          "multiplier_bps": 20000
+        }
       }
     },
     "JANUS.EVIDENCE_PACK": {
       "billing_unit": "pack",
       "base_unit_usdt_micros": 500000,
       "modes": {
-        "STANDARD": {"multiplier_bps": 10000},
-        "DEEP": {"multiplier_bps": 20000}
+        "STANDARD": {
+          "multiplier_bps": 10000
+        },
+        "DEEP": {
+          "multiplier_bps": 20000
+        }
       }
     },
     "JANUS.ARCHIVE_SCAN": {
       "billing_unit": "scan",
       "base_unit_usdt_micros": 250000,
       "modes": {
-        "OPEN-ARCHIVE": {"multiplier_bps": 10000},
-        "PUBLIC-MIX": {"multiplier_bps": 20000}
+        "OPEN-ARCHIVE": {
+          "multiplier_bps": 10000
+        },
+        "PUBLIC-MIX": {
+          "multiplier_bps": 20000
+        }
       }
     },
     "JANUS.REPO_AUDIT": {
       "billing_unit": "audit",
       "base_unit_usdt_micros": 1000000,
       "modes": {
-        "ARCHITECTURE": {"multiplier_bps": 10000},
-        "CLAIMS": {"multiplier_bps": 12500},
-        "DEPENDENCIES": {"multiplier_bps": 15000}
+        "ARCHITECTURE": {
+          "multiplier_bps": 10000
+        },
+        "CLAIMS": {
+          "multiplier_bps": 12500
+        },
+        "DEPENDENCIES": {
+          "multiplier_bps": 15000
+        }
       }
     },
     "JANUS.RESEARCH_JOB": {
       "billing_unit": "job",
       "base_unit_usdt_micros": 1000000,
       "modes": {
-        "SHORT": {"multiplier_bps": 10000},
-        "STANDARD": {"multiplier_bps": 20000},
-        "DEEP": {"multiplier_bps": 40000}
+        "SHORT": {
+          "multiplier_bps": 10000
+        },
+        "STANDARD": {
+          "multiplier_bps": 20000
+        },
+        "DEEP": {
+          "multiplier_bps": 40000
+        }
       }
     },
     "HELIOS.PILOT": {
@@ -81,7 +138,28 @@
       "authority": "DELEGATED_TO_JANUS_HELIOS",
       "local_price": null
     },
-    "JANUS.INFERENCE": {"status": "CLOSED", "local_price": null},
-    "JANUS.COMPUTE": {"status": "CLOSED", "local_price": null}
+    "JANUS.INFERENCE": {
+      "status": "CLOSED",
+      "local_price": null
+    },
+    "JANUS.COMPUTE": {
+      "status": "CLOSED",
+      "local_price": null
+    }
+  },
+  "alternative_payment_routes": {
+    "BTT_TRON": {
+      "status": "DECLARED_DISCOUNT_ROUTE_NOT_LIVE",
+      "record": "BTT_PAYMENT_ROUTE.json",
+      "asset": "BTT",
+      "network": "TRON Mainnet",
+      "token_standard": "TRC-20",
+      "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
+      "receiving_address": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
+      "discount_bps": 5000,
+      "reference": "USDT_REFERENCE_TOTAL_AFTER_CATALOG_AND_QUEUE_ADJUSTMENTS",
+      "exact_btt_amount": "FROZEN_ONLY_BY_FUTURE_LIVE_INVOICE_WITH_PRICE_SOURCE",
+      "live_quote_allowed": false
+    }
   }
 }
