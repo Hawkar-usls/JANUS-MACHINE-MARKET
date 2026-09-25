@@ -4,7 +4,7 @@ from runtime.public_search_beta import (
     GLOBAL_DAILY_LIMIT,
     MAX_ANSWER_UTF8_BYTES,
     MAX_MESSAGE_UTF8_BYTES,
-    PER_ACTOR_DAILY_LIMIT,
+    FIRST_FREE_PER_ACTOR,
     PUBLIC_ORIGIN,
     PublicSearchBetaError,
     evaluate_outbox_admission,
@@ -79,15 +79,15 @@ class PublicSearchBetaTests(unittest.TestCase):
         self.assertFalse(decision["admitted"])
         self.assertEqual(decision["reason"], "ISSUE_ALREADY_BOUND_TO_DIFFERENT_QUERY")
 
-    def test_per_actor_daily_quota(self):
-        priors = [
-            self.packet(issue_id=2000 + i, issue_number=50 + i, message=f"q{i}")
-            for i in range(PER_ACTOR_DAILY_LIMIT)
-        ]
-        current = self.packet(issue_id=3000, issue_number=90, message="over")
-        decision = evaluate_outbox_admission(current, priors)
+    def test_only_first_search_is_free_per_actor_across_days(self):
+        first = self.packet(issue_id=2001, issue_number=51, created_at="2026-09-04T10:00:00Z", message="first")
+        current = self.packet(issue_id=3000, issue_number=90, created_at="2026-09-25T10:00:00Z", message="second")
+        decision = evaluate_outbox_admission(current, [first])
         self.assertFalse(decision["admitted"])
-        self.assertEqual(decision["reason"], "PER_ACTOR_DAILY_LIMIT_REACHED")
+        self.assertEqual(decision["reason"], "FIRST_FREE_SEARCH_ALREADY_USED")
+        self.assertEqual(decision["policy"], "ONE_FIRST_FREE_SEARCH_PER_EXTERNAL_PRINCIPAL")
+        self.assertEqual(decision["limit"], FIRST_FREE_PER_ACTOR)
+
 
     def test_global_daily_quota(self):
         priors = [
@@ -99,13 +99,11 @@ class PublicSearchBetaTests(unittest.TestCase):
         self.assertFalse(decision["admitted"])
         self.assertEqual(decision["reason"], "GLOBAL_DAILY_LIMIT_REACHED")
 
-    def test_previous_day_does_not_consume_today_quota(self):
-        priors = [
-            self.packet(issue_id=6000 + i, issue_number=300 + i, created_at="2026-09-03T23:59:00Z", message=f"q{i}")
-            for i in range(PER_ACTOR_DAILY_LIMIT)
-        ]
-        current = self.packet(issue_id=7000, issue_number=400, created_at="2026-09-04T00:01:00Z", message="today")
-        self.assertTrue(evaluate_outbox_admission(current, priors)["admitted"])
+    def test_different_actor_can_use_first_free_even_if_another_actor_used_one_before(self):
+        prior = self.packet(login="actor-a", issue_id=6000, issue_number=300, created_at="2026-09-03T23:59:00Z", message="a")
+        current = self.packet(login="actor-b", issue_id=7000, issue_number=400, created_at="2026-09-25T00:01:00Z", message="b")
+        self.assertTrue(evaluate_outbox_admission(current, [prior])["admitted"])
+
 
 
 if __name__ == "__main__":
