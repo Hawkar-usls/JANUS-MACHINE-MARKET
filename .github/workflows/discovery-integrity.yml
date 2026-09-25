@@ -7,6 +7,8 @@ on:
       - 'BEACON.json'
       - 'AGENT_MARKET.json'
       - 'CATALOG.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'products/JANUS.*.json'
       - '.well-known/agent-market.json'
       - 'llms.txt'
       - 'discovery/**'
@@ -24,6 +26,8 @@ on:
       - 'BEACON.json'
       - 'AGENT_MARKET.json'
       - 'CATALOG.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'products/JANUS.*.json'
       - '.well-known/agent-market.json'
       - 'llms.txt'
       - 'discovery/**'
@@ -62,6 +66,7 @@ jobs:
           python -m json.tool BEACON.json >/dev/null
           python -m json.tool AGENT_MARKET.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null
+          python -m json.tool ORGAN_SERVICE_MATRIX.json >/dev/null
           python -m json.tool .well-known/agent-market.json >/dev/null
           python -m json.tool runtime/FOREIGN_AGENT_WITNESS_POLICY.json >/dev/null
           python -m json.tool FOREIGN_AGENT_WITNESS.json >/dev/null
