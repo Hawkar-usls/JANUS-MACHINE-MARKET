@@ -64,7 +64,7 @@ def evaluate_admission(request: dict[str,Any], receipts: Iterable[dict[str,Any]]
             continue
         if int(receipt.get("source_issue_id") or 0)==issue_id:
             same=(receipt.get("buyer_actor_id")==actor and receipt.get("repository")==request.get("repository") and receipt.get("pull_number")==request.get("pull_number") and receipt.get("expected_head_sha")==request.get("expected_head_sha"))
-            return {"admitted":bool(same),"reason":"EXACT_RETRY_ALREADY_DELIVERED" if same else "ISSUE_ALREADY_BOUND_TO_DIFFERENT_PR"}
+            return {"admitted":False,"reason":"EXACT_RETRY_ALREADY_DELIVERED" if same else "ISSUE_ALREADY_BOUND_TO_DIFFERENT_PR","existing_receipt_id":receipt.get("receipt_id") if same else None}
         if receipt.get("buyer_actor_id")==actor:
             actor_prior+=1
         try:
