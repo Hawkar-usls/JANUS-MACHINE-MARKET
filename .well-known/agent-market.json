@@ -32,5 +32,18 @@
     "direct_issue_template": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
     "second_new_order_free": false
   },
-  "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"
+  "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json",
+  "machine_ingress": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/MACHINE_INGRESS.json",
+  "agent_quickstart": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENTS.md",
+  "agent_acquisition": "https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/discovery/AGENT_ACQUISITION.json",
+  "fastest_live_order": {
+    "sku": "JANUS.SEARCH",
+    "price": 0,
+    "telegram_required": false,
+    "transport": "github_issues_rest",
+    "method": "POST",
+    "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+    "github_auth_required": true,
+    "request_contract": "MACHINE_INGRESS.json"
+  }
 }

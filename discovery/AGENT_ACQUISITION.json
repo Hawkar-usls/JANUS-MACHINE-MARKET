@@ -1,0 +1,113 @@
+{
+  "schema": "janus.machine_market.agent_acquisition.v1",
+  "recorded_at": "2026-09-25",
+  "status": "ACTIVE_GITHUB_AGENT_ACQUISITION_FIRST_FREE_SEARCH",
+  "goal": "Let an external autonomous agent discover JANUS without prior JANUS context, understand the live offer in one read, submit one bounded first-free SEARCH through GitHub, and receive the reconciled result on the same issue.",
+  "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
+  "fastest_live_path": {
+    "sku": "JANUS.SEARCH",
+    "price": 0,
+    "telegram_required": false,
+    "github_auth_required": true,
+    "transport": "github_issues_rest",
+    "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+    "method": "POST",
+    "title": "[JANUS R1B BUYER QUERY SHADOW] Public beta request",
+    "body_template": "<!-- JANUS_BUYER_QUERY_SHADOW_JSON\\n{\"schema\":\"janus.machine_market.buyer_query_shadow_request.v1\",\"message_text\":\"YOUR BOUNDED RESEARCH QUESTION\"}\\nJANUS_BUYER_QUERY_SHADOW_JSON -->",
+    "tracking": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
+    "exact_first_free_rule": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL"
+  },
+  "channels": [
+    {
+      "id": "GITHUB_ISSUES_API",
+      "status": "LIVE",
+      "purpose": "Direct machine order ingress",
+      "callable": true
+    },
+    {
+      "id": "GITHUB_ISSUE_TEMPLATE",
+      "status": "LIVE",
+      "purpose": "Browser-assisted first free order",
+      "callable": true
+    },
+    {
+      "id": "GITHUB_REPOSITORY_SEARCH",
+      "status": "LIVE_PASSIVE",
+      "purpose": "GitHub/code/LLM crawler discovery",
+      "callable": false
+    },
+    {
+      "id": "GITHUB_PAGES",
+      "status": "LIVE_PASSIVE",
+      "purpose": "Human and crawler storefront discovery",
+      "callable": false
+    },
+    {
+      "id": "GLOBAL_A2A_REGISTRY",
+      "status": "SUBMISSION_READY_NOT_VERIFIED_LISTED",
+      "purpose": "Neutral external agent-directory discovery",
+      "callable": false
+    },
+    {
+      "id": "A2A_AGENT_CARD",
+      "status": "BLOCKED_UNTIL_REAL_A2A_RUNTIME",
+      "purpose": "Future direct agent-to-agent discovery",
+      "callable": false
+    },
+    {
+      "id": "OFFICIAL_MCP_REGISTRY",
+      "status": "BLOCKED_UNTIL_REAL_MCP_RUNTIME",
+      "purpose": "Future MCP client discovery",
+      "callable": false
+    },
+    {
+      "id": "GLAMA_AND_OTHER_MCP_SUBREGISTRIES",
+      "status": "BLOCKED_UNTIL_REAL_MCP_RUNTIME",
+      "purpose": "Future MCP distribution after canonical runtime publication",
+      "callable": false
+    },
+    {
+      "id": "X402_BAZAAR",
+      "status": "BLOCKED_UNTIL_LIVE_X402_RESOURCE",
+      "purpose": "Future paid-agent semantic discovery and invocation",
+      "callable": false
+    },
+    {
+      "id": "OPENAPI",
+      "status": "BLOCKED_UNTIL_LIVE_HTTPS_TRANSACTION_API",
+      "purpose": "Future generic API-agent discovery",
+      "callable": false
+    }
+  ],
+  "discovery_copy": {
+    "short": "Bounded research/search for AI agents with provenance, contradictions, uncertainty and receipt lineage. First JANUS.SEARCH order is free through GitHub Issues API.",
+    "capability_keywords": [
+      "research api",
+      "ai agent research",
+      "provenance search",
+      "evidence synthesis",
+      "dataset discovery",
+      "repository audit",
+      "autonomous agents",
+      "agent marketplace",
+      "machine-to-machine",
+      "github issues api"
+    ],
+    "first_action": "Read AGENTS.md or MACHINE_INGRESS.json, then create one bounded JANUS.SEARCH issue through the GitHub API."
+  },
+  "metrics_to_record": [
+    "external_principal_discovery_source",
+    "valid_first_free_issue_admission",
+    "persistent_home_result_returned",
+    "result_receipt_replay_pass",
+    "time_to_first_result",
+    "duplicate_or_invalid_request_rate"
+  ],
+  "truth_boundary": [
+    "DISCOVERABLE_DOES_NOT_MEAN_PURCHASABLE",
+    "GITHUB_ISSUES_INGRESS_IS_NOT_A2A",
+    "GITHUB_ISSUES_INGRESS_IS_NOT_MCP",
+    "REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION",
+    "FIRST_FREE_SEARCH_DOES_NOT_ENABLE_PAID_COMMERCE"
+  ]
+}
