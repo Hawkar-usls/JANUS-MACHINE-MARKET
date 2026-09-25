@@ -75,7 +75,8 @@
     "persistent_janus_home_acceptor": "MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID",
     "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE_SHARED_WITH_LOCAL_EXECUTOR",
     "fresh_checkout_replay": "REQUIRED_ON_FIRST_REAL_PAID_WITNESS",
-    "first_real_paid_delivery": "PENDING"
+    "first_real_paid_delivery": "PENDING",
+    "btt_tron_payment_route": "DECLARED_NOT_LIVE_REQUIRES_ORACLE_OBSERVER_AND_EXISTING_COMMERCE_GATES"
   },
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
@@ -97,5 +98,17 @@
   "policy": "PAYMENT_POLICY.md",
   "paid_terms": "docs/PAID_SEARCH_TERMS.md",
   "queue_policy": "PAID_QUEUE_POLICY.json",
-  "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json"
+  "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json",
+  "alternative_payment_rails": {
+    "BTT_TRON": {
+      "status": "DECLARED_DISCOUNT_ROUTE_GATE_CLOSED",
+      "record": "BTT_PAYMENT_ROUTE.json",
+      "discount_bps": 5000,
+      "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
+      "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
+      "observer": "NOT_IMPLEMENTED_YET",
+      "oracle": "NOT_IMPLEMENTED_YET",
+      "live_invoice_allowed": false
+    }
+  }
 }
