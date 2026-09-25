@@ -1,0 +1,87 @@
+{
+  "schema": "janus.machine_market.organ_service_matrix.v1",
+  "version": "1.0.0",
+  "recorded_at": "2026-09-25",
+  "status": "SPECIALIST_ORGANS_DISCOVERABLE_EXECUTION_RECEIPT_GATED",
+  "purpose": "Map bounded Market requests to existing JANUS research organs without pretending that repository capability alone is a live public execution route.",
+  "routing_laws": [
+    "ORGAN_CAPABILITY != LIVE_MARKET_EXECUTION",
+    "ROUTE_PROPOSAL != DISPATCH_AUTHORITY",
+    "REPOSITORY_OUTPUT != WORLD_TRUTH",
+    "MODEL_OUTPUT != INDEPENDENT_CONFIRMATION",
+    "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS",
+    "SPECIALIST_PUBLIC_LIVE_REQUIRES_DEDICATED_MARKET_TO_HOME_TO_ORGAN_TO_HOME_TO_MARKET_RECEIPT"
+  ],
+  "services": {
+    "JANUS.SEARCH": {
+      "organ": "Hawkar-usls/Hawkar-usls + HRAiN/Terminal conversation tissue",
+      "role": "general bounded read-only search/research turn",
+      "market_state": "LIVE_FIRST_SEARCH_FREE",
+      "public_live": true,
+      "machine_purchase": false,
+      "first_free_per_external_principal": 1
+    },
+    "JANUS.TOPA_HUNT": {
+      "organ": "Hawkar-usls/TOPA",
+      "ref": "main",
+      "role": "provenance-bound anomaly investigation, archive hunt, competing-hypothesis falsification and unresolved-case research",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> TOPA -> HOME receipt -> Market reconcile"
+    },
+    "JANUS.DEMIURGE_SCOUT": {
+      "organ": "Hawkar-usls/Janus-Demiurge",
+      "ref": "main",
+      "role": "bounded 17-agent Scout Swarm reconnaissance across the JANUS repository constellation",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> Demiurge bounded scout dispatch -> receipt aggregation -> Market reconcile"
+    },
+    "JANUS.COUSTEAU_SCAN": {
+      "organ": "Hawkar-usls/Janus-Cosmos",
+      "ref": "janus-echo-cousteau",
+      "role": "ocean/seafloor bathymetry, multibeam, sidescan, hydroacoustic and instrument-control search/falsification",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> Cousteau data-bound scan -> provenance receipt -> Market reconcile"
+    },
+    "JANUS.META_REGISTRY_SEARCH": {
+      "organ": "Hawkar-usls/janus-meta-registry",
+      "ref": "main",
+      "role": "JANUS registry/provenance discovery and durable research-memory pointer search",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> registry read-only discovery -> receipt -> Market reconcile"
+    },
+    "JANUS.FUNDAMENTUM_AUDIT": {
+      "organ": "Hawkar-usls/Janus-Fundamentum",
+      "ref": "main",
+      "role": "formal-claim/source/proof-carrying research audit under fail-closed theorem authority",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> bounded Fundamentum audit -> proof/source receipt -> Market reconcile"
+    },
+    "JANUS.SWARM_RESEARCH": {
+      "organ": "Hawkar-usls/janus-distributed-ai-swarm",
+      "ref": "main",
+      "role": "bounded parallel multi-agent research attack with independence/provenance separation",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> bounded swarm manifest -> receipt aggregation -> Market reconcile"
+    }
+  },
+  "supporting_organs": {
+    "Hawkar-usls/Hrain": "memory/context support; memory is not evidence or command authority",
+    "Hawkar-usls/Demi_Head": "execution/source receipt and proposal gate; not truth authority",
+    "Hawkar-usls/AIFC": "causal/statistical claim checking where applicable",
+    "Hawkar-usls/aura-oracle-tg": "candidate discrimination/precommitment only; oracle output is not evidence",
+    "Hawkar-usls/janus-lapis": "candidate-generation/research support only until domain-specific validation",
+    "Hawkar-usls/Fast-CAT-SHAiTan": "candidate-generation/research support only until domain-specific validation"
+  }
+}
