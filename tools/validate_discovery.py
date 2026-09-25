@@ -27,9 +27,11 @@ pointer = load_json(".well-known/agent-market.json")
 a2a = load_json("discovery/A2A_PUBLICATION.json")
 global_a2a = load_json("discovery/GLOBAL_A2A_REGISTRY.json")
 mcp = load_json("discovery/MCP_PUBLICATION.json")
+mcp_baseline = load_json("discovery/MCP_2026_07_28_BASELINE.json")
 x402 = load_json("discovery/X402_BAZAAR_PUBLICATION.json")
 openapi = load_json("discovery/OPENAPI_PUBLICATION.json")
 witness_policy = load_json("runtime/FOREIGN_AGENT_WITNESS_POLICY.json")
+witness_status = load_json("FOREIGN_AGENT_WITNESS.json")
 
 require(beacon.get("status") == "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED", "BEACON_STATUS_DRIFT")
 require(agent.get("transaction_api", {}).get("status") == "NOT_ESTABLISHED", "AGENT_TRANSACTION_STATUS_DRIFT")
@@ -76,6 +78,50 @@ for name, record in {
 }.items():
     require(record.get("current_publication_allowed") is False, f"{name}_PUBLICATION_MUST_FAIL_CLOSED")
     require("PREPARED" in str(record.get("status", "")), f"{name}_PREPUBLICATION_STATUS_DRIFT")
+
+# MCP 2026-07-28 is a stateless protocol era. The repository may record the
+# compatibility target before a runtime exists, but the record itself must stay
+# source-exact and must never promote runtime, commerce, or foreign-witness state.
+require(mcp_baseline.get("spec_revision") == "2026-07-28", "MCP_BASELINE_REVISION_DRIFT")
+require(mcp_baseline.get("status") == "AUTHORITATIVE_2026_07_28_BASELINE_RECORDED_NOT_DEPLOYED", "MCP_BASELINE_STATUS_DRIFT")
+wire = mcp_baseline.get("wire_contract") or {}
+require(wire.get("core_model") == "STATELESS_REQUEST_RESPONSE", "MCP_2026_07_28_MUST_BE_STATELESS")
+require(wire.get("protocol_level_sessions") == "REMOVED_FOR_2026_07_28", "MCP_PROTOCOL_SESSION_FALSE_CLAIM")
+require(wire.get("initialize_initialized_exchange") == "REMOVED_FOR_2026_07_28", "MCP_INITIALIZE_FALSE_CLAIM")
+require(wire.get("mcp_session_id_header") == "REMOVED_FOR_2026_07_28", "MCP_SESSION_ID_FALSE_CLAIM")
+meta = wire.get("per_request_meta") or {}
+required_meta = set(meta.get("required") or [])
+require("io.modelcontextprotocol/protocolVersion" in required_meta, "MCP_PROTOCOL_VERSION_META_REQUIRED")
+require("io.modelcontextprotocol/clientCapabilities" in required_meta, "MCP_CLIENT_CAPABILITIES_META_REQUIRED")
+discover = wire.get("server_discover") or {}
+require(discover.get("server_must_implement") is True, "MCP_SERVER_DISCOVER_MUST_BE_REQUIRED")
+require(discover.get("client_call_before_other_requests") == "OPTIONAL", "MCP_SERVER_DISCOVER_CLIENT_CALL_SEMANTICS_DRIFT")
+notifications = wire.get("long_lived_change_notifications") or {}
+require(notifications.get("method") == "subscriptions/listen", "MCP_SUBSCRIPTIONS_LISTEN_REQUIRED")
+removed = set(wire.get("removed_methods") or [])
+for method in [
+    "ping",
+    "logging/setLevel",
+    "notifications/roots/list_changed",
+    "resources/subscribe",
+    "resources/unsubscribe",
+]:
+    require(method in removed, f"MCP_REMOVED_METHOD_NOT_FROZEN:{method}")
+
+pub_transport = mcp.get("planned_transport_contract") or {}
+require(pub_transport.get("core") == "STATELESS_REQUEST_RESPONSE", "MCP_PUBLICATION_CORE_MODEL_DRIFT")
+require(pub_transport.get("capability_discovery") == "SERVER_MUST_IMPLEMENT_server/discover__CLIENT_MAY_PROBE", "MCP_PUBLICATION_DISCOVER_DRIFT")
+require(pub_transport.get("change_notification_transport") == "subscriptions/listen", "MCP_PUBLICATION_NOTIFICATION_DRIFT")
+pub_required_meta = set(pub_transport.get("required_request_meta") or [])
+require("io.modelcontextprotocol/protocolVersion" in pub_required_meta, "MCP_PUBLICATION_PROTOCOL_META_MISSING")
+require("io.modelcontextprotocol/clientCapabilities" in pub_required_meta, "MCP_PUBLICATION_CAPABILITIES_META_MISSING")
+require((mcp.get("registry_submission") or {}).get("create_manifest_now") is False, "MCP_SERVER_JSON_MUST_REMAIN_BLOCKED")
+require("SERVER_DISCOVER_IMPLEMENTED_AND_PASS" in (mcp.get("publication_gates") or []), "MCP_DISCOVER_GATE_MISSING")
+require("PER_REQUEST_META_CONTRACT_PASS" in (mcp.get("publication_gates") or []), "MCP_META_GATE_MISSING")
+
+require(witness_status.get("foreign_agent_witness") is False, "MCP_BASELINE_MUST_NOT_PROMOTE_FOREIGN_AGENT_WITNESS")
+require(witness_status.get("promotion_authority") == "PERSISTENT_HOME_RECEIPT_ONLY", "FOREIGN_AGENT_WITNESS_AUTHORITY_DRIFT")
+require(witness_status.get("money_enabled") is False, "MCP_BASELINE_MUST_NOT_ENABLE_MONEY")
 
 allowed_surfaces = set((witness_policy.get("required_discovery_claim") or {}).get("allowed_surfaces") or [])
 require("GLOBAL_A2A_REGISTRY" in allowed_surfaces, "GLOBAL_A2A_NOT_ALLOWED_AS_FOREIGN_DISCOVERY_SURFACE")
@@ -128,5 +174,8 @@ print("A2A_RUNTIME_ACTIVE=FALSE")
 print("A2A_AGENT_CARD_PUBLISHED=FALSE")
 print("REGISTRY_LISTING_PROVES_A2A_RUNTIME=FALSE")
 print("TRANSACTION_API_ACTIVE=FALSE")
+print("MCP_TARGET_SPEC=2026-07-28")
+print("MCP_PROTOCOL_MODEL=STATELESS")
+print("MCP_SERVER_DISCOVER_REQUIRED=TRUE")
 print("MCP_PUBLISHED=FALSE")
 print("X402_BAZAAR_REGISTERED=FALSE")
