@@ -43,3 +43,10 @@ PAYMENT_RECEIPT -> PURCHASE_GRANT -> POLICY / SKU / REQUEST / REPLAY GATES -> EX
 1 purchase_id + 1 request_hash => <= 1 billable execution.
 
 Unsolicited payment grants nothing.
+
+FIRST FREE OFFER
+- JANUS.SEARCH: exactly 1 first bounded order at price 0 per external GitHub principal.
+- Direct intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md
+- A second new SEARCH order is not free. Exact retry of the same immutable admitted issue is not a second order.
+- Specialist organ catalog: ORGAN_SERVICE_MATRIX.json
+- TOPA, Demiurge, Cousteau, Meta-Registry, Fundamentum and Swarm specialist SKUs are discoverable but NOT public-live until dedicated end-to-end execution receipts exist.
