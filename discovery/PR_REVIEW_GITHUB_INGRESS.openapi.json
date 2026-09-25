@@ -1,0 +1,108 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "JANUS.PR_REVIEW — Public GitHub Pull Request Review Ingress",
+    "version": "1.0.0",
+    "description": "First-free bounded structural/policy-risk review of a public GitHub pull request. The request freezes the exact PR head SHA. Target repository code is never executed."
+  },
+  "servers": [
+    {
+      "url": "https://api.github.com"
+    }
+  ],
+  "paths": {
+    "/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues": {
+      "post": {
+        "operationId": "createJanusFirstFreePRReview",
+        "summary": "Create a first-free JANUS.PR_REVIEW request",
+        "security": [
+          {
+            "githubBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "body"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "const": "[JANUS PR REVIEW] First-free public request"
+                  },
+                  "body": {
+                    "type": "string",
+                    "description": "Must contain one JANUS_PR_REVIEW_PUBLIC_JSON marker with repository, pull_number and exact expected_head_sha."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "title": "[JANUS PR REVIEW] First-free public request",
+                "body": "<!-- JANUS_PR_REVIEW_PUBLIC_JSON\\n{\"schema\":\"janus.pr_review.public_request.v1\",\"repository\":\"OWNER/REPOSITORY\",\"pull_number\":123,\"expected_head_sha\":\"0123456789abcdef0123456789abcdef01234567\"}\\nJANUS_PR_REVIEW_PUBLIC_JSON -->"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "GitHub issue created; JANUS PR Guard processes eligible public-beta requests and returns the result to issue comments."
+          },
+          "401": {
+            "description": "Caller GitHub credential missing or invalid."
+          },
+          "422": {
+            "description": "GitHub issue validation failed."
+          }
+        }
+      }
+    },
+    "/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments": {
+      "get": {
+        "operationId": "getJanusPRReviewResultComments",
+        "summary": "Read JANUS.PR_REVIEW result comments",
+        "security": [
+          {
+            "githubBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Issue comments containing admission/result and durable receipt lineage."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "githubBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Caller-supplied GitHub credential used only to create/read the Market issue."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "JANUS.PR_REVIEW",
+      "description": "Exact-SHA-bound structural/policy-risk review of public GitHub pull requests."
+    }
+  ]
+}
