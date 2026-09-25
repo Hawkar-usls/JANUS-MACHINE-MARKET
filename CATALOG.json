@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.catalog.v1",
   "market": "JANUS MACHINE MARKET",
-  "generated": "2026-08-31",
+  "generated": "2026-09-25",
   "currency_policy": "Deterministic preview prices are published in PRICING.json; payable invoices remain authority-gated per product.",
   "pricing": "PRICING.json",
   "products": [
@@ -9,7 +9,7 @@
       "sku": "JANUS.SEARCH",
       "title": "JANUS Search",
       "class": "search_api",
-      "status": "SPECIFICATION_READY",
+      "status": "LIVE_FIRST_SEARCH_FREE",
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.SEARCH.json"
@@ -85,6 +85,61 @@
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/HELIOS.PILOT.json"
+    },
+    {
+      "sku": "JANUS.TOPA_HUNT",
+      "title": "JANUS TOPA Hunt",
+      "class": "research_job",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.TOPA_HUNT.json"
+    },
+    {
+      "sku": "JANUS.DEMIURGE_SCOUT",
+      "title": "JANUS Demiurge Scout",
+      "class": "research_job",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.DEMIURGE_SCOUT.json"
+    },
+    {
+      "sku": "JANUS.COUSTEAU_SCAN",
+      "title": "JANUS Cousteau Scan",
+      "class": "data_discovery",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.COUSTEAU_SCAN.json"
+    },
+    {
+      "sku": "JANUS.META_REGISTRY_SEARCH",
+      "title": "JANUS Meta-Registry Search",
+      "class": "archive_research",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.META_REGISTRY_SEARCH.json"
+    },
+    {
+      "sku": "JANUS.FUNDAMENTUM_AUDIT",
+      "title": "JANUS Fundamentum Audit",
+      "class": "research_synthesis",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.FUNDAMENTUM_AUDIT.json"
+    },
+    {
+      "sku": "JANUS.SWARM_RESEARCH",
+      "title": "JANUS Swarm Research",
+      "class": "research_job",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.SWARM_RESEARCH.json"
     }
-  ]
+  ],
+  "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"
 }
