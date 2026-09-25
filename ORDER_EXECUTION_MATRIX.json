@@ -85,6 +85,14 @@
       "paid_execution": false,
       "public_execution": false,
       "blocker": "DEDICATED_CUSTOMER_INPUT_SANDBOX_PLUS_MARKET_TO_FRESCO_DISPATCH_PLUS_RETURN_RECEIPT_AND_LICENSE_POLICY"
+    },
+    "JANUS.AGENT_EVAL": {
+      "current_mode": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+      "capability": "deterministic redacted agent-trace audit for tool authority, loop, provenance and receipt integrity",
+      "executor": "runtime/agent_eval.py",
+      "paid_execution": false,
+      "public_execution": false,
+      "blocker": "PUBLIC_AGENT_TRACE_INGRESS_PLUS_PRIVACY_TERMS_PLUS_END_TO_END_MARKET_RECEIPT"
     }
   },
   "public_beta_promotion_requirements": [
