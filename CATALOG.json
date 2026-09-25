@@ -153,7 +153,7 @@
       "sku": "JANUS.AGENT_EVAL",
       "title": "JANUS Agent Eval — Trace Guard",
       "class": "agent_evaluation",
-      "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.AGENT_EVAL.json"
