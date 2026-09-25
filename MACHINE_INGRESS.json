@@ -43,7 +43,9 @@
         "first_free_per_external_principal": 1,
         "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
         "second_new_issue_is_free": false,
-        "exact_retry_same_issue_consumes_second_free_order": false
+        "exact_retry_same_issue_consumes_second_free_order": false,
+        "second_new_search_is_free": false,
+        "exact_retry_consumes_second_free_order": false
       }
     },
     "JANUS.REPO_AUDIT": {
@@ -62,7 +64,7 @@
     }
   },
   "current_commerce_state": {
-    "price_mode": "FIRST_SEARCH_FREE_PER_EXTERNAL_PRINCIPAL_OWNER_SHADOW_FOR_OTHER_LIVE_LANES",
+    "price_mode": "ONE_FIRST_FREE_PUBLIC_SEARCH_PER_EXTERNAL_PRINCIPAL_SPECIALIST_ORGANS_CATALOGUED_NOT_LIVE",
     "money_enabled": false,
     "autonomous_purchase_declared": false,
     "payment_required": false,
@@ -75,7 +77,7 @@
     "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_BETA_NO_EMBEDDED_CREDENTIALS",
     "public_now": [
       "JANUS.SEARCH one first free order per external GitHub principal via direct issue template",
-      "JANUS.SEARCH one first free order via prefilled GitHub issue composer and external issues.opened admission workflow"
+      "JANUS.SEARCH one first free order via GitHub Issues API"
     ],
     "owner_shadow_only": [
       "JANUS.REPO_AUDIT",
@@ -118,5 +120,9 @@
     "PUBLIC_INTAKE != COMPLETED_SERVICE",
     "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_GATE_PASSES",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
-  ]
+  ],
+  "specialist_organ_catalog": {
+    "record": "ORGAN_SERVICE_MATRIX.json",
+    "public_execution_live": false
+  }
 }
