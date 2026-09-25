@@ -69,3 +69,14 @@ FIRST FREE OFFER
 - A second new SEARCH order is not free. Exact retry of the same immutable admitted issue is not a second order.
 - Specialist organ catalog: ORGAN_SERVICE_MATRIX.json
 - TOPA, Demiurge, Cousteau, Meta-Registry, Fundamentum and Swarm specialist SKUs are discoverable but NOT public-live until dedicated end-to-end execution receipts exist.
+
+## Agent discovery accelerators
+
+- Agent landing: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/
+- APIs.json: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json
+- Well-known APIs.json: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json
+- Live GitHub ingress OpenAPI: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json
+- Integration recipes: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/docs/AGENT_INTEGRATION_RECIPES.md
+- Security contact: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt
+
+Search intent terms: autonomous research agent, AI research API, provenance search, evidence synthesis, dataset discovery, repository audit, agent marketplace, machine-to-machine research.

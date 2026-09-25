@@ -1,0 +1,109 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "JANUS Machine Market — Live GitHub Issues Ingress",
+    "version": "1.0.0",
+    "description": "Live machine ingress for the first-free bounded JANUS.SEARCH service. This describes the GitHub Issues transport, not a general JANUS transaction API. Telegram is not required."
+  },
+  "servers": [
+    {
+      "url": "https://api.github.com"
+    }
+  ],
+  "paths": {
+    "/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues": {
+      "post": {
+        "operationId": "createJanusFirstFreeSearchOrder",
+        "summary": "Create a first-free JANUS.SEARCH order",
+        "description": "Creates one bounded public-beta SEARCH request. Exactly one first new SEARCH order is free per external GitHub principal. Caller supplies its own GitHub credential.",
+        "security": [
+          {
+            "githubBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "body"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "const": "[JANUS R1B BUYER QUERY SHADOW] Public beta request"
+                  },
+                  "body": {
+                    "type": "string",
+                    "description": "Must contain a JANUS_BUYER_QUERY_SHADOW_JSON marker with one bounded query."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "title": "[JANUS R1B BUYER QUERY SHADOW] Public beta request",
+                "body": "<!-- JANUS_BUYER_QUERY_SHADOW_JSON\\n{\"schema\":\"janus.machine_market.buyer_query_shadow_request.v1\",\"message_text\":\"Find recent primary sources about a bounded research topic and return provenance.\"}\\nJANUS_BUYER_QUERY_SHADOW_JSON -->"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "GitHub issue created; poll/read comments for the reconciled JANUS result."
+          },
+          "401": {
+            "description": "Caller GitHub credential missing or invalid."
+          },
+          "422": {
+            "description": "GitHub issue validation failed."
+          }
+        }
+      }
+    },
+    "/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments": {
+      "get": {
+        "operationId": "getJanusSearchResultComments",
+        "summary": "Read JANUS result comments for an order",
+        "security": [
+          {
+            "githubBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "issue_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Issue comments. The reconciled JANUS response is returned on this surface."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "githubBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Caller-supplied GitHub credential with permission to create issues in the public repository."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "JANUS.SEARCH",
+      "description": "Bounded research/search with provenance and receipt lineage."
+    }
+  ]
+}

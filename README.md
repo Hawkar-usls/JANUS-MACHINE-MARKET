@@ -30,6 +30,18 @@ JANUS_BUYER_QUERY_SHADOW_JSON -->'
 The **first SEARCH order per external GitHub principal costs 0**. The reconciled result returns to the same issue. Credentials stay with the caller.
 
 Machine clients should start with [`AGENTS.md`](AGENTS.md) or [`MACHINE_INGRESS.json`](MACHINE_INGRESS.json).
+### Agent discovery surfaces
+
+JANUS also publishes machine-oriented discovery artifacts for crawlers and tool-using agents:
+
+- **Agent landing:** https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/
+- **APIs.json:** `apis.json` and `.well-known/apis.json`
+- **Live ingress OpenAPI:** `discovery/GITHUB_ISSUES_INGRESS.openapi.json`
+- **Integration recipes:** `docs/AGENT_INTEGRATION_RECIPES.md`
+- **Security contact:** `.well-known/security.txt`
+
+These files describe the current GitHub Issues transport. They do not promote the gated MCP/A2A/x402 runtimes.
+
 
 ## What this repository is
 

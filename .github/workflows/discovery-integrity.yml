@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - 'BEACON.json'
+      - 'tools/validate_agent_acquisition.py'
+      - 'docs/AGENT_INTEGRATION_RECIPES.md'
+      - 'agents/**'
+      - '.well-known/security.txt'
+      - '.well-known/apis.json'
+      - 'apis.json'
       - 'AGENT_MARKET.json'
       - 'CATALOG.json'
       - 'ORGAN_SERVICE_MATRIX.json'
@@ -66,6 +72,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m json.tool BEACON.json >/dev/null
+          python -m json.tool apis.json >/dev/null
+          python -m json.tool .well-known/apis.json >/dev/null
+          python -m json.tool discovery/GITHUB_ISSUES_INGRESS.openapi.json >/dev/null
           python -m json.tool AGENT_MARKET.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null
           python -m json.tool ORGAN_SERVICE_MATRIX.json >/dev/null
@@ -77,6 +86,9 @@ jobs:
 
       - name: Enforce fail-closed discovery truth
         run: python tools/validate_discovery.py
+
+      - name: Validate agent acquisition contracts
+        run: python tools/validate_agent_acquisition.py
 
       - name: Prove Global A2A Registry discovery cannot bypass R1E gates
         env:
