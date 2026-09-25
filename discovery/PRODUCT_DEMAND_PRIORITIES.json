@@ -1,0 +1,101 @@
+{
+  "schema": "janus.machine_market.product_demand_priorities.v1",
+  "recorded_at": "2026-09-25",
+  "status": "STRATEGY_ONLY_NOT_CATALOG_AUTHORITY",
+  "ranking_basis": [
+    "CURRENT_EXTERNAL_DEMAND_SIGNAL",
+    "JANUS_EXISTING_CAPABILITY_FIT",
+    "BOUNDED_EXECUTION_FEASIBILITY",
+    "RECEIPT_AND_PROVENANCE_DIFFERENTIATION",
+    "LOWEST_PATH_TO_REAL_EXTERNAL_REPEAT_PURCHASE"
+  ],
+  "priorities": [
+    {
+      "priority": 1,
+      "candidate": "JANUS.AGENT_EVAL",
+      "market_need": "AI agent reliability, trace evaluation, tool-path governance and production debugging",
+      "janus_fit": "VERY_HIGH",
+      "current_state": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+      "next_gate": "PUBLIC_REDACTED_TRACE_INGRESS_PLUS_PRIVACY_TERMS_PLUS_MARKET_RECEIPT",
+      "demand_evidence": [
+        "https://www.langchain.com/state-of-agent-engineering",
+        "https://www.langchain.com/resources/agent-evals"
+      ]
+    },
+    {
+      "priority": 2,
+      "candidate": "JANUS.PR_REVIEW",
+      "market_need": "Independent high-signal review of agent-generated pull requests, tests, policy and regression risk",
+      "janus_fit": "HIGH",
+      "current_state": "RECOMMENDED_NOT_YET_CATALOGED",
+      "next_gate": "BUILD_DETERMINISTIC_PR_GUARD_THEN_OPTIONAL_DEEP_SEMANTIC_REVIEW",
+      "demand_evidence": [
+        "https://github.com/resources/insights/enterprise-content-roundup-april-26",
+        "https://docs.github.com/en/copilot/concepts/agents/code-review"
+      ]
+    },
+    {
+      "priority": 3,
+      "candidate": "JANUS.AGENT_SECURITY",
+      "market_need": "Agent identity/permission/external-effect governance and defensive AI application security review",
+      "janus_fit": "HIGH",
+      "current_state": "PARTLY_COVERED_BY_AGENT_EVAL_NOT_SEPARATE_SKU",
+      "next_gate": "EXTEND_TRACE_GUARD_WITH_POLICY_PACKS_AND_DEFENSIVE_SECURITY_CHECKS",
+      "demand_evidence": [
+        "https://www.mckinsey.com/capabilities/risk-and-resilience/our-insights/securing-the-agentic-enterprise-opportunities-for-cybersecurity-providers",
+        "https://www.deloitte.com/us/en/insights/topics/emerging-technologies/ai-agents-scaling-faster.html"
+      ]
+    },
+    {
+      "priority": 4,
+      "candidate": "JANUS.EVAL_DATA_FACTORY",
+      "market_need": "High-quality training/evaluation datasets, adversarial fixtures and RL-style task environments",
+      "janus_fit": "HIGH",
+      "current_state": "RECOMMENDED_NOT_YET_CATALOGED",
+      "next_gate": "PACKAGE_EXISTING_FIXTURE_RECEIPT_PIPELINES_INTO_DATASET_PRODUCTS_WITH_LICENSE_PROVENANCE",
+      "demand_evidence": [
+        "https://www.reuters.com/legal/transactional/snorkel-ai-valued-35-billion-amid-surging-demand-complex-ai-training-data-2026-09-22/",
+        "https://scale.com/blog/rl-environments"
+      ]
+    },
+    {
+      "priority": 5,
+      "candidate": "JANUS.EVIDENCE_PACK_PLUS",
+      "market_need": "Research, due diligence, knowledge work and source-grounded synthesis",
+      "janus_fit": "VERY_HIGH",
+      "current_state": "EXISTING_SPECIFICATION_READY_SKU",
+      "next_gate": "PROMOTE_EXISTING_EVIDENCE_PACK_TO_EXECUTABLE_PUBLIC_ROUTE",
+      "demand_evidence": [
+        "https://openai.com/signals/enterprise-data/",
+        "https://www.deloitte.com/us/en/what-we-do/capabilities/applied-artificial-intelligence/content/state-of-ai-in-the-enterprise.html"
+      ]
+    },
+    {
+      "priority": 6,
+      "candidate": "JANUS.DOC_STRUCT",
+      "market_need": "Document-to-structured-data extraction for invoices, contracts and enterprise records",
+      "janus_fit": "MEDIUM",
+      "current_state": "RECOMMENDED_ONLY",
+      "next_gate": "ADD_DOCUMENT_PARSER_WITH_SCHEMA_VALIDATION_AND_HUMAN_REVIEW_BOUNDARY",
+      "demand_evidence": [
+        "https://www.microsoft.com/en/customers/story/26378-concentrix-microsoft-power-platform"
+      ]
+    },
+    {
+      "priority": 7,
+      "candidate": "JANUS.FRESCO_FORGE",
+      "market_need": "Creative/content generation and provenance-bound visual storytelling",
+      "janus_fit": "VERY_HIGH_UNIQUE_DIFFERENTIATOR",
+      "current_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "next_gate": "ISOLATED_CUSTOMER_INPUT_PLUS_CONTENT_SAFETY_LICENSE_POLICY_PLUS_RETURN_RECEIPT",
+      "role": "DIFFERENTIATION_PRODUCT_NOT_EXPECTED_PRIMARY_VOLUME_DRIVER"
+    }
+  ],
+  "anti_strategy": [
+    "DO_NOT_ADD_GENERIC_CHATBOT_SKUS",
+    "DO_NOT_COMPETE_ON_RAW_SEARCH_PRICE_ALONE",
+    "DO_NOT_LIST_UNBOUNDED_BROWSER_AUTOMATION_AS_LIVE_WITHOUT_AUTHORITY_CONTROLS",
+    "DO_NOT_LIST_OFFENSIVE_SECURITY_EXECUTION_AS_GENERAL_PUBLIC_SERVICE",
+    "DO_NOT_PROMOTE_CATALOG_ENTRY_TO_LIVE_WITHOUT_END_TO_END_RECEIPT"
+  ]
+}
