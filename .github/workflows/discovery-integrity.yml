@@ -27,6 +27,12 @@ on:
       - 'docs/AGENT_DISCOVERY_STRATEGY.md'
       - 'SECURITY.md'
       - 'README.md'
+      - 'tools/validate_web_discovery.py'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search.md'
+      - '.github/ISSUE_TEMPLATE/config.yml'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'index.html'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
@@ -48,6 +54,12 @@ on:
       - 'docs/AGENT_DISCOVERY_STRATEGY.md'
       - 'SECURITY.md'
       - 'README.md'
+      - 'tools/validate_web_discovery.py'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search.md'
+      - '.github/ISSUE_TEMPLATE/config.yml'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'index.html'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
@@ -97,6 +109,9 @@ jobs:
 
       - name: Validate agent acquisition contracts
         run: python tools/validate_agent_acquisition.py
+
+      - name: Validate web discovery surfaces
+        run: python tools/validate_web_discovery.py
 
       - name: Prove Global A2A Registry discovery cannot bypass R1E gates
         env:
