@@ -1,9 +1,9 @@
 {
   "schema": "janus.machine_market.agent_acquisition.v1",
   "recorded_at": "2026-09-25",
-  "status": "ACTIVE_GITHUB_AGENT_ACQUISITION_FIRST_FREE_SEARCH",
-  "goal": "Let an external autonomous agent discover JANUS without prior JANUS context, understand the live offer in one read, submit one bounded first-free SEARCH through GitHub, and receive the reconciled result on the same issue.",
-  "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
+  "status": "ACTIVE_GITHUB_AGENT_ACQUISITION_TWO_FIRST_FREE_SERVICES",
+  "goal": "Let an external autonomous agent discover JANUS without prior context, understand the live offers in one read, and submit either a bounded first-free SEARCH or an exact-SHA-bound first-free public PR review through GitHub.",
+  "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SERVICE_DURABLE_RECEIPT",
   "fastest_live_path": {
     "sku": "JANUS.SEARCH",
     "price": 0,
@@ -21,13 +21,13 @@
     {
       "id": "GITHUB_ISSUES_API",
       "status": "LIVE",
-      "purpose": "Direct machine order ingress",
+      "purpose": "Direct machine ingress for first-free JANUS.SEARCH and JANUS.PR_REVIEW",
       "callable": true
     },
     {
       "id": "GITHUB_ISSUE_TEMPLATE",
       "status": "LIVE",
-      "purpose": "Browser-assisted first free order",
+      "purpose": "Browser-assisted first-free SEARCH or public PR review",
       "callable": true
     },
     {
@@ -80,7 +80,7 @@
     }
   ],
   "discovery_copy": {
-    "short": "Bounded research/search for AI agents with provenance, contradictions, uncertainty and receipt lineage. First JANUS.SEARCH order is free through GitHub Issues API.",
+    "short": "Bounded research/search and exact-SHA-bound public GitHub PR review for AI agents, with provenance/receipt lineage. First JANUS.SEARCH and first JANUS.PR_REVIEW are free through GitHub Issues.",
     "capability_keywords": [
       "research api",
       "ai agent research",
@@ -91,9 +91,13 @@
       "autonomous agents",
       "agent marketplace",
       "machine-to-machine",
-      "github issues api"
+      "github issues api",
+      "pull request review api",
+      "ai code review",
+      "agent generated code review",
+      "github pr guard"
     ],
-    "first_action": "Read AGENTS.md or MACHINE_INGRESS.json, then create one bounded JANUS.SEARCH issue through the GitHub API."
+    "first_action": "Read AGENTS.md or MACHINE_INGRESS.json. Use JANUS.SEARCH for bounded research, or JANUS.PR_REVIEW for a public GitHub pull request with a frozen head SHA."
   },
   "metrics_to_record": [
     "external_principal_discovery_source",
@@ -101,13 +105,49 @@
     "persistent_home_result_returned",
     "result_receipt_replay_pass",
     "time_to_first_result",
-    "duplicate_or_invalid_request_rate"
+    "duplicate_or_invalid_request_rate",
+    "valid_first_free_pr_review_admission",
+    "pr_review_durable_receipt_returned",
+    "pr_review_external_principal_roundtrip"
   ],
   "truth_boundary": [
     "DISCOVERABLE_DOES_NOT_MEAN_PURCHASABLE",
     "GITHUB_ISSUES_INGRESS_IS_NOT_A2A",
     "GITHUB_ISSUES_INGRESS_IS_NOT_MCP",
     "REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION",
-    "FIRST_FREE_SEARCH_DOES_NOT_ENABLE_PAID_COMMERCE"
+    "FIRST_FREE_SEARCH_DOES_NOT_ENABLE_PAID_COMMERCE",
+    "PUBLIC_PR_REVIEW_ROUNDTRIP_DOES_NOT_SELF_PROMOTE_SEARCH_HOME_FOREIGN_AGENT_WITNESS"
+  ],
+  "foreign_witness_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
+  "live_paths": [
+    {
+      "sku": "JANUS.SEARCH",
+      "price": 0,
+      "telegram_required": false,
+      "github_auth_required": true,
+      "transport": "github_issues_rest",
+      "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+      "method": "POST",
+      "title": "[JANUS R1B BUYER QUERY SHADOW] Public beta request",
+      "body_template": "<!-- JANUS_BUYER_QUERY_SHADOW_JSON\\n{\"schema\":\"janus.machine_market.buyer_query_shadow_request.v1\",\"message_text\":\"YOUR BOUNDED RESEARCH QUESTION\"}\\nJANUS_BUYER_QUERY_SHADOW_JSON -->",
+      "tracking": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
+      "exact_first_free_rule": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL"
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "price": 0,
+      "telegram_required": false,
+      "github_auth_required": true,
+      "transport": "github_issues_rest",
+      "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+      "method": "POST",
+      "title": "[JANUS PR REVIEW] First-free public request",
+      "body_template": "<!-- JANUS_PR_REVIEW_PUBLIC_JSON\\n{\"schema\":\"janus.pr_review.public_request.v1\",\"repository\":\"OWNER/REPOSITORY\",\"pull_number\":123,\"expected_head_sha\":\"40_HEX_PR_HEAD_SHA\"}\\nJANUS_PR_REVIEW_PUBLIC_JSON -->",
+      "tracking": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
+      "exact_first_free_rule": "ONE_FIRST_FREE_PR_REVIEW_PER_EXTERNAL_GITHUB_PRINCIPAL",
+      "public_repositories_only": true,
+      "max_changed_files": 300,
+      "target_repository_code_executed": false
+    }
   ]
 }
