@@ -6,6 +6,15 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'tests/test_organ_service_catalog.py'
+      - 'products/JANUS.SWARM_RESEARCH.json'
+      - 'products/JANUS.FUNDAMENTUM_AUDIT.json'
+      - 'products/JANUS.META_REGISTRY_SEARCH.json'
+      - 'products/JANUS.COUSTEAU_SCAN.json'
+      - 'products/JANUS.DEMIURGE_SCOUT.json'
+      - 'products/JANUS.TOPA_HUNT.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'CATALOG.json'
       - 'tests/test_btt_payment_route.py'
       - '.github/ISSUE_TEMPLATE/janus-search-free-beta.md'
       - 'BTT_PAYMENT_ROUTE.json'
@@ -34,6 +43,15 @@ on:
     paths:
       - 'index.html'
       - 'PRICING.json'
+      - 'tests/test_organ_service_catalog.py'
+      - 'products/JANUS.SWARM_RESEARCH.json'
+      - 'products/JANUS.FUNDAMENTUM_AUDIT.json'
+      - 'products/JANUS.META_REGISTRY_SEARCH.json'
+      - 'products/JANUS.COUSTEAU_SCAN.json'
+      - 'products/JANUS.DEMIURGE_SCOUT.json'
+      - 'products/JANUS.TOPA_HUNT.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'CATALOG.json'
       - 'tests/test_btt_payment_route.py'
       - '.github/ISSUE_TEMPLATE/janus-search-free-beta.md'
       - 'BTT_PAYMENT_ROUTE.json'
@@ -74,7 +92,7 @@ jobs:
       - name: Install pytest
         run: python -m pip install --disable-pip-version-check pytest
       - name: Compile contract tests
-        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py tests/test_btt_payment_route.py runtime/paid_search_promotion.py
+        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py tests/test_btt_payment_route.py tests/test_organ_service_catalog.py runtime/paid_search_promotion.py
       - name: Verify public SEARCH beta admission and quotas
         run: PYTHONPATH=. python -m unittest -v tests.test_public_search_beta
       - name: Verify Pages -> Market -> HOME ingress contract
@@ -85,6 +103,8 @@ jobs:
         run: PYTHONPATH=. python -m pytest -q tests/test_paid_search_promotion.py
       - name: Verify BTT discount route remains fail-closed
         run: python -m unittest -v tests.test_btt_payment_route
+      - name: Verify specialist organ catalog remains receipt-gated
+        run: python -m unittest -v tests.test_organ_service_catalog
       - name: Preserve canonical blocked/live commerce boundary
         run: |
           python - <<'PY'
@@ -119,7 +139,7 @@ jobs:
               assert product['machine_purchase'] is False
               assert product['live_gate']['checkout_live'] is False
               assert pricing['status']=='PREVIEW_RATECARD_NOT_LIVE'
-              assert ingress['live_services']['JANUS.SEARCH']['status']=='LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW'
+              assert ingress['live_services']['JANUS.SEARCH']['status']=='LIVE_FIRST_SEARCH_FREE_PLUS_OWNER_SHADOW'
               assert 'PAID SEARCH <b>ARMED · GATED</b>' in html
               print('PAGES_PAID_SEARCH=ARMED_GATE_CLOSED')
           print('PAGES_TO_JANUS_PUBLIC_SEARCH_BETA=WIRED')
