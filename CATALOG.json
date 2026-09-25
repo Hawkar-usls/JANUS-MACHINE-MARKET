@@ -157,6 +157,15 @@
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.AGENT_EVAL.json"
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "title": "JANUS PR Guard",
+      "class": "repository_analysis",
+      "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.PR_REVIEW.json"
     }
   ],
   "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"

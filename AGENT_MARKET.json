@@ -45,7 +45,8 @@
     "owner_shadow_skus": [
       "JANUS.REPO_AUDIT",
       "JANUS.DATASET_SCOUT",
-      "JANUS.AGENT_EVAL"
+      "JANUS.AGENT_EVAL",
+      "JANUS.PR_REVIEW"
     ],
     "ingress": "MACHINE_INGRESS.json",
     "result_transport": "GitHub issue comments + persistent Market receipts",
@@ -137,7 +138,8 @@
     "formal_claim_audit",
     "parallel_swarm_research",
     "provenance_bound_fresco_generation",
-    "agent_trace_evaluation"
+    "agent_trace_evaluation",
+    "pull_request_structural_review"
   ],
   "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json",
   "first_free_offer": {

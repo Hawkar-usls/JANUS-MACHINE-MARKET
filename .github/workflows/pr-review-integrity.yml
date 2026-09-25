@@ -1,0 +1,325 @@
+name: JANUS PR Guard Integrity + Owner Shadow
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/pr_review.py'
+      - 'tests/test_pr_review.py'
+      - 'tests/fixtures/pr_review_*.json'
+      - 'products/JANUS.PR_REVIEW.json'
+      - 'CATALOG.json'
+      - 'PRICING.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'AGENT_MARKET.json'
+      - '.github/workflows/pr-review-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/pr_review.py'
+      - 'tests/test_pr_review.py'
+      - 'tests/fixtures/pr_review_*.json'
+      - 'products/JANUS.PR_REVIEW.json'
+      - 'CATALOG.json'
+      - 'PRICING.json'
+      - 'ORDER_EXECUTION_MATRIX.json'
+      - 'ORGAN_SERVICE_MATRIX.json'
+      - 'AGENT_MARKET.json'
+      - '.github/workflows/pr-review-integrity.yml'
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile PR Guard
+        run: python -m py_compile runtime/pr_review.py tests/test_pr_review.py
+      - name: Run deterministic PR fixtures
+        run: python tests/test_pr_review.py
+      - name: Replay clean fixture
+        run: |
+          python runtime/pr_review.py --snapshot tests/fixtures/pr_review_pass.json --output /tmp/pr-pass.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/pr-pass.json'))
+          assert r['verdict']=='PASS' and r['score_0_100']==100
+          print('PR_GUARD_PASS_REPLAY=PASS')
+          PY
+      - name: Replay adversarial fixture
+        run: |
+          python runtime/pr_review.py --snapshot tests/fixtures/pr_review_fail.json --output /tmp/pr-fail.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/pr-fail.json'))
+          assert r['verdict']=='FAIL'
+          assert r['severity_counts']['high'] >= 3
+          print('PR_GUARD_FAIL_REPLAY=PASS')
+          PY
+
+  owner-shadow:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS PR REVIEW SHADOW]') &&
+      github.event.issue.user.login == github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse frozen owner-shadow request
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/pr-review-live
+          python - <<'PY'
+          import json, os, pathlib, re
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
+          body=str(event['issue'].get('body') or '')
+          begin='<!-- JANUS_PR_REVIEW_SHADOW_JSON'
+          end='JANUS_PR_REVIEW_SHADOW_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('PR_REVIEW_REQUEST_MARKER_MISSING')
+          req=json.loads(body[s+len(begin):e].strip())
+          if req.get('schema') != 'janus.pr_review.shadow_request.v1':
+              raise SystemExit('PR_REVIEW_REQUEST_SCHEMA_INVALID')
+          repo=str(req.get('repository') or '').strip()
+          if re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo) is None:
+              raise SystemExit('PR_REVIEW_REQUEST_REPOSITORY_INVALID')
+          num=req.get('pull_number')
+          if isinstance(num,bool) or not isinstance(num,int) or num < 1:
+              raise SystemExit('PR_REVIEW_REQUEST_PULL_NUMBER_INVALID')
+          head=str(req.get('expected_head_sha') or '')
+          if re.fullmatch(r'[0-9a-f]{40}', head) is None:
+              raise SystemExit('PR_REVIEW_EXPECTED_HEAD_SHA_REQUIRED')
+          req={'schema':req['schema'],'repository':repo,'pull_number':num,'expected_head_sha':head}
+          pathlib.Path('runtime/pr-review-live/request.json').write_text(json.dumps(req,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('PR_REVIEW_REQUEST_FROZEN=PASS')
+          PY
+
+      - name: Fetch read-only public PR snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib, urllib.error, urllib.request
+          req=json.load(open('runtime/pr-review-live/request.json'))
+          repo=req['repository']; number=req['pull_number']
+          base=f'https://api.github.com/repos/{repo}/pulls/{number}'
+          def get(url):
+              headers={'Accept':'application/vnd.github+json','User-Agent':'janus-pr-guard/1.0','X-GitHub-Api-Version':'2022-11-28'}
+              token=os.environ.get('GH_TOKEN','').strip()
+              attempts=[token, ''] if token else ['']
+              last=None
+              for tok in attempts:
+                  h=dict(headers)
+                  if tok: h['Authorization']='Bearer '+tok
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=h),timeout=30) as r:
+                          return json.load(r)
+                  except urllib.error.HTTPError as exc:
+                      last=exc
+                      if exc.code not in (403,404): raise
+              raise last
+          pr=get(base)
+          head=str((pr.get('head') or {}).get('sha') or '')
+          base_sha=str((pr.get('base') or {}).get('sha') or '')
+          if head != req['expected_head_sha']:
+              raise SystemExit(f'PR_REVIEW_HEAD_SHA_DRIFT expected={req["expected_head_sha"]} actual={head}')
+          reported=int(pr.get('changed_files') or 0)
+          if reported > 300:
+              raise SystemExit('PR_REVIEW_CHANGED_FILES_HARD_CAP_EXCEEDED')
+          files=[]
+          for page in range(1,5):
+              batch=get(base+f'/files?per_page=100&page={page}')
+              if not isinstance(batch,list): raise SystemExit('PR_REVIEW_FILES_RESPONSE_INVALID')
+              files.extend(batch)
+              if len(batch)<100: break
+          normalized=[]
+          for row in files[:300]:
+              normalized.append({
+                  'filename':row.get('filename'),
+                  'status':row.get('status'),
+                  'additions':row.get('additions',0),
+                  'deletions':row.get('deletions',0),
+                  'changes':row.get('changes',0),
+                  'patch':row.get('patch'),
+              })
+          snap={
+              'schema':'janus.pr_review.snapshot.v1',
+              'repository':repo,
+              'pull_number':number,
+              'base_sha':base_sha,
+              'head_sha':head,
+              'title':str(pr.get('title') or '')[:500],
+              'draft':bool(pr.get('draft',False)),
+              'additions':int(pr.get('additions') or 0),
+              'deletions':int(pr.get('deletions') or 0),
+              'changed_files_reported':reported,
+              'snapshot_complete':len(normalized)==reported,
+              'files':normalized,
+          }
+          pathlib.Path('runtime/pr-review-live/snapshot.json').write_text(json.dumps(snap,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('PR_REVIEW_PUBLIC_SNAPSHOT=PASS')
+          print('PR_REVIEW_TARGET='+repo+'#'+str(number))
+          print('PR_REVIEW_HEAD_SHA='+head)
+          print('TARGET_REPOSITORY_CODE_EXECUTED=FALSE')
+          PY
+
+      - name: Run deterministic PR Guard
+        run: |
+          set -euo pipefail
+          python runtime/pr_review.py --snapshot runtime/pr-review-live/snapshot.json --output runtime/pr-review-live/result.json
+
+      - name: Persist create-only PR review receipt
+        id: persist
+        env:
+          BUYER_ACTOR: github:${{ github.event.issue.user.login }}
+          SOURCE_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          SOURCE_ISSUE_ID: ${{ github.event.issue.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JANUS PR Guard'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          state="$RUNNER_TEMP/pr-review-market-state"
+          rm -rf "$state"
+          if git ls-remote --exit-code --heads origin janus/market-state >/dev/null 2>&1; then
+            git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+            git worktree add -B janus-pr-review-market-state "$state" origin/janus/market-state
+          else
+            git worktree add --detach "$state" HEAD
+            cd "$state"
+            git switch --orphan janus-pr-review-market-state
+            git rm -rf --ignore-unmatch .
+            cd - >/dev/null
+          fi
+          STATE="$state" python - <<'PY'
+          import hashlib,json,os,pathlib
+          snap=json.load(open('runtime/pr-review-live/snapshot.json'))
+          result=json.load(open('runtime/pr-review-live/result.json'))
+          req=json.load(open('runtime/pr-review-live/request.json'))
+          body={
+            'schema':'janus.machine_market.pr_review_delivery_receipt.v1',
+            'sku':'JANUS.PR_REVIEW',
+            'buyer_actor_id':os.environ['BUYER_ACTOR'],
+            'source_issue_id':int(os.environ['SOURCE_ISSUE_ID']),
+            'source_issue_number':int(os.environ['SOURCE_ISSUE_NUMBER']),
+            'repository':snap['repository'],
+            'pull_number':snap['pull_number'],
+            'base_sha':snap['base_sha'],
+            'head_sha':snap['head_sha'],
+            'expected_head_sha':req['expected_head_sha'],
+            'snapshot_sha256':result['snapshot_sha256'],
+            'result_sha256':result['result_sha256'],
+            'verdict':result['verdict'],
+            'score_0_100':result['score_0_100'],
+            'finding_codes':[x['code'] for x in result['findings']],
+            'snapshot_complete':result['snapshot_complete'],
+            'target_repository_code_executed':False,
+            'repository_write_authorized':False,
+            'external_effect_authorized':False,
+            'money_enabled':False,
+          }
+          enc=json.dumps(body,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+          body['receipt_hash']=hashlib.sha256(enc.encode()).hexdigest()
+          rid='prr-'+body['result_sha256'][:40]
+          body['receipt_id']=rid
+          out=pathlib.Path('runtime/pr-review-live/delivery-receipt.json')
+          out.write_text(json.dumps(body,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          root=pathlib.Path(os.environ['STATE'])/'state/r4-services/pr-review/receipts'
+          root.mkdir(parents=True,exist_ok=True)
+          target=root/(rid+'.json')
+          if target.exists() and target.read_bytes()!=out.read_bytes():
+              raise SystemExit('PR_REVIEW_CREATE_ONLY_RECEIPT_CONFLICT')
+          if not target.exists(): target.write_bytes(out.read_bytes())
+          print('PR_REVIEW_RECEIPT_ID='+rid)
+          PY
+          rid="$(python -c "import json; print(json.load(open('runtime/pr-review-live/delivery-receipt.json'))['receipt_id'])")"
+          cd "$state"
+          git add state/r4-services/pr-review
+          if git diff --cached --quiet; then
+            echo 'PR_REVIEW_STATE_COMMIT=NO_CHANGE_EXACT_RETRY'
+          else
+            git commit -m "Deliver PR review $rid"
+            git push origin HEAD:refs/heads/janus/market-state
+          fi
+          commit="$(git rev-parse HEAD)"
+          cd - >/dev/null
+          echo "receipt_id=$rid" >> "$GITHUB_OUTPUT"
+          echo "market_state_commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - name: Return PR Guard result to source issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RECEIPT_ID: ${{ steps.persist.outputs.receipt_id }}
+          MARKET_STATE_COMMIT: ${{ steps.persist.outputs.market_state_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/pr-review-comment.md"
+          import json,os
+          r=json.load(open('runtime/pr-review-live/result.json'))
+          rec=json.load(open('runtime/pr-review-live/delivery-receipt.json'))
+          print('## JANUS.PR_REVIEW · verified owner-shadow result\n')
+          print(f"- target: `{r['repository']}#{r['pull_number']}`")
+          print(f"- base_sha: `{r['base_sha']}`")
+          print(f"- head_sha: `{r['head_sha']}`")
+          print(f"- verdict: `{r['verdict']}`")
+          print(f"- structural_score: `{r['score_0_100']}`")
+          print(f"- snapshot_complete: `{str(r['snapshot_complete']).lower()}`")
+          print(f"- findings: `{len(r['findings'])}`")
+          print(f"- high/medium/low: `{r['severity_counts']['high']}/{r['severity_counts']['medium']}/{r['severity_counts']['low']}`")
+          print(f"- result_sha256: `{r['result_sha256']}`")
+          print(f"- receipt_id: `{rec['receipt_id']}`")
+          print(f"- receipt_hash: `{rec['receipt_hash']}`")
+          print(f"- market_state_commit: `{os.environ['MARKET_STATE_COMMIT']}`")
+          codes=rec['finding_codes']
+          print(f"- finding_codes: `{','.join(codes) if codes else 'NONE'}`")
+          print('- target_repository_code_executed: `false`')
+          print('- money_enabled: `false`')
+          print('\nThis is a bounded structural/diff risk audit, not a merge approval, exploitability proof, security certification or full semantic correctness proof.')
+          print(f"\n<!-- PR_REVIEW_RETURNED:{rec['receipt_id']} -->")
+          PY
+          marker="PR_REVIEW_RETURNED:${RECEIPT_ID}"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" --paginate --jq '.[].body' || true)"
+          if printf '%s' "$existing" | grep -Fq "$marker"; then
+            echo 'PR_REVIEW_COMMENT_ALREADY_PRESENT=TRUE'
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/pr-review-comment.md")" >/dev/null
+            echo 'PR_REVIEW_RESULT_RETURNED=PASS'
+          fi
+
+      - name: Upload owner-shadow witness
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-pr-review-${{ steps.persist.outputs.receipt_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime/pr-review-live/
+          if-no-files-found: error

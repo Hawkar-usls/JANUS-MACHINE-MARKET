@@ -1,0 +1,81 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.PR_REVIEW",
+  "title": "JANUS PR Guard",
+  "class": "repository_analysis",
+  "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Bounded GitHub pull-request structural and policy-risk review bound to exact base/head commit SHAs, returning machine-readable findings and a durable receipt without executing target repository code.",
+  "request": {
+    "mode": "OWNER_SHADOW_PUBLIC_REPOSITORY_PR_ONLY",
+    "schema": "janus.pr_review.shadow_request.v1",
+    "input_fields": [
+      "repository",
+      "pull_number",
+      "expected_head_sha"
+    ],
+    "max_changed_files": 300,
+    "target_repository_code_execution": false
+  },
+  "delivery": {
+    "format": "application/json",
+    "result_schema": "janus.pr_review.result.v1",
+    "receipt_schema": "janus.machine_market.pr_review_delivery_receipt.v1",
+    "outputs": [
+      "verdict",
+      "score_0_100",
+      "severity_counts",
+      "findings",
+      "snapshot_sha256",
+      "result_sha256",
+      "durable_receipt"
+    ]
+  },
+  "checks": [
+    "EXACT_BASE_HEAD_SHA_BINDING",
+    "SNAPSHOT_COMPLETENESS",
+    "CHANGESET_BREADTH",
+    "GITHUB_WORKFLOW_CHANGE",
+    "PULL_REQUEST_TARGET_INTRODUCTION",
+    "WORKFLOW_WRITE_PERMISSION_ADDITION",
+    "WORKFLOW_SECRET_REFERENCE_ADDITION",
+    "REMOTE_SCRIPT_PIPE_TO_SHELL",
+    "ACTION_FULL_SHA_PINNING",
+    "DEPENDENCY_MANIFEST_WITHOUT_LOCKFILE_CHANGE",
+    "SOURCE_CHANGE_WITHOUT_TEST_FILE_CHANGE",
+    "TEST_FILE_REMOVAL",
+    "GOVERNANCE_FILE_CHANGE_OR_REMOVAL",
+    "PATCH_COVERAGE"
+  ],
+  "pricing": {
+    "mode": "REFERENCE_ONLY_NOT_LIVE",
+    "billing_unit": "pull_request_review",
+    "preview_unit_usdt_micros": 250000,
+    "payable_quote": false
+  },
+  "execution": {
+    "executor": "runtime/pr_review.py",
+    "workflow": ".github/workflows/pr-review-integrity.yml",
+    "owner_shadow": true,
+    "public_live": false,
+    "paid_execution": false,
+    "target_repository_code_executed": false,
+    "blocker": "OWNER_SHADOW_LIVE_WITNESS_THEN_PUBLIC_QUOTA_PRIVACY_POLICY_AND_FOREIGN_PRINCIPAL_RECEIPT"
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "merge_authority": false,
+    "repository_write_authority": false,
+    "target_code_execution_authority": false,
+    "security_certification": false,
+    "semantic_correctness_authority": false
+  },
+  "truth_boundary": [
+    "STRUCTURAL_PR_REVIEW != FULL_SEMANTIC_CORRECTNESS_PROOF",
+    "PASS != MERGE_APPROVAL",
+    "FAIL != EXPLOITABILITY_PROOF",
+    "REVIEW != SECURITY_CERTIFICATION",
+    "PAYMENT != EXECUTION_AUTHORITY"
+  ]
+}
