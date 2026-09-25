@@ -1,0 +1,97 @@
+{
+  "schema": "janus.machine_market.agent_framework_compatibility.v1",
+  "recorded_at": "2026-09-25",
+  "status": "TRANSPORT_COMPATIBILITY_NOT_NATIVE_SDK_CERTIFICATION",
+  "live_transport": {
+    "kind": "github_issues_rest",
+    "create_issue": "POST https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+    "read_result": "GET https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
+    "telegram_required": false,
+    "first_free_sku": "JANUS.SEARCH"
+  },
+  "compatibility_rule": "Any agent runtime that can make authenticated GitHub REST calls (or use a GitHub connector capable of creating issues and reading comments) can use the current JANUS.SEARCH transport. This is transport compatibility, not a claim of a native JANUS integration or certification by the named framework.",
+  "discovery_targets": [
+    {
+      "name": "OpenAI Agents SDK",
+      "search_terms": [
+        "OpenAI Agents SDK research tool",
+        "OpenAI agent GitHub tool",
+        "agent research API"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "LangGraph / LangChain agents",
+      "search_terms": [
+        "LangGraph research API",
+        "LangChain agent GitHub tool",
+        "agent provenance search"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "CrewAI",
+      "search_terms": [
+        "CrewAI research tool",
+        "CrewAI GitHub integration",
+        "multi-agent research API"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "AutoGen",
+      "search_terms": [
+        "AutoGen research agent tool",
+        "AutoGen GitHub API",
+        "agent evidence search"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "Semantic Kernel",
+      "search_terms": [
+        "Semantic Kernel research plugin",
+        "agent GitHub REST tool"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "Pydantic AI",
+      "search_terms": [
+        "Pydantic AI research tool",
+        "agent GitHub API"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "OpenHands / coding agents",
+      "search_terms": [
+        "coding agent research service",
+        "GitHub agent research issue"
+      ],
+      "native_integration": false
+    },
+    {
+      "name": "Generic MCP-capable agents",
+      "search_terms": [
+        "research agent service",
+        "provenance search service"
+      ],
+      "native_integration": false,
+      "notes": "Use the current GitHub transport until JANUS has a live MCP runtime."
+    }
+  ],
+  "machine_entrypoints": [
+    "AGENTS.md",
+    "MACHINE_INGRESS.json",
+    "apis.json",
+    "discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+    "docs/AGENT_INTEGRATION_RECIPES.md"
+  ],
+  "prohibited_claims": [
+    "NATIVE_FRAMEWORK_PLUGIN_EXISTS",
+    "FRAMEWORK_VENDOR_CERTIFIED",
+    "LIVE_MCP_RUNTIME",
+    "LIVE_A2A_RUNTIME"
+  ]
+}
