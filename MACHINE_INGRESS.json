@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.machine_ingress.v1",
-  "status": "LIVE_BOUNDED_GITHUB_API_AND_PUBLIC_SEARCH_ISSUE_INGRESS",
-  "purpose": "Machine-native and GitHub-authenticated human task submission into the already running JANUS HOME without granting payment or command authority.",
+  "status": "LIVE_BOUNDED_GITHUB_API_SEARCH_AND_PR_REVIEW_INGRESS",
+  "purpose": "Machine-native and GitHub-authenticated human task submission for bounded JANUS.SEARCH and JANUS.PR_REVIEW without granting payment, command, merge, repository-write or target-code-execution authority.",
   "transport": {
     "type": "github_issues_rest",
     "method": "POST",
@@ -61,10 +61,35 @@
       "request_schema": "janus.machine_market.dataset_scout_pages_request.v1",
       "lane": "PERSISTENT_JANUS_DATASET_SCOUT",
       "status": "LIVE_BOUNDED_OWNER_SHADOW_NOT_PUBLIC_YET"
+    },
+    "JANUS.PR_REVIEW": {
+      "title_prefix": "[JANUS PR REVIEW]",
+      "marker": "JANUS_PR_REVIEW_PUBLIC_JSON",
+      "request_schema": "janus.pr_review.public_request.v1",
+      "lane": "PUBLIC_GITHUB_PR_STRUCTURAL_REVIEW",
+      "status": "LIVE_FIRST_REVIEW_FREE_EXTERNAL_ROUNDTRIP_PENDING",
+      "external_public_beta": {
+        "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
+        "accepted_event": "issues.opened",
+        "public_repositories_only": true,
+        "max_changed_files": 300,
+        "global_daily_limit": 10,
+        "first_free_per_external_principal": 1,
+        "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
+        "second_new_issue_is_free": false,
+        "exact_retry_same_issue_executes_again": false,
+        "admission_policy": "runtime/public_pr_review_beta.py",
+        "workflow": ".github/workflows/pr-review-public-beta.yml",
+        "issue_template": ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md",
+        "issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md",
+        "target_repository_code_executed": false,
+        "merge_authority": false,
+        "security_certification": false
+      }
     }
   },
   "current_commerce_state": {
-    "price_mode": "ONE_FIRST_FREE_PUBLIC_SEARCH_PER_EXTERNAL_PRINCIPAL_SPECIALIST_ORGANS_CATALOGUED_NOT_LIVE",
+    "price_mode": "ONE_FIRST_FREE_PUBLIC_SEARCH_AND_ONE_FIRST_FREE_PUBLIC_PR_REVIEW_PER_EXTERNAL_PRINCIPAL_SPECIALIST_ORGANS_CATALOGUED_MOSTLY_GATED",
     "money_enabled": false,
     "autonomous_purchase_declared": false,
     "payment_required": false,
@@ -74,21 +99,22 @@
     "compute": "CLOSED"
   },
   "browser_ingress": {
-    "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_BETA_NO_EMBEDDED_CREDENTIALS",
+    "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_AND_PR_REVIEW_BETA_NO_EMBEDDED_CREDENTIALS",
     "public_now": [
-      "JANUS.SEARCH one first free order per external GitHub principal via direct issue template",
-      "JANUS.SEARCH one first free order via GitHub Issues API"
+      "JANUS.SEARCH one first free order per external GitHub principal via direct issue template or GitHub Issues API",
+      "JANUS.PR_REVIEW one first free bounded review of a public GitHub pull request per external GitHub principal"
     ],
     "owner_shadow_only": [
       "JANUS.REPO_AUDIT",
       "JANUS.DATASET_SCOUT"
     ],
-    "reason": "Static GitHub Pages must not embed a repository write credential. GitHub-authenticated issue creation is the current trusted browser bridge for the zero-price SEARCH beta.",
+    "reason": "Static GitHub Pages must not embed repository-write credentials. GitHub-authenticated issue creation is the trusted browser bridge for the zero-price SEARCH and PR_REVIEW betas; PR_REVIEW fetches only public GitHub metadata/diffs and never executes target repository code.",
     "forbidden": [
       "embedding PAT or GitHub token in Pages JavaScript",
       "treating unauthenticated browser POST as authority",
       "turning payment into execution authority",
-      "opening public REPO_AUDIT or DATASET_SCOUT before SEARCH external roundtrip evidence"
+      "executing target repository code during JANUS.PR_REVIEW",
+      "promoting owner/self/synthetic traffic to FOREIGN_AGENT_WITNESS"
     ],
     "specialist_router_prepared": [
       "JANUS.TOPA_HUNT",
@@ -96,7 +122,9 @@
       "JANUS.COUSTEAU_SCAN",
       "JANUS.META_REGISTRY_SEARCH",
       "JANUS.FUNDAMENTUM_AUDIT",
-      "JANUS.SWARM_RESEARCH"
+      "JANUS.SWARM_RESEARCH",
+      "JANUS.AGENT_EVAL",
+      "JANUS.FRESCO_FORGE"
     ]
   },
   "proof": {
@@ -120,6 +148,16 @@
     },
     "public_search_beta": {
       "admission_contract_prepared": true,
+      "external_roundtrip_observed": false,
+      "foreign_agent_witness": false
+    },
+    "public_pr_review_beta": {
+      "owner_shadow_roundtrip_observed": true,
+      "owner_shadow_source_issue": 70,
+      "owner_shadow_target_pull_request": 69,
+      "owner_shadow_result_sha256": "71beea06edf7733a998053ff9c42d05fae6532c0410d314264a0149cd318acfe",
+      "owner_shadow_receipt_hash": "07c7a468cde26112f695e7f72afa064ef21ccd54573929365fe57a9af6c9b5bf",
+      "owner_shadow_market_state_commit": "f4d1233d41b5ded8069781bdb4902c0a89474c3a",
       "external_roundtrip_observed": false,
       "foreign_agent_witness": false
     }

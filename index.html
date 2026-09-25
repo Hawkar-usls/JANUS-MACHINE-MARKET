@@ -14,7 +14,10 @@
   <link rel="alternate" type="application/json" href="AGENT_MARKET.json">
   <link rel="alternate" type="application/json" href="GM_SHOP.json">
   <link rel="alternate" type="application/json" href="PRICING.json">
-  <link rel="alternate" type="application/json" href="MACHINE_INGRESS.json" title="Live machine ingress">\n  <link rel="alternate" type="application/json" href="apis.json" title="APIs.json discovery index">\n  <link rel="alternate" type="application/json" href="discovery/GITHUB_ISSUES_INGRESS.openapi.json" title="Live GitHub ingress OpenAPI">
+  <link rel="alternate" type="application/json" href="MACHINE_INGRESS.json" title="Live machine ingress">
+  <link rel="alternate" type="application/json" href="apis.json" title="APIs.json discovery index">
+  <link rel="alternate" type="application/json" href="discovery/GITHUB_ISSUES_INGRESS.openapi.json" title="Live JANUS.SEARCH GitHub ingress OpenAPI">
+  <link rel="alternate" type="application/json" href="discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json" title="Live JANUS.PR_REVIEW GitHub ingress OpenAPI">
   <link rel="alternate" type="application/json" href=".well-known/agent-market.json" title="Agent discovery pointer">
   <link rel="alternate" type="text/markdown" href="AGENTS.md" title="Autonomous agent quickstart">
   <link rel="alternate" type="text/plain" href="llms.txt" title="LLM crawler index">
@@ -34,7 +37,8 @@
       <button class="nav-link" data-view="machine">MACHINE SURFACES</button>
       <button class="nav-link" data-view="status">STATUS</button>
     </nav>
-    <a class="beacon" href="agents/">FOR AGENTS ↗</a>\n    <a class="beacon" href="BEACON.json">BEACON.json ↗</a>
+    <a class="beacon" href="agents/">FOR AGENTS ↗</a>
+    <a class="beacon" href="BEACON.json">BEACON.json ↗</a>
   </header>
 
   <main class="shell">
@@ -51,7 +55,8 @@
           <div id="recommendation" class="recommendation" hidden></div>
           <div class="hero-actions">
             <a class="gold-btn" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md">TRY JANUS.SEARCH FREE · FIRST ORDER ↗</a>
-            <span class="micro">Exactly one first free SEARCH order per external GitHub principal · GitHub sign-in required</span>
+            <a class="tiny-btn" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md">REVIEW A PUBLIC PR FREE ↗</a>
+            <span class="micro">One first free SEARCH + one first free public PR review per external GitHub principal · GitHub sign-in required</span>
           </div>
         </div>
         <div class="hero-glyph" aria-hidden="true">
@@ -64,7 +69,8 @@
 
       <div class="truthbar" id="truthbar">
         <span class="truth live">DISCOVERY <b>LIVE</b></span>
-        <span class="truth live">PUBLIC SEARCH <b>LIVE</b></span>
+        <span class="truth live public-search-beta">PUBLIC SEARCH <b>LIVE</b></span>
+        <span class="truth live public-pr-review-beta">PUBLIC PR REVIEW <b>LIVE</b></span>
         <span class="truth prep">PAID SEARCH <b>ARMED · GATED</b></span>
         <span class="truth prep">A2A <b>PREPARED</b></span>
         <span class="truth prep">MCP <b>PREPARED</b></span>
@@ -86,14 +92,14 @@
           <div class="loadout-head"><div><p class="eyebrow">YOUR INVENTORY</p><h2>Loadout</h2></div><button id="clearLoadout" class="tiny-btn">CLEAR</button></div>
           <div id="loadoutList" class="loadout-list empty">Add services from the catalog.</div>
           <div class="quote-lines">
-            <div><span>Mode</span><b>PUBLIC + PAID SEARCH</b></div>
+            <div><span>Mode</span><b>PUBLIC SEARCH + PR REVIEW</b></div>
             <div><span>JANUS.SEARCH FAST</span><b>0.050000 USDT</b></div>
             <div><span>BTT / TRON route</span><b>50% OFF · GATED</b></div>
             <div><span>Paid checkout</span><b class="amber">ARMED · WITNESS GATE</b></div>
             <div><span>Autonomous purchase</span><b>OFF UNTIL GATE</b></div>
           </div>
           <button id="reviewTrade" class="gold-btn wide">REVIEW TRADE</button>
-          <p class="micro">The paid SEARCH transport, invoice, exact Ethereum-USDT observer and persistent HOME delivery path are armed. A BTT (TRC-20 / TRON) route is declared at 50% off the USDT reference value, but its oracle/observer and the global money gate are still closed. <b>Do not send USDT or BTT without a live invoice for your exact request.</b></p>
+          <p class="micro">Public first-free SEARCH and public first-free PR REVIEW are live. The paid SEARCH transport, invoice, exact Ethereum-USDT observer and persistent HOME delivery path are armed. A BTT (TRC-20 / TRON) route is declared at 50% off the USDT reference value, but its oracle/observer and the global money gate are still closed. <b>Do not send USDT or BTT without a live invoice for your exact request.</b></p>
           <a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">REQUEST PAID SEARCH / GATE CHECK ↗</a>
         </aside>
       </div>
@@ -184,7 +190,7 @@
         <section><h3>JANUS</h3><div class="janus-checks"><span>SKU / SCOPE <b>✓</b></span><span>POLICY BOUNDARY <b>✓</b></span><span>QUOTE <b>PREVIEW</b></span><span>EXECUTION AUTHORITY <b>NOT GRANTED</b></span></div><div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WITNESS GATE PENDING</b></div></section>
       </div>
       <div class="trade-rule">The browser freezes a deterministic quote preview. A payable invoice is issued only by the gated JANUS Paid SEARCH Checkout for the exact external request; payment still does not equal command or execution authority.</div>
-      <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SEARCH</button><a class="gold-btn" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">REQUEST PAID SEARCH / GATE CHECK ↗</a></div>
+      <div class="trade-actions"><button id="copyShadow" class="tiny-btn">COPY SHADOW REQUEST</button><button id="openShadow" class="gold-btn">OPEN ZERO-PRICE SERVICE</button><a class="gold-btn" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">REQUEST PAID SEARCH / GATE CHECK ↗</a></div>
     </div>
   </div>
 

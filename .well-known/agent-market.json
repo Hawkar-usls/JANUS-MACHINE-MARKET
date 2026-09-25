@@ -44,6 +44,39 @@
     "method": "POST",
     "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
     "github_auth_required": true,
-    "request_contract": "MACHINE_INGRESS.json"
-  }
+    "request_contract": "MACHINE_INGRESS.json",
+    "note": "JANUS.SEARCH remains the fastest general-purpose entrypoint; JANUS.PR_REVIEW is separately live for public GitHub pull requests."
+  },
+  "first_free_offers": [
+    {
+      "sku": "JANUS.SEARCH",
+      "amount": 1,
+      "price": 0,
+      "principal_model": "external GitHub principal",
+      "direct_issue_template": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
+      "second_new_order_free": false
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "amount": 1,
+      "price": 0,
+      "principal_model": "external GitHub principal",
+      "direct_issue_template": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md",
+      "public_repositories_only": true,
+      "max_changed_files": 300,
+      "second_new_order_free": false
+    }
+  ],
+  "public_live_services": [
+    {
+      "sku": "JANUS.SEARCH",
+      "transport": "github_issues_rest",
+      "request_contract": "MACHINE_INGRESS.json"
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "transport": "github_issues_rest",
+      "request_contract": "discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json"
+    }
+  ]
 }

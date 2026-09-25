@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -29,7 +29,8 @@
       "READ_INPUT_OUTPUT_SCHEMAS",
       "DISCOVER_JANUS_VIA_GLOBAL_A2A_REGISTRY_AFTER_LISTING",
       "USE_PUBLIC_ZERO_PRICE_JANUS_SEARCH_INGRESS",
-      "PREPARE_BOUNDED_REQUEST"
+      "PREPARE_BOUNDED_REQUEST",
+      "USE_PUBLIC_ZERO_PRICE_JANUS_PR_REVIEW_INGRESS"
     ],
     "not_yet_authorized": [
       "SEND_UNSOLICITED_PAYMENT",
@@ -46,10 +47,31 @@
       "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
       "request_contract": "MACHINE_INGRESS.json",
       "quickstart": "AGENTS.md"
-    }
+    },
+    "primary_live_actions": [
+      {
+        "action": "CREATE_FIRST_FREE_JANUS_SEARCH_GITHUB_ISSUE",
+        "telegram_required": false,
+        "method": "POST",
+        "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+        "request_contract": "MACHINE_INGRESS.json",
+        "quickstart": "AGENTS.md"
+      },
+      {
+        "action": "CREATE_FIRST_FREE_JANUS_PR_REVIEW_GITHUB_ISSUE",
+        "telegram_required": false,
+        "method": "POST",
+        "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+        "request_contract": "discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json",
+        "quickstart": "AGENTS.md",
+        "public_repositories_only": true
+      }
+    ]
   },
   "priority_skus": [
     "JANUS.SEARCH",
+    "JANUS.PR_REVIEW",
+    "JANUS.AGENT_EVAL",
     "JANUS.DATASET_SCOUT",
     "JANUS.EVIDENCE_PACK",
     "JANUS.ARCHIVE_SCAN",
@@ -110,13 +132,18 @@
   "discovery_surfaces": [
     {
       "id": "GITHUB_ISSUES_API",
-      "status": "LIVE_FIRST_FREE_JANUS_SEARCH",
-      "purpose": "Machine-native public bounded SEARCH ingress",
+      "status": "LIVE_FIRST_FREE_SEARCH_AND_PR_REVIEW",
+      "purpose": "Machine-native public bounded SEARCH and PR_REVIEW ingress",
       "method": "POST",
       "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
       "authentication": "CALLER_SUPPLIED_GITHUB_CREDENTIAL",
       "telegram_required": false,
-      "contract": "MACHINE_INGRESS.json"
+      "contract": "MACHINE_INGRESS.json",
+      "contracts": [
+        "MACHINE_INGRESS.json",
+        "discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+        "discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json"
+      ]
     },
     {
       "id": "JANUS_NATIVE",
@@ -209,5 +236,6 @@
     "MCP_REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION_AUTHORITY",
     "MCP_SELF_REPORTED_IDENTITY_DOES_NOT_PROVE_EXTERNAL_PRINCIPAL"
   ],
-  "next_activation_gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT"
+  "next_activation_gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
+  "next_product_validation_gate": "FIRST_REAL_EXTERNAL_GITHUB_PRINCIPAL_PR_REVIEW_DURABLE_RECEIPT"
 }

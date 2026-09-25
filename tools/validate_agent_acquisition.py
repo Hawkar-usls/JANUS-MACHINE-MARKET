@@ -27,6 +27,8 @@ pointer = load(".well-known/agent-market.json")
 agent = load("AGENT_MARKET.json")
 commerce = load("COMMERCE_READINESS.json")
 witness = load("FOREIGN_AGENT_WITNESS.json")
+ingress = load("MACHINE_INGRESS.json")
+public_beta = load("PUBLIC_SERVICE_BETA.json")
 skill_index = load(".well-known/agent-skills/index.json")
 skill_index_mirror = load("skills/index.json")
 
@@ -96,6 +98,18 @@ require(public_live == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "PUBLIC_LIVE_SKU_DRI
 offers = {x.get("sku"): x for x in (agent.get("public_first_free_offers") or [])}
 require(set(offers) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "PUBLIC_FIRST_FREE_OFFERS_DRIFT")
 require(offers["JANUS.PR_REVIEW"].get("public_repositories_only") is True, "PR_REVIEW_PUBLIC_ONLY_DRIFT")
+ingress_live = ingress.get("live_services") or {}
+require("JANUS.SEARCH" in ingress_live and "JANUS.PR_REVIEW" in ingress_live, "MACHINE_INGRESS_PUBLIC_SERVICE_SET_DRIFT")
+require(str((ingress_live.get("JANUS.SEARCH") or {}).get("status", "")).startswith("LIVE_FIRST_SEARCH_FREE"), "MACHINE_INGRESS_SEARCH_STATUS_DRIFT")
+require(str((ingress_live.get("JANUS.PR_REVIEW") or {}).get("status", "")).startswith("LIVE_FIRST_REVIEW_FREE"), "MACHINE_INGRESS_PR_REVIEW_STATUS_DRIFT")
+beta_services = public_beta.get("public_services") or {}
+require(set(beta_services) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "PUBLIC_SERVICE_BETA_SET_DRIFT")
+require((beta_services["JANUS.PR_REVIEW"] or {}).get("target_repository_code_executed") is False, "PR_REVIEW_TARGET_CODE_EXECUTION_DRIFT")
+pointer_offers = {x.get("sku"): x for x in (pointer.get("first_free_offers") or [])}
+require(set(pointer_offers) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "WELL_KNOWN_FIRST_FREE_OFFERS_DRIFT")
+live_paths = {x.get("sku"): x for x in (acq.get("live_paths") or [])}
+require(set(live_paths) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "ACQUISITION_LIVE_PATH_SET_DRIFT")
+require(live_paths["JANUS.PR_REVIEW"].get("target_repository_code_executed") is False, "ACQUISITION_PR_REVIEW_EXECUTION_DRIFT")
 require((ROOT / ".github/workflows/pr-review-public-beta.yml").is_file(), "PR_REVIEW_PUBLIC_WORKFLOW_MISSING")
 require((ROOT / ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md").is_file(), "PR_REVIEW_PUBLIC_TEMPLATE_MISSING")
 require(commerce.get("money_enabled") is False, "ACQUISITION_MUST_NOT_ENABLE_MONEY")

@@ -11,7 +11,19 @@
       marker: 'JANUS_BUYER_QUERY_SHADOW_JSON',
       schema: 'janus.machine_market.buyer_query_shadow_request.v1',
       lane: 'PERSISTENT_JANUS_CONVERSATION',
-      publicBeta: true
+      publicBeta: true,
+      publicRule: 'Each external GitHub principal gets exactly one first free bounded JANUS.SEARCH order.'
+    },
+    'JANUS.PR_REVIEW': {
+      label: 'JANUS.PR_REVIEW',
+      titlePrefix: '[JANUS PR REVIEW]',
+      exactTitle: '[JANUS PR REVIEW] First-free public request',
+      marker: 'JANUS_PR_REVIEW_PUBLIC_JSON',
+      schema: 'janus.pr_review.public_request.v1',
+      lane: 'PUBLIC_GITHUB_PR_STRUCTURAL_REVIEW',
+      publicBeta: true,
+      directPublic: true,
+      publicRule: 'Each external GitHub principal gets exactly one first free review of a public GitHub pull request. Target repository code is never executed.'
     },
     'JANUS.REPO_AUDIT': {
       label: 'JANUS.REPO_AUDIT',
@@ -71,6 +83,29 @@
     return match ? `${match[1]}/${match[2]}` : '';
   }
 
+  function normalizePullRequest(value) {
+    let text = String(value || '').trim();
+    if (!text) return null;
+    let m = text.match(/^https?:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/pull\/(\d+)(?:[/?#].*)?$/i);
+    if (!m) m = text.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)#(\d+)$/);
+    if (!m) return null;
+    return { repository: `${m[1]}/${m[2]}`, pull_number: Number(m[3]) };
+  }
+
+  function buildPRReviewRequest(item) {
+    let target = normalizePullRequest(q('#needInput')?.value || '');
+    if (!target) target = normalizePullRequest(window.prompt('Public GitHub PR URL or owner/repo#number', 'https://github.com/OWNER/REPOSITORY/pull/123') || '');
+    if (!target) return { error: 'PUBLIC_PR_TARGET_REQUIRED' };
+    const expected = String(window.prompt('Exact current PR head SHA (40 lowercase hex)', '') || '').trim().toLowerCase();
+    if (!/^[0-9a-f]{40}$/.test(expected)) return { error: 'PR_HEAD_SHA_REQUIRED' };
+    return {
+      schema: LIVE_HOME_SERVICES['JANUS.PR_REVIEW'].schema,
+      repository: target.repository,
+      pull_number: target.pull_number,
+      expected_head_sha: expected
+    };
+  }
+
   function buildSearchRequest(item) {
     const message = needText();
     if (!message) return { error: 'TASK_TEXT_REQUIRED' };
@@ -128,6 +163,7 @@
   function buildRequest(item) {
     if (!item) return null;
     if (item.sku === 'JANUS.SEARCH') return buildSearchRequest(item);
+    if (item.sku === 'JANUS.PR_REVIEW') return buildPRReviewRequest(item);
     if (item.sku === 'JANUS.REPO_AUDIT') return buildRepoAuditRequest(item);
     if (item.sku === 'JANUS.DATASET_SCOUT') return buildDatasetScoutRequest(item);
     return null;
@@ -136,6 +172,14 @@
   function canonicalPayloadForWorkflow(item, request) {
     // The issue-side adapters deliberately accept only a bounded subset. Extra
     // Pages metadata is stripped here instead of asking HOME to trust UI fields.
+    if (item.sku === 'JANUS.PR_REVIEW') {
+      return {
+        schema: request.schema,
+        repository: request.repository,
+        pull_number: request.pull_number,
+        expected_head_sha: request.expected_head_sha
+      };
+    }
     if (item.sku === 'JANUS.REPO_AUDIT') {
       return {
         repository: request.repository,
@@ -164,15 +208,18 @@
     const svc = LIVE_HOME_SERVICES[item.sku];
     const payload = canonicalPayloadForWorkflow(item, request);
     const ingressNote = svc.publicBeta
-      ? 'JANUS.SEARCH offers exactly one first free order per external GitHub principal. Requests are server-normalized to one turn, 4 KB input / 6 KB output before entering the HOME outbox; exact retry of the same immutable issue is not a second order. Repository-owner requests continue through the existing owner-shadow contract.'
+      ? svc.publicRule
       : 'This service currently uses the repository-owner shadow ingress. It is not yet open as a public service.';
+    const route = item.sku === 'JANUS.PR_REVIEW'
+      ? '`Pages -> Market issue -> public-beta admission -> anonymous public GitHub PR snapshot -> deterministic PR Guard -> create-only Market receipt -> this issue`'
+      : '`Pages -> Market issue -> create-only Market outbox -> credentialless HOME pull -> Activator -> persistent JANUS organ -> HOME response -> credentialless Market reconcile -> this issue`';
     return [
-      `## JANUS MACHINE MARKET · ${svc.label} task handoff to the running JANUS`,
+      `## JANUS MACHINE MARKET · ${svc.label} task handoff`,
       '',
       ingressNote,
       '',
       'Route:',
-      '`Pages -> Market issue -> create-only Market outbox -> credentialless HOME pull -> Activator -> persistent JANUS organ -> HOME response -> credentialless Market reconcile -> this issue`',
+      route,
       '',
       `- service: \`${svc.label}\``,
       `- lane: \`${svc.lane}\``,
@@ -182,7 +229,9 @@
       '- money_enabled: `false`',
       '- command_authority_granted: `false`',
       '- external_effect_authorized: `false`',
-      `- HOME repository: \`${HOME_REPOSITORY}\``,
+      ...(item.sku === 'JANUS.PR_REVIEW'
+        ? ['- target_repository_code_executed: `false`', '- merge_authority: `false`', '- security_certification: `false`']
+        : [`- HOME repository: \`${HOME_REPOSITORY}\``]),
       '',
       `<!-- ${svc.marker}`,
       JSON.stringify(payload, null, 2),
@@ -201,7 +250,7 @@
 
   async function copyJanusTask() {
     const selected = validateSingleLiveItem();
-    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
+    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.PR_REVIEW, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
     if (selected.error === 'MULTI_SERVICE_NOT_YET_ATOMIC') return alert('For the live R1 contour, submit one executable service per trade. Multi-SKU atomic orchestration is not admitted yet.');
     const request = buildRequest(selected.item);
     if (!request || request.error) return alert('Complete the task parameters first.');
@@ -212,13 +261,13 @@
 
   function openJanusTask() {
     const selected = validateSingleLiveItem();
-    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
+    if (selected.error === 'NO_LIVE_HOME_SERVICE') return alert('Add JANUS.SEARCH, JANUS.PR_REVIEW, JANUS.REPO_AUDIT, or JANUS.DATASET_SCOUT to the loadout first.');
     if (selected.error === 'MULTI_SERVICE_NOT_YET_ATOMIC') return alert('For the live R1 contour, submit one executable service per trade. Multi-SKU atomic orchestration is not admitted yet.');
     const item = selected.item;
     const request = buildRequest(item);
     if (!request || request.error) return alert('Complete the task parameters first.');
     const svc = LIVE_HOME_SERVICES[item.sku];
-    const title = `${svc.titlePrefix} Pages Market task`;
+    const title = svc.exactTitle || `${svc.titlePrefix} Pages Market task`;
     const url = `https://github.com/${MARKET_REPOSITORY}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(issueBody(item, request))}`;
     try { recordActivity('JANUS_TASK', `${item.sku} persistent HOME task issue composer opened`, { sku: item.sku }); } catch (_) {}
     window.open(url, '_blank', 'noopener');
@@ -252,7 +301,10 @@
         ? `SEND ${item.sku} · FIRST ORDER FREE`
         : `SEND ${item.sku} · OWNER SHADOW`;
       primary.onclick = openJanusTask;
-      if (rule && svc.publicBeta) rule.innerHTML = `<b>FIRST ORDER FREE:</b> each external GitHub principal gets one bounded JANUS.SEARCH order at price 0. The Market writes a create-only packet, persistent JANUS HOME answers it, and Market returns the verified response to the same issue. A second new SEARCH order is not free; command authority and external effects remain disabled.`;
+      if (rule && svc.publicBeta) {
+        if (item.sku === 'JANUS.PR_REVIEW') rule.innerHTML = '<b>FIRST PR REVIEW FREE:</b> each external GitHub principal gets one bounded review of a public GitHub PR at price 0. The request freezes the exact head SHA; JANUS fetches only public PR metadata/diff, executes no target code, writes a durable receipt, and returns the result to the same issue.';
+        else rule.innerHTML = '<b>FIRST SEARCH FREE:</b> each external GitHub principal gets one bounded JANUS.SEARCH order at price 0. The Market writes a create-only packet, persistent JANUS HOME answers it, and Market returns the verified response to the same issue. A second new SEARCH order is not free; command authority and external effects remain disabled.';
+      }
       else if (rule) rule.innerHTML = `<b>OWNER SHADOW:</b> ${item.sku} uses the proven Market -> persistent JANUS HOME route but is not open to external requesters yet.`;
     } else if (items.length > 1) {
       primary.textContent = 'SPLIT LIVE SERVICES INTO SEPARATE TASKS';
@@ -267,7 +319,7 @@
       primary.textContent = 'CURRENT SKU IS PREVIEW-ONLY';
       primary.disabled = true;
       primary.onclick = null;
-      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Public now: one first-free JANUS.SEARCH per external principal. Owner-shadow only: JANUS.REPO_AUDIT and JANUS.DATASET_SCOUT. Specialist TOPA/Demiurge/Cousteau/registry/Fundamentum/swarm SKUs are discoverable but execution-receipt gated.';
+      if (rule) rule.textContent = 'No selected SKU currently has a live browser ingress. Public now: one first-free JANUS.SEARCH and one first-free public JANUS.PR_REVIEW per external principal. Owner-shadow only: JANUS.REPO_AUDIT and JANUS.DATASET_SCOUT. Other specialist SKUs remain execution-receipt gated.';
     }
   };
 
@@ -278,6 +330,12 @@
       chip.className = 'truth live public-search-beta';
       chip.innerHTML = 'SEARCH <b>FIRST ORDER FREE</b>';
       truthbar.insertBefore(chip, truthbar.children[2] || null);
+    }
+    if (truthbar && !truthbar.querySelector('.truth.public-pr-review-beta')) {
+      const chip = document.createElement('span');
+      chip.className = 'truth live public-pr-review-beta';
+      chip.innerHTML = 'PR REVIEW <b>FIRST REVIEW FREE</b>';
+      truthbar.insertBefore(chip, truthbar.children[3] || null);
     }
     if (truthbar && !truthbar.querySelector('.truth.home-bridge')) {
       const chip = document.createElement('span');
@@ -290,7 +348,7 @@
       const card = document.createElement('article');
       card.className = 'panel';
       card.dataset.r1dHome = 'true';
-      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>JANUS.SEARCH gives each external GitHub principal exactly one first free order routed to persistent JANUS HOME. REPO_AUDIT and DATASET_SCOUT remain owner-shadow; specialist organ SKUs remain receipt-gated until their dedicated bridges are proven.</p><b class="status-big cyan">FIRST SEARCH FREE</b>';
+      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Two public machine services</h2><p>JANUS.SEARCH gives each external GitHub principal one first free bounded search routed through persistent JANUS HOME. JANUS.PR_REVIEW separately gives one first free structural review of a public GitHub PR with exact head-SHA binding and no target-code execution. REPO_AUDIT and DATASET_SCOUT remain owner-shadow.</p><b class="status-big cyan">SEARCH + PR REVIEW LIVE</b>';
       status.prepend(card);
     }
   }

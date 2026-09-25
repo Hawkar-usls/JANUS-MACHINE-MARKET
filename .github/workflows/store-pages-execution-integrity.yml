@@ -21,6 +21,12 @@ on:
       - 'COMMERCE_READINESS.json'
       - 'FOREIGN_AGENT_WITNESS.json'
       - 'products/JANUS.SEARCH.json'
+      - 'discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json'
+      - '.github/workflows/pr-review-public-beta.yml'
+      - 'tests/test_public_pr_review_beta.py'
+      - 'runtime/public_pr_review_beta.py'
+      - '.github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md'
+      - 'products/JANUS.PR_REVIEW.json'
       - 'PUBLIC_SERVICE_BETA.json'
       - 'MACHINE_INGRESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
@@ -58,6 +64,12 @@ on:
       - 'COMMERCE_READINESS.json'
       - 'FOREIGN_AGENT_WITNESS.json'
       - 'products/JANUS.SEARCH.json'
+      - 'discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json'
+      - '.github/workflows/pr-review-public-beta.yml'
+      - 'tests/test_public_pr_review_beta.py'
+      - 'runtime/public_pr_review_beta.py'
+      - '.github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md'
+      - 'products/JANUS.PR_REVIEW.json'
       - 'PUBLIC_SERVICE_BETA.json'
       - 'MACHINE_INGRESS.json'
       - 'ORDER_EXECUTION_MATRIX.json'
@@ -91,10 +103,18 @@ jobs:
           python-version: '3.11'
       - name: Install pytest
         run: python -m pip install --disable-pip-version-check pytest
+      - name: Validate storefront JavaScript syntax
+        run: |
+          node --check assets/site.js
+          node --check assets/store-exec-v1.js
+          node --check assets/pricing-v1.js
+          node --check assets/slot-polish-v5.js
       - name: Compile contract tests
-        run: python -m py_compile tests/test_public_search_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py tests/test_btt_payment_route.py tests/test_organ_service_catalog.py runtime/paid_search_promotion.py
+        run: python -m py_compile tests/test_public_search_beta.py tests/test_public_pr_review_beta.py tests/test_store_pages_execution_contract.py tests/test_pricing_ui_contract.py tests/test_paid_search_promotion.py tests/test_btt_payment_route.py tests/test_organ_service_catalog.py runtime/paid_search_promotion.py
       - name: Verify public SEARCH beta admission and quotas
         run: PYTHONPATH=. python -m unittest -v tests.test_public_search_beta
+      - name: Verify public PR REVIEW beta admission and quotas
+        run: PYTHONPATH=. python -m unittest -v tests.test_public_pr_review_beta
       - name: Verify Pages -> Market -> HOME ingress contract
         run: python -m unittest -v tests.test_store_pages_execution_contract
       - name: Verify deterministic pricing and browser invoice boundary
