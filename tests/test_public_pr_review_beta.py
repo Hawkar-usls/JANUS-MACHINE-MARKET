@@ -58,7 +58,7 @@ class PublicPRReviewBetaTest(unittest.TestCase):
             "expected_head_sha":req["expected_head_sha"],
         }
         d=evaluate_admission(req,[receipt])
-        self.assertTrue(d["admitted"])
+        self.assertFalse(d["admitted"])
         self.assertEqual(d["reason"],"EXACT_RETRY_ALREADY_DELIVERED")
 
     def test_daily_cap(self):
