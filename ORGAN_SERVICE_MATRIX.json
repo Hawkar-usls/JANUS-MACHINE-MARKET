@@ -88,7 +88,7 @@
       "organ": "Hawkar-usls/JANUS-MACHINE-MARKET",
       "ref": "main",
       "role": "deterministic privacy-minimized trace/authority/provenance audit for AI-agent runs",
-      "market_state": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "market_state": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
       "public_live": false,
       "machine_purchase": false,
       "required_bridge": "MARKET trace intake -> deterministic Agent Eval -> immutable result hash -> Market reconcile"
