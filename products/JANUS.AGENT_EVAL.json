@@ -1,0 +1,71 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.AGENT_EVAL",
+  "title": "JANUS Agent Eval — Trace Guard",
+  "class": "agent_evaluation",
+  "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Deterministic privacy-minimized audit of an AI-agent execution trace for tool authorization, external-effect authority, loop signals, missing tool results, provenance gaps, receipt presence and bounded execution.",
+  "request": {
+    "mode": "OWNER_SHADOW_EXECUTOR_IMPLEMENTED_NOT_PUBLIC_LIVE",
+    "schema": "janus.agent_eval.trace.v1",
+    "input": "redacted/hash-bound execution trace; raw tool arguments are forbidden",
+    "max_events_hard_cap": 5000,
+    "max_tool_calls_hard_cap": 1000
+  },
+  "delivery": {
+    "format": "application/json",
+    "schema": "janus.agent_eval.result.v1",
+    "outputs": [
+      "verdict",
+      "score_0_100",
+      "metrics",
+      "failures",
+      "warnings",
+      "trace_sha256",
+      "policy_sha256",
+      "result_sha256"
+    ]
+  },
+  "current_checks": [
+    "CONTIGUOUS_EVENT_SEQUENCE",
+    "TOOL_ALLOWLIST",
+    "EXTERNAL_EFFECT_AUTHORITY",
+    "RAW_TOOL_ARGUMENT_REJECTION",
+    "DUPLICATE_CALL_ID",
+    "ORPHAN_TOOL_RESULT",
+    "MISSING_TOOL_RESULT",
+    "REPEATED_IDENTICAL_TOOL_CALL_LOOP_SIGNAL",
+    "TOOL_RESULT_PROVENANCE",
+    "FINAL_PROVENANCE",
+    "FINAL_RECEIPT",
+    "EVENT_AND_TOOL_BUDGETS"
+  ],
+  "pricing": {
+    "mode": "REFERENCE_ONLY_NOT_LIVE",
+    "billing_unit": "trace_audit",
+    "preview_unit_usdt_micros": 100000,
+    "payable_quote": false
+  },
+  "execution": {
+    "executor": "runtime/agent_eval.py",
+    "public_live": false,
+    "owner_shadow": true,
+    "paid_execution": false,
+    "blocker": "PUBLIC_AGENT_TRACE_INGRESS_PLUS_PRIVACY_TERMS_PLUS_END_TO_END_MARKET_RECEIPT"
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "external_effect_authority": false,
+    "customer_trace_is_world_truth": false,
+    "semantic_correctness_authority": false
+  },
+  "truth_boundary": [
+    "TRACE_AUDIT != SEMANTIC_CORRECTNESS_PROOF",
+    "PASS != AGENT_SAFE_IN_ALL_ENVIRONMENTS",
+    "SELF_REPORTED_TRACE != INDEPENDENT EXECUTION WITNESS",
+    "OBSERVABILITY != EVALUATION_COMPLETENESS",
+    "PAYMENT != EXECUTION_AUTHORITY"
+  ]
+}
