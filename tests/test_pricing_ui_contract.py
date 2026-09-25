@@ -75,6 +75,17 @@ class PricingUiContractTests(unittest.TestCase):
         self.assertLess(store, pricing)
         self.assertIn('href="PRICING.json"', self.html)
 
+    def test_btt_route_is_visible_but_nonpayable(self):
+        route = self.pricing["alternative_payment_routes"]["BTT_TRON"]
+        self.assertEqual(route["discount_bps"], 5000)
+        self.assertFalse(route["live_quote_allowed"])
+        self.assertIn("BTT route reference", self.js)
+        self.assertIn("BTT / TRON −50%", self.js)
+        self.assertIn("TRY JANUS.SEARCH FREE", self.html)
+        template = (ROOT / ".github/ISSUE_TEMPLATE/janus-search-free-beta.md").read_text(encoding="utf-8")
+        self.assertIn("JANUS_BUYER_QUERY_SHADOW_JSON", template)
+        self.assertIn("Price: 0", template)
+
     def test_browser_quote_remains_non_authoritative_in_both_commerce_states(self):
         for token in (
             "browser preview is not a payable invoice",

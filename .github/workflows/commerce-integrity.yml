@@ -10,6 +10,7 @@ on:
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
       - 'PRICING.json'
+      - 'BTT_PAYMENT_ROUTE.json'
       - 'PAID_QUEUE_POLICY.json'
       - 'products/JANUS.SEARCH.json'
       - 'runtime/commerce_authority.py'
@@ -34,6 +35,7 @@ on:
       - 'tests/test_paid_search_queue.py'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tests/test_paid_search_promotion.py'
+      - 'tests/test_btt_payment_route.py'
       - '.github/workflows/commerce-integrity.yml'
   push:
     branches: [main]
@@ -45,6 +47,7 @@ on:
       - 'ORDER_EXECUTION_MATRIX.json'
       - 'PAYMENT_POLICY.md'
       - 'PRICING.json'
+      - 'BTT_PAYMENT_ROUTE.json'
       - 'PAID_QUEUE_POLICY.json'
       - 'products/JANUS.SEARCH.json'
       - 'runtime/**'
@@ -60,6 +63,7 @@ on:
       - 'tests/test_paid_search_queue.py'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tests/test_paid_search_promotion.py'
+      - 'tests/test_btt_payment_route.py'
       - '.github/workflows/commerce-integrity.yml'
 
 permissions:
@@ -96,6 +100,7 @@ jobs:
           python -m json.tool BUYER_QUERY_PLANE.json >/dev/null
           python -m json.tool MACHINE_INGRESS.json >/dev/null
           python -m json.tool PRICING.json >/dev/null
+          python -m json.tool BTT_PAYMENT_ROUTE.json >/dev/null
           python -m json.tool PAID_QUEUE_POLICY.json >/dev/null
           python -m json.tool products/JANUS.SEARCH.json >/dev/null
           python -m json.tool ORDER_EXECUTION_MATRIX.json >/dev/null
@@ -116,7 +121,8 @@ jobs:
             tests/test_paid_search_settlement.py \
             tests/test_paid_search_queue.py \
             tests/test_persistent_home_foreign_witness.py \
-            tests/test_paid_search_promotion.py
+            tests/test_paid_search_promotion.py \
+            tests/test_btt_payment_route.py
       - name: Validate queue pricing and scheduling contract
         run: |
           PYTHONPATH=. python - <<'PY'

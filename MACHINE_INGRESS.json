@@ -38,7 +38,9 @@
         "global_daily_limit": 20,
         "one_issue_one_query": true,
         "admission_policy": "runtime/public_search_beta.py",
-        "workflow": ".github/workflows/r1-public-search-beta-outbox.yml"
+        "workflow": ".github/workflows/r1-public-search-beta-outbox.yml",
+        "issue_template": ".github/ISSUE_TEMPLATE/janus-search-free-beta.md",
+        "issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md"
       }
     },
     "JANUS.REPO_AUDIT": {
@@ -69,6 +71,7 @@
   "browser_ingress": {
     "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_BETA_NO_EMBEDDED_CREDENTIALS",
     "public_now": [
+      "JANUS.SEARCH via direct Free Public Beta GitHub issue template",
       "JANUS.SEARCH via prefilled GitHub issue composer and external issues.opened admission workflow"
     ],
     "owner_shadow_only": [

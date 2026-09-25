@@ -1,0 +1,64 @@
+{
+  "schema": "janus.machine_market.btt_payment_route.v1",
+  "version": "1.0.0",
+  "recorded_at": "2026-09-25",
+  "status": "DECLARED_50_PERCENT_DISCOUNT_ROUTE_GATE_CLOSED",
+  "asset": {
+    "canonical_symbol": "BTT",
+    "display_aliases": [
+      "BTT",
+      "BTTC"
+    ],
+    "name": "BitTorrent Token",
+    "network": "TRON Mainnet",
+    "token_standard": "TRC-20",
+    "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
+    "decimals": 18,
+    "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
+    "receiver_format": "TRON_BASE58CHECK",
+    "receiver_checksum_validated": true
+  },
+  "pricing": {
+    "reference_route": "USDT_ETHEREUM",
+    "discount_bps": 5000,
+    "discount_percent": 50,
+    "rule": "BTT route reference value is exactly 50% of the otherwise-applicable USDT-denominated invoice after catalog mode, quantity and queue adjustments.",
+    "order_of_operations": [
+      "COMPUTE_CANONICAL_USDT_REFERENCE_TOTAL",
+      "APPLY_BTT_ROUTE_DISCOUNT_5000_BPS",
+      "FREEZE_BTT_USD_PRICE_SOURCE_IN_EXACT_INVOICE",
+      "COMPUTE_EXACT_BTT_ATOMIC_AMOUNT",
+      "BIND_PRICE_SOURCE_TIMESTAMP_AND_AMOUNT_TO_INVOICE"
+    ],
+    "btt_usd_oracle": "NOT_IMPLEMENTED_YET",
+    "live_quote_allowed": false,
+    "rounding": "MUST_BE_DEFINED_BY_FUTURE_TRUSTED_INVOICE_IMPLEMENTATION"
+  },
+  "settlement": {
+    "observer": "NOT_IMPLEMENTED_YET",
+    "exact_transfer_identity": "TRON_TXID_PLUS_TRC20_TRANSFER_EVENT_INDEX",
+    "required_confirmations": "TO_BE_FROZEN_BEFORE_LIVE_ACTIVATION",
+    "settlement_starts_execution": false
+  },
+  "commerce_gate": {
+    "money_enabled": false,
+    "machine_purchase": false,
+    "live_invoice_allowed": false,
+    "foreign_agent_witness_required": true,
+    "payment_observer_required": true,
+    "persistent_purchase_ledger_required": true,
+    "purchase_grant_required": true,
+    "execution_grant_separate": true
+  },
+  "safety": [
+    "DO_NOT_SEND_BTT_WITHOUT_AN_EXACT_LIVE_INVOICE",
+    "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
+    "PAYMENT_IS_EVIDENCE_NOT_EXECUTION_AUTHORITY",
+    "BTT_ROUTE_DECLARATION_DOES_NOT_ENABLE_MONEY",
+    "ADDRESS_IS_FOR_NEW_BTT_TRC20_ON_TRON_NOT_BTTOLD"
+  ],
+  "sources": [
+    "https://medium.com/@BitTorrent/launch-of-bttc-mainnet-and-btt-redenomination-plan-2eacfe26d22",
+    "https://bt.io/"
+  ]
+}

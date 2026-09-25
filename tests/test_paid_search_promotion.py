@@ -146,11 +146,16 @@ def test_promotion_binds_exact_witness_id_hash_market_state_and_queue_policy():
 
 
 def test_pricing_becomes_mixed_not_falsely_all_live():
-    price = promoted()["PRICING.json"]
+    docs = promoted()
+    price = docs["PRICING.json"]
+    readiness = docs["COMMERCE_READINESS.json"]
     assert price["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
     assert price["live_skus"] == ["JANUS.SEARCH"]
     assert "JANUS.REPO_AUDIT" in price["preview_only_skus"] and "JANUS.DATASET_SCOUT" in price["preview_only_skus"]
     assert price["version"] == "2026-09-04-search-live-queue5-1"
+    assert price["alternative_payment_routes"]["BTT_TRON"]["live_quote_allowed"] is False
+    assert price["alternative_payment_routes"]["BTT_TRON"]["status"] == "DECLARED_DISCOUNT_ROUTE_NOT_LIVE"
+    assert readiness["alternative_payment_rails"]["BTT_TRON"]["live_invoice_allowed"] is False
 
 
 def test_buyer_plane_and_machine_ingress_become_search_live_only_with_queue():

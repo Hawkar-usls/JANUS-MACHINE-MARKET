@@ -32,6 +32,14 @@ WHAT EXISTS
 
 This repository is a **market/catalog protocol and discovery surface**. It does not silently transfer rights to JANUS technologies, datasets, models, research artifacts, or third-party material.
 
+### TRY JANUS.SEARCH FREE
+
+The public zero-price beta is live for one bounded search/research turn through GitHub Issues:
+
+**[Open a free JANUS.SEARCH request](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md)**
+
+GitHub authentication is currently required. No payment is required for this beta.
+
 ### Machine entry points
 
 | Surface | Purpose |
@@ -255,6 +263,12 @@ A public USDT / Ethereum receiving route is recorded for machine-readable policy
 Never infer a license, execution grant, SLA, delivery obligation, ownership transfer, production right, or commercial right from a bare blockchain transfer. See [`PAYMENT_POLICY.md`](PAYMENT_POLICY.md).
 
 x402 is a planned low-friction machine-purchase integration target. It is **not active** until a real HTTP endpoint, payment verification, replay protection, purchase ledger and execution-grant bridge exist and pass their gates.
+
+### BTT / TRON discount route
+
+A second payment route is declared for **BTT (TRC-20 on TRON Mainnet)** at a **50% discount relative to the otherwise-applicable USDT reference value**. The exact BTT amount must be frozen by a future trusted live invoice using a bound price source; the route is not live while the commerce gate is closed. See [`BTT_PAYMENT_ROUTE.json`](BTT_PAYMENT_ROUTE.json).
+
+Do not send BTT directly to the published receiver without an exact live invoice. Unsolicited payment grants nothing.
 
 ---
 
