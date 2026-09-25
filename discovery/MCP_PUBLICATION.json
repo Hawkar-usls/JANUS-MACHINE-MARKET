@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.mcp_publication.v1",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "standard": "MODEL_CONTEXT_PROTOCOL",
   "target_spec_revision": "2026-07-28",
   "spec_baseline_record": "discovery/MCP_2026_07_28_BASELINE.json",
@@ -10,16 +10,28 @@
   "planned_server_manifest": "server.json",
   "planned_transport_contract": {
     "core": "STATELESS_REQUEST_RESPONSE",
-    "initialize_initialized_exchange": "DO_NOT_REQUIRE_FOR_2026_07_28",
-    "mcp_session_id": "DO_NOT_DEPEND_ON_FOR_2026_07_28",
+    "protocol_level_sessions": "NOT_ALLOWED_FOR_2026_07_28",
+    "initialize_initialized_exchange": "REMOVED_FOR_2026_07_28",
+    "mcp_session_id": "REMOVED_FOR_2026_07_28",
     "protocol_version": "2026-07-28",
+    "required_request_meta": [
+      "io.modelcontextprotocol/protocolVersion",
+      "io.modelcontextprotocol/clientCapabilities"
+    ],
+    "recommended_request_meta": [
+      "io.modelcontextprotocol/clientInfo"
+    ],
     "routing_headers": [
       "Mcp-Method",
       "Mcp-Name"
     ],
-    "capability_discovery": "OPTIONAL_SERVER_DISCOVER",
+    "capability_discovery": "SERVER_MUST_IMPLEMENT_server/discover__CLIENT_MAY_PROBE",
+    "change_notification_transport": "subscriptions/listen",
+    "unsupported_protocol_version": "REJECT_OR_NEGOTIATE_WITH_EXPLICIT_DUAL_ERA_SUPPORT",
     "authorization_registration_target": "CLIENT_ID_METADATA_DOCUMENTS",
-    "dynamic_client_registration": "DEPRECATED_COMPATIBILITY_ONLY"
+    "dynamic_client_registration": "DEPRECATED_COMPATIBILITY_ONLY",
+    "protected_resource_metadata_if_authorized": "RFC_9728",
+    "issuer_validation_if_authorized": "RFC_9207"
   },
   "planned_tools": [
     {
@@ -46,19 +58,45 @@
   "publication_gates": [
     "LIVE_MCP_SERVER",
     "MCP_2026_07_28_WIRE_CONFORMANCE_PASS",
-    "SERVER_DISCOVERY_PASS",
+    "SERVER_DISCOVER_IMPLEMENTED_AND_PASS",
+    "PER_REQUEST_META_CONTRACT_PASS",
+    "NO_PROTOCOL_SESSION_DEPENDENCY_PASS",
+    "SUBSCRIPTIONS_LISTEN_CONFORMANCE_IF_NOTIFICATIONS_ADVERTISED",
+    "AUTHORIZATION_CONFORMANCE_IF_AUTHORIZATION_ADVERTISED",
     "TOOL_SCHEMAS_MATCH_PRODUCT_CONTRACTS",
     "ZERO_PRICE_SHADOW_SEARCH_ROUNDTRIP_PASS",
     "NO_CLOSED_SKU_EXPOSED_AS_EXECUTABLE",
-    "SERVER_JSON_VALID_FOR_CURRENT_MCP_REGISTRY",
+    "MCP_PUBLISHER_SERVER_JSON_SCHEMA_VALID",
+    "REGISTRY_NAMESPACE_OWNERSHIP_PASS",
     "REGISTRY_PUBLICATION_OBSERVED"
   ],
   "prohibited_premature_claims": [
     "LIVE_MCP_RUNTIME",
+    "MCP_2026_07_28_CONFORMANT_RUNTIME",
     "MCP_REGISTRY_LISTED",
     "PURCHASABLE",
     "EXECUTION_AUTHORITY",
-    "PAID_EXECUTION"
+    "PAID_EXECUTION",
+    "FOREIGN_AGENT_WITNESS"
   ],
-  "truth_boundary": "Do not publish server.json to a public MCP registry until a resolvable MCP server exists, conforms to the pinned 2026-07-28 runtime contract, and the advertised tools are callable under their declared authority boundaries."
+  "truth_boundary": "A recorded MCP 2026-07-28 baseline is compatibility planning only. Do not create or publish server.json, claim a live MCP endpoint, registry listing, execution authority, foreign-agent witness, or paid capability until the corresponding runtime and persistent receipts actually exist.",
+  "forbidden_2026_07_28_runtime_dependencies": [
+    "initialize",
+    "notifications/initialized",
+    "Mcp-Session-Id",
+    "HTTP_GET_NOTIFICATION_STREAM",
+    "resources/subscribe",
+    "resources/unsubscribe",
+    "ping",
+    "logging/setLevel",
+    "notifications/roots/list_changed"
+  ],
+  "registry_submission": {
+    "publisher_cli": "mcp-publisher",
+    "manifest": "server.json",
+    "init": "mcp-publisher init",
+    "publish": "mcp-publisher publish [PATH]",
+    "create_manifest_now": false,
+    "reason": "NO_LIVE_MCP_RUNTIME"
+  }
 }
