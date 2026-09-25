@@ -3,7 +3,7 @@
   "sku": "JANUS.AGENT_EVAL",
   "title": "JANUS Agent Eval — Trace Guard",
   "class": "agent_evaluation",
-  "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
   "machine_discovery": true,
   "machine_purchase": false,
   "summary": "Deterministic privacy-minimized audit of an AI-agent execution trace for tool authorization, external-effect authority, loop signals, missing tool results, provenance gaps, receipt presence and bounded execution.",
