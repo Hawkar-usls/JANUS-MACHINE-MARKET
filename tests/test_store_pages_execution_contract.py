@@ -49,6 +49,27 @@ class StorePagesExecutionContractTests(unittest.TestCase):
             self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_OWNER_SHADOW")
         self.assertIn("FIRST ORDER FREE", self.js)
         self.assertIn("OWNER SHADOW", self.js)
+        pr = contract["public_services"]["JANUS.PR_REVIEW"]
+        self.assertEqual(pr["status"], "FIRST_PR_REVIEW_FREE")
+        self.assertEqual(pr["first_free_per_external_principal"], 1)
+        self.assertEqual(pr["global_daily_limit"], 10)
+        self.assertTrue(pr["public_repositories_only"])
+        self.assertTrue(pr["exact_head_sha_required"])
+        self.assertFalse(pr["target_repository_code_executed"])
+        self.assertIn("JANUS.PR_REVIEW", ingress["live_services"])
+        self.assertIn("LIVE_FIRST_REVIEW_FREE", ingress["live_services"]["JANUS.PR_REVIEW"]["status"])
+
+    def test_pages_uses_public_pr_review_contract(self):
+        workflow = (ROOT / ".github/workflows/pr-review-public-beta.yml").read_text(encoding="utf-8")
+        policy = (ROOT / "runtime/public_pr_review_beta.py").read_text(encoding="utf-8")
+        for token in ("[JANUS PR REVIEW]", "JANUS_PR_REVIEW_PUBLIC_JSON", "janus.pr_review.public_request.v1"):
+            self.assertIn(token, self.js)
+            self.assertIn(token, workflow)
+        for field in ("repository", "pull_number", "expected_head_sha"):
+            self.assertIn(field, self.js)
+            self.assertIn(field, policy)
+        self.assertIn("target_repository_code_executed", self.js)
+        self.assertIn("FIRST PR REVIEW FREE", self.js)
 
     def test_pages_uses_existing_repo_audit_contract(self):
         workflow = (ROOT / ".github/workflows/r2-repo-audit-shadow-outbox.yml").read_text(encoding="utf-8")
@@ -68,8 +89,8 @@ class StorePagesExecutionContractTests(unittest.TestCase):
             self.assertIn(field, self.js)
             self.assertIn(field, workflow)
 
-    def test_pages_declares_three_home_routes_and_no_implicit_multi_sku_authority(self):
-        for sku in ("JANUS.SEARCH", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"):
+    def test_pages_declares_four_bounded_service_routes_and_no_implicit_multi_sku_authority(self):
+        for sku in ("JANUS.SEARCH", "JANUS.PR_REVIEW", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"):
             self.assertIn(sku, self.js)
         self.assertIn("MULTI_SERVICE_NOT_YET_ATOMIC", self.js)
         self.assertIn("proof-carrying multi-SKU orchestration grant", self.js)
