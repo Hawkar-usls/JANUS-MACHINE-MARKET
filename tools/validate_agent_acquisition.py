@@ -29,6 +29,9 @@ commerce = load("COMMERCE_READINESS.json")
 witness = load("FOREIGN_AGENT_WITNESS.json")
 ingress = load("MACHINE_INGRESS.json")
 public_beta = load("PUBLIC_SERVICE_BETA.json")
+commercial = load("COMMERCIAL.json")
+readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+llms_text = (ROOT / "llms.txt").read_text(encoding="utf-8")
 skill_index = load(".well-known/agent-skills/index.json")
 skill_index_mirror = load("skills/index.json")
 
@@ -110,6 +113,13 @@ require(set(pointer_offers) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "WELL_KNOWN_
 live_paths = {x.get("sku"): x for x in (acq.get("live_paths") or [])}
 require(set(live_paths) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "ACQUISITION_LIVE_PATH_SET_DRIFT")
 require(live_paths["JANUS.PR_REVIEW"].get("target_repository_code_executed") is False, "ACQUISITION_PR_REVIEW_EXECUTION_DRIFT")
+commercial_services = {x.get("sku"): x for x in (commercial.get("public_zero_price_services") or [])}
+require(set(commercial_services) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "COMMERCIAL_PUBLIC_SERVICE_SET_DRIFT")
+require(commercial_services["JANUS.PR_REVIEW"].get("target_repository_code_executed") is False, "COMMERCIAL_PR_REVIEW_EXECUTION_DRIFT")
+for token in ("JANUS.SEARCH", "JANUS.PR_REVIEW", "Two live first-free entrypoints"):
+    require(token in readme_text, f"README_PUBLIC_SERVICE_DRIFT:{token}")
+for token in ("JANUS.SEARCH", "JANUS.PR_REVIEW", "FIRST FREE OFFERS"):
+    require(token in llms_text, f"LLMS_PUBLIC_SERVICE_DRIFT:{token}")
 require((ROOT / ".github/workflows/pr-review-public-beta.yml").is_file(), "PR_REVIEW_PUBLIC_WORKFLOW_MISSING")
 require((ROOT / ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md").is_file(), "PR_REVIEW_PUBLIC_TEMPLATE_MISSING")
 require(commerce.get("money_enabled") is False, "ACQUISITION_MUST_NOT_ENABLE_MONEY")

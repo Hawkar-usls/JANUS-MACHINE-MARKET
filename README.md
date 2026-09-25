@@ -14,9 +14,9 @@
 
 ---
 
-## 🤖 Autonomous agent? Try JANUS in one GitHub API call
+## 🤖 Autonomous agent? Two live first-free entrypoints
 
-**Telegram is not required.** If your agent can create GitHub Issues, it can place its first bounded `JANUS.SEARCH` order directly.
+**Telegram is not required.** If your agent can create GitHub Issues, it can use either the first-free `JANUS.SEARCH` research path or the first-free `JANUS.PR_REVIEW` public pull-request review path.
 
 ```bash
 gh api repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues \
@@ -29,6 +29,10 @@ JANUS_BUYER_QUERY_SHADOW_JSON -->'
 
 The **first SEARCH order per external GitHub principal costs 0**. The reconciled result returns to the same issue. Credentials stay with the caller.
 
+For a public GitHub pull request, the same external principal also gets **one first `JANUS.PR_REVIEW` at price 0**. PR Review freezes the exact current head SHA, never executes target repository code, and returns structural/policy-risk findings plus a durable receipt.
+
+**[Open first-free PR Review](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md)**
+
 Machine clients should start with [`AGENTS.md`](AGENTS.md) or [`MACHINE_INGRESS.json`](MACHINE_INGRESS.json).
 ### Agent discovery surfaces
 
@@ -36,7 +40,9 @@ JANUS also publishes machine-oriented discovery artifacts for crawlers and tool-
 
 - **Agent landing:** https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/
 - **APIs.json:** `apis.json` and `.well-known/apis.json`
-- **Live ingress OpenAPI:** `discovery/GITHUB_ISSUES_INGRESS.openapi.json`
+- **JANUS.SEARCH OpenAPI:** `discovery/GITHUB_ISSUES_INGRESS.openapi.json`
+- **JANUS.PR_REVIEW OpenAPI:** `discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json`
+- **Agent Skills:** `.well-known/agent-skills/index.json`
 - **Integration recipes:** `docs/AGENT_INTEGRATION_RECIPES.md`
 - **Security contact:** `.well-known/security.txt`
 
@@ -61,13 +67,17 @@ WHAT EXISTS
 
 This repository is a **market/catalog protocol and discovery surface**. It does not silently transfer rights to JANUS technologies, datasets, models, research artifacts, or third-party material.
 
-### TRY JANUS.SEARCH FREE — FIRST ORDER
+### TWO FIRST-FREE PUBLIC SERVICES
 
-Each external GitHub principal gets **exactly one first JANUS.SEARCH order free**: one bounded search/research turn through GitHub Issues.
+Each external GitHub principal currently has two independent zero-price beta entitlements:
 
-**[Open your first free JANUS.SEARCH order](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md)**
+- **JANUS.SEARCH** — one first bounded research/search order through GitHub Issues.
+- **JANUS.PR_REVIEW** — one first bounded structural review of a public GitHub pull request, bound to the exact current head SHA.
 
-A second new SEARCH issue from the same principal is not free. Exact retry of the same immutable admitted issue is not a second order. GitHub authentication is currently required.
+**[Open first-free JANUS.SEARCH](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md)**  
+**[Open first-free JANUS.PR_REVIEW](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md)**
+
+A second new request of the same SKU from the same principal is not free. Exact retry of the same immutable admitted issue is not a second order. GitHub authentication is required for issue creation.
 
 ### Machine entry points
 
@@ -347,16 +357,20 @@ See [`LICENSING.md`](LICENSING.md).
 
 ```text
 MACHINE-READABLE DISCOVERY       READY
-CATALOG                         READY
-PRODUCT CONTRACTS               READY / BOOTSTRAP
-COMMERCE AUTHORITY SPEC         READY / DESIGN
-GENERAL QUOTE API               NOT ESTABLISHED
-GENERAL PAYMENT API             NOT ESTABLISHED
-x402                            PLANNED / NOT ACTIVE
-MCP 2026-07-28 BASELINE         PINNED / NO LIVE MCP SERVER
-DATA / SEARCH MACHINE PURCHASE  NOT ACTIVE
-INFERENCE PURCHASE              CLOSED
-COMPUTE PURCHASE                CLOSED
+PUBLIC JANUS.SEARCH              LIVE · FIRST ORDER FREE
+PUBLIC JANUS.PR_REVIEW           LIVE · FIRST REVIEW FREE
+JANUS.AGENT_EVAL                 OWNER-SHADOW VERIFIED
+JANUS.FRESCO_FORGE               PROOF-BACKED · PUBLIC EXECUTION GATED
+CATALOG                          READY
+PRODUCT CONTRACTS                READY / BOOTSTRAP
+COMMERCE AUTHORITY SPEC          READY / DESIGN
+GENERAL QUOTE API                NOT ESTABLISHED
+GENERAL PAYMENT API              NOT ESTABLISHED
+x402                              PLANNED / NOT ACTIVE
+MCP 2026-07-28 BASELINE          PINNED / NO LIVE MCP SERVER
+PAID MACHINE PURCHASE            NOT ACTIVE
+INFERENCE PURCHASE               CLOSED
+COMPUTE PURCHASE                 CLOSED
 ```
 
 The repository intentionally prefers an explicit `NOT ESTABLISHED` over pretending that a published specification is already a production service.
