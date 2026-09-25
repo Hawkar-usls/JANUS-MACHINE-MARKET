@@ -1,0 +1,60 @@
+name: JANUS Telegram Gateway Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'TELEGRAM_GATEWAY.json'
+      - 'runtime/telegram_gateway_guard.py'
+      - 'tests/test_telegram_gateway_guard.py'
+      - 'docs/TELEGRAM_MARKET_GATEWAY.md'
+      - '.github/workflows/telegram-gateway-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TELEGRAM_GATEWAY.json'
+      - 'runtime/telegram_gateway_guard.py'
+      - 'tests/test_telegram_gateway_guard.py'
+      - 'docs/TELEGRAM_MARKET_GATEWAY.md'
+      - '.github/workflows/telegram-gateway-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate gateway JSON and Python
+        run: |
+          python -m json.tool TELEGRAM_GATEWAY.json >/dev/null
+          python -m py_compile runtime/telegram_gateway_guard.py tests/test_telegram_gateway_guard.py
+      - name: Run gateway abuse/idempotency tests
+        run: PYTHONPATH=. python -m unittest -v tests.test_telegram_gateway_guard
+      - name: Enforce fail-closed activation state
+        run: |
+          python - <<'PY'
+          import json
+          g=json.load(open('TELEGRAM_GATEWAY.json',encoding='utf-8'))
+          assert g['status'] == 'PREPARED_NOT_LIVE_CONNECTION_SECRETS_AND_SITE_BINDING_PENDING'
+          assert g['frontend']['secret_material_allowed_in_browser'] is False
+          assert g['first_free_search']['amount'] == 1
+          assert g['first_free_search']['second_new_search_free'] is False
+          assert g['abuse_controls']['per_principal_active_orders'] == 1
+          assert g['abuse_controls']['machine_request_max_hops'] == 1
+          assert g['abuse_controls']['telegram_bot_to_bot_max_hops'] == 1
+          assert g['abuse_controls']['allow_arbitrary_shell'] is False
+          assert g['abuse_controls']['allow_repository_write_from_order_text'] is False
+          assert g['abuse_controls']['allow_secret_access'] is False
+          assert g['abuse_controls']['allow_external_effects'] is False
+          assert 'JANUS.SEARCH' in g['sku_policy']['live_first_free']
+          assert 'JANUS.TOPA_HUNT' in g['sku_policy']['catalogued_not_live']
+          print('TELEGRAM_GATEWAY_CONTRACT=PASS')
+          print('TELEGRAM_GATEWAY_LIVE=FALSE')
+          PY
