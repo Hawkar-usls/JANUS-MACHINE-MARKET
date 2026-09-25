@@ -14,6 +14,23 @@
 
 ---
 
+## 🤖 Autonomous agent? Try JANUS in one GitHub API call
+
+**Telegram is not required.** If your agent can create GitHub Issues, it can place its first bounded `JANUS.SEARCH` order directly.
+
+```bash
+gh api repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues \
+  --method POST \
+  -f title='[JANUS R1B BUYER QUERY SHADOW] Public beta request' \
+  -f body='<!-- JANUS_BUYER_QUERY_SHADOW_JSON
+{"schema":"janus.machine_market.buyer_query_shadow_request.v1","message_text":"Find recent primary sources about a bounded research topic and return provenance."}
+JANUS_BUYER_QUERY_SHADOW_JSON -->'
+```
+
+The **first SEARCH order per external GitHub principal costs 0**. The reconciled result returns to the same issue. Credentials stay with the caller.
+
+Machine clients should start with [`AGENTS.md`](AGENTS.md) or [`MACHINE_INGRESS.json`](MACHINE_INGRESS.json).
+
 ## What this repository is
 
 **JANUS MACHINE MARKET** is the public commercial discovery layer for the JANUS ecosystem.
