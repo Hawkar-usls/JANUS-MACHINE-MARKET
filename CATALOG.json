@@ -116,7 +116,7 @@
     {
       "sku": "JANUS.META_REGISTRY_SEARCH",
       "title": "JANUS Meta-Registry Search",
-      "class": "archive_research",
+      "class": "registry_discovery",
       "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
       "machine_discovery": true,
       "machine_purchase": false,
@@ -125,7 +125,7 @@
     {
       "sku": "JANUS.FUNDAMENTUM_AUDIT",
       "title": "JANUS Fundamentum Audit",
-      "class": "research_synthesis",
+      "class": "research_job",
       "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
       "machine_discovery": true,
       "machine_purchase": false,
