@@ -119,6 +119,31 @@ require((mcp.get("registry_submission") or {}).get("create_manifest_now") is Fal
 require("SERVER_DISCOVER_IMPLEMENTED_AND_PASS" in (mcp.get("publication_gates") or []), "MCP_DISCOVER_GATE_MISSING")
 require("PER_REQUEST_META_CONTRACT_PASS" in (mcp.get("publication_gates") or []), "MCP_META_GATE_MISSING")
 
+agent_mcp = ((agent.get("discovery_protocols") or {}).get("mcp") or {})
+require(agent_mcp.get("target_spec_revision") == "2026-07-28", "AGENT_MARKET_MCP_REVISION_DRIFT")
+require(agent_mcp.get("runtime_model") == "STATELESS_REQUEST_RESPONSE", "AGENT_MARKET_MCP_MODEL_DRIFT")
+require(agent_mcp.get("server_discover_required") is True, "AGENT_MARKET_MCP_DISCOVER_DRIFT")
+require(agent_mcp.get("live_runtime_exists") is False, "AGENT_MARKET_FALSE_MCP_RUNTIME")
+
+pointer_mcp = ((pointer.get("standard_discovery_detail") or {}).get("mcp") or {})
+require(pointer_mcp.get("target_spec_revision") == "2026-07-28", "WELL_KNOWN_MCP_REVISION_DRIFT")
+require(pointer_mcp.get("server_discover_required") is True, "WELL_KNOWN_MCP_DISCOVER_DRIFT")
+require(pointer_mcp.get("live_runtime_exists") is False, "WELL_KNOWN_FALSE_MCP_RUNTIME")
+
+beacon_mcp = next((row for row in beacon.get("discovery_surfaces", []) if row.get("id") == "MCP_REGISTRY"), {})
+require(beacon_mcp.get("target_spec_revision") == "2026-07-28", "BEACON_MCP_REVISION_DRIFT")
+require(beacon_mcp.get("runtime_model") == "STATELESS_REQUEST_RESPONSE", "BEACON_MCP_MODEL_DRIFT")
+require(beacon_mcp.get("server_discover_required") is True, "BEACON_MCP_DISCOVER_DRIFT")
+require(beacon_mcp.get("legacy_session_dependency_allowed") is False, "BEACON_MCP_SESSION_DRIFT")
+require(beacon_mcp.get("live_runtime_exists") is False, "BEACON_FALSE_MCP_RUNTIME")
+
+for law in [
+    "MCP_SPEC_BASELINE_DOES_NOT_PROVE_MCP_RUNTIME",
+    "MCP_REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION_AUTHORITY",
+    "MCP_SELF_REPORTED_IDENTITY_DOES_NOT_PROVE_EXTERNAL_PRINCIPAL",
+]:
+    require(law in beacon.get("truth_boundary", []), f"MISSING_MCP_TRUTH_LAW:{law}")
+
 require(witness_status.get("foreign_agent_witness") is False, "MCP_BASELINE_MUST_NOT_PROMOTE_FOREIGN_AGENT_WITNESS")
 require(witness_status.get("promotion_authority") == "PERSISTENT_HOME_RECEIPT_ONLY", "FOREIGN_AGENT_WITNESS_AUTHORITY_DRIFT")
 require(witness_status.get("money_enabled") is False, "MCP_BASELINE_MUST_NOT_ENABLE_MONEY")
