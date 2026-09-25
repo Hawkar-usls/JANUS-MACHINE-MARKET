@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -8,7 +8,10 @@
     "commercial": "COMMERCIAL.json",
     "agent_manifest": "AGENT_MARKET.json",
     "catalog": "CATALOG.json",
-    "well_known_pointer": ".well-known/agent-market.json"
+    "well_known_pointer": ".well-known/agent-market.json",
+    "machine_ingress": "MACHINE_INGRESS.json",
+    "agent_quickstart": "AGENTS.md",
+    "agent_acquisition": "discovery/AGENT_ACQUISITION.json"
   },
   "audiences": [
     "AUTONOMOUS_BUYER_AGENTS",
@@ -35,7 +38,15 @@
       "CALL_MCP_RUNTIME",
       "REGISTER_JANUS_IN_AWS_AGENT_REGISTRY",
       "MAKE_X402_PURCHASE"
-    ]
+    ],
+    "primary_live_action": {
+      "action": "CREATE_FIRST_FREE_JANUS_SEARCH_GITHUB_ISSUE",
+      "telegram_required": false,
+      "method": "POST",
+      "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+      "request_contract": "MACHINE_INGRESS.json",
+      "quickstart": "AGENTS.md"
+    }
   },
   "priority_skus": [
     "JANUS.SEARCH",
@@ -75,9 +86,23 @@
     "machine-readable catalog",
     "AI data market",
     "AI inference market",
-    "compute market"
+    "compute market",
+    "GitHub Issues API research agent",
+    "first free AI agent research",
+    "provenance-aware search",
+    "evidence research agent"
   ],
   "discovery_surfaces": [
+    {
+      "id": "GITHUB_ISSUES_API",
+      "status": "LIVE_FIRST_FREE_JANUS_SEARCH",
+      "purpose": "Machine-native public bounded SEARCH ingress",
+      "method": "POST",
+      "endpoint": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+      "authentication": "CALLER_SUPPLIED_GITHUB_CREDENTIAL",
+      "telegram_required": false,
+      "contract": "MACHINE_INGRESS.json"
+    },
     {
       "id": "JANUS_NATIVE",
       "status": "LIVE_IN_REPOSITORY",
