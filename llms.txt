@@ -80,3 +80,6 @@ FIRST FREE OFFER
 - Security contact: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt
 
 Search intent terms: autonomous research agent, AI research API, provenance search, evidence synthesis, dataset discovery, repository audit, agent marketplace, machine-to-machine research.
+
+- Agent framework compatibility: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html
+- Compatibility matrix: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json
