@@ -1,6 +1,6 @@
 {
   "schema": "janus.machine_market.discovery_beacon.v1",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "market": "JANUS MACHINE MARKET",
   "status": "DISCOVERY_ACTIVE_TRANSACTION_API_NOT_ESTABLISHED",
   "canonical": {
@@ -116,7 +116,13 @@
       "spec_baseline_record": "discovery/MCP_2026_07_28_BASELINE.json",
       "runtime_model": "STATELESS_REQUEST_RESPONSE",
       "legacy_session_dependency_allowed": false,
-      "publication_record": "discovery/MCP_PUBLICATION.json"
+      "publication_record": "discovery/MCP_PUBLICATION.json",
+      "server_discover_required": true,
+      "per_request_meta_required": true,
+      "initialize_handshake_allowed_for_target_revision": false,
+      "mcp_session_id_allowed_for_target_revision": false,
+      "live_runtime_exists": false,
+      "registry_listing_verified": false
     },
     {
       "id": "AWS_AGENT_REGISTRY",
@@ -158,7 +164,10 @@
     "A2A_AGENT_CARD_REQUIRES_REAL_SUPPORTED_INTERFACE",
     "AWS_REGISTRY_SUPPORT_DOES_NOT_MEAN_JANUS_IS_REGISTERED",
     "AWS_SCHEMA_VERSION_GAP_DOES_NOT_AUTHORIZE_DOWNGRADING_JANUS",
-    "CLOSED_SKUS_MUST_REMAIN_MACHINE_DISCOVERABLE_BUT_MACHINE_PURCHASE_FALSE"
+    "CLOSED_SKUS_MUST_REMAIN_MACHINE_DISCOVERABLE_BUT_MACHINE_PURCHASE_FALSE",
+    "MCP_SPEC_BASELINE_DOES_NOT_PROVE_MCP_RUNTIME",
+    "MCP_REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION_AUTHORITY",
+    "MCP_SELF_REPORTED_IDENTITY_DOES_NOT_PROVE_EXTERNAL_PRINCIPAL"
   ],
   "next_activation_gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT"
 }

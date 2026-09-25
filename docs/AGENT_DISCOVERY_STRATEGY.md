@@ -61,6 +61,8 @@ JANUS should publish that card only after a real HTTPS A2A endpoint exists. The 
 
 ### MCP
 
+JANUS pins future MCP publication to **protocol revision `2026-07-28`**. That revision is a stateless protocol era: a conforming server must not rely on the old `initialize` / `notifications/initialized` handshake or `Mcp-Session-Id`, every request carries protocol version and client capabilities in `_meta`, and the server must implement `server/discover`. If change notifications are advertised, use `subscriptions/listen` rather than the retired HTTP GET / resource subscription flow.
+
 Once a real MCP server exists, expose bounded market tools such as:
 
 - `janus_search`
@@ -68,7 +70,9 @@ Once a real MCP server exists, expose bounded market tools such as:
 - `janus_evidence_pack`
 - `janus_repo_audit`
 
-Then publish a current `server.json` through the MCP Registry tooling. The registry manifest must resolve to a real server; a speculative manifest is forbidden.
+Before publication, prove wire conformance, `server/discover`, per-request metadata handling, protocol-version rejection/negotiation, tool-schema truth, and a zero-price `JANUS.SEARCH` roundtrip. If authorization is advertised, additionally prove the MCP 2026-07-28 authorization profile, including protected-resource metadata and issuer validation.
+
+Only then generate/validate a `server.json` with `mcp-publisher` and publish through the official MCP Registry. A speculative `server.json`, a registry entry without a real runtime, or self-reported MCP identity must never be treated as execution authority or as a FOREIGN_AGENT_WITNESS.
 
 ### x402 Bazaar
 

@@ -11,6 +11,10 @@ on:
       - 'llms.txt'
       - 'discovery/**'
       - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'docs/AGENT_DISCOVERY_STRATEGY.md'
+      - 'SECURITY.md'
+      - 'README.md'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
@@ -24,6 +28,10 @@ on:
       - 'llms.txt'
       - 'discovery/**'
       - 'runtime/FOREIGN_AGENT_WITNESS_POLICY.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'docs/AGENT_DISCOVERY_STRATEGY.md'
+      - 'SECURITY.md'
+      - 'README.md'
       - 'tests/test_persistent_home_foreign_witness.py'
       - 'tools/validate_discovery.py'
       - '.github/workflows/discovery-integrity.yml'
@@ -56,6 +64,7 @@ jobs:
           python -m json.tool CATALOG.json >/dev/null
           python -m json.tool .well-known/agent-market.json >/dev/null
           python -m json.tool runtime/FOREIGN_AGENT_WITNESS_POLICY.json >/dev/null
+          python -m json.tool FOREIGN_AGENT_WITNESS.json >/dev/null
           for f in discovery/*.json; do python -m json.tool "$f" >/dev/null; done
 
       - name: Enforce fail-closed discovery truth

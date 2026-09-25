@@ -1,56 +1,142 @@
 {
-  "schema": "janus.machine_market.mcp_spec_baseline.v1",
-  "recorded_at": "2026-09-03",
+  "schema": "janus.machine_market.mcp_spec_baseline.v2",
+  "recorded_at": "2026-09-25",
   "standard": "MODEL_CONTEXT_PROTOCOL",
   "spec_revision": "2026-07-28",
   "release_date": "2026-07-28",
-  "status": "AUTHORITATIVE_BASELINE_RECORDED_NOT_DEPLOYED",
+  "status": "AUTHORITATIVE_2026_07_28_BASELINE_RECORDED_NOT_DEPLOYED",
   "sources": [
     "https://blog.modelcontextprotocol.io/posts/2026-07-28/",
-    "https://ts.sdk.modelcontextprotocol.io/v2/migration/support-2026-07-28"
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/changelog.mdx",
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/server/discover.mdx",
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/index.mdx",
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2026-07-28/basic/authorization/index.mdx",
+    "https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/cli/commands.md"
   ],
   "wire_contract": {
     "core_model": "STATELESS_REQUEST_RESPONSE",
-    "initialize_initialized_exchange": "RETIRED_FOR_2026_07_28",
-    "mcp_session_id_header": "RETIRED_FOR_2026_07_28",
+    "protocol_level_sessions": "REMOVED_FOR_2026_07_28",
+    "initialize_initialized_exchange": "REMOVED_FOR_2026_07_28",
+    "mcp_session_id_header": "REMOVED_FOR_2026_07_28",
     "protocol_version_header": "MCP-Protocol-Version",
     "protocol_version_value": "2026-07-28",
-    "routing_headers": [
-      "Mcp-Method",
-      "Mcp-Name"
+    "per_request_meta": {
+      "required": [
+        "io.modelcontextprotocol/protocolVersion",
+        "io.modelcontextprotocol/clientCapabilities"
+      ],
+      "optional_but_recommended": [
+        "io.modelcontextprotocol/clientInfo"
+      ],
+      "server_result_identity": "io.modelcontextprotocol/serverInfo",
+      "server_result_identity_is_security_authority": false,
+      "log_level": "io.modelcontextprotocol/logLevel"
+    },
+    "routing_headers": {
+      "standardized_http_headers": [
+        "Mcp-Method",
+        "Mcp-Name"
+      ],
+      "janus_may_route_on_them_only_after_runtime_conformance": true
+    },
+    "server_discover": {
+      "server_must_implement": true,
+      "client_call_before_other_requests": "OPTIONAL",
+      "purpose": [
+        "SUPPORTED_PROTOCOL_VERSIONS",
+        "SERVER_CAPABILITIES",
+        "SERVER_IDENTITY"
+      ],
+      "result_identity_is_security_authority": false
+    },
+    "version_mismatch": "UnsupportedProtocolVersionError",
+    "long_lived_change_notifications": {
+      "method": "subscriptions/listen",
+      "transport": "SINGLE_LONG_LIVED_POST_RESPONSE_STREAM",
+      "replaces": [
+        "HTTP_GET_NOTIFICATION_STREAM",
+        "resources/subscribe",
+        "resources/unsubscribe"
+      ]
+    },
+    "removed_methods": [
+      "ping",
+      "logging/setLevel",
+      "notifications/roots/list_changed",
+      "resources/subscribe",
+      "resources/unsubscribe"
     ],
-    "server_discover": "OPTIONAL_CAPABILITY_DISCOVERY_RPC",
-    "request_identity_and_capabilities": "PER_REQUEST_META",
-    "server_identity": "RESPONSE_META_SELF_REPORTED_NOT_SECURITY_AUTHORITY"
+    "explicit_cross_request_state": "SERVER_MINTED_HANDLE_PASSED_AS_ORDINARY_ARGUMENT",
+    "cacheable_results": {
+      "endpoints": [
+        "tools/list",
+        "prompts/list",
+        "resources/list",
+        "resources/read"
+      ],
+      "hints": [
+        "ttlMs",
+        "cacheScope"
+      ]
+    }
   },
   "authorization_contract": {
-    "issuer_validation": "RFC_9207_HARDENING_REQUIRED_WHEN_APPLICABLE",
-    "dynamic_client_registration": "DEPRECATED_COMPATIBILITY_ONLY",
-    "client_id_metadata_documents": "TARGET_FOR_NEW_DESIGNS",
+    "authorization_in_core_transport": "OPTIONAL",
+    "http_authorization_if_supported": "FOLLOW_2026_07_28_AUTHORIZATION_SPEC",
+    "protected_resource_metadata": "RFC_9728_REQUIRED_WHEN_HTTP_AUTHORIZATION_IS_SUPPORTED",
+    "authorization_server_discovery": "RFC_8414_OR_OPENID_CONNECT_DISCOVERY",
+    "issuer_validation": "RFC_9207_ISS_VALIDATION_PER_SPEC",
+    "client_credentials_bound_to_issuer": true,
+    "client_id_metadata_documents": "PREFERRED_NEW_DESIGN",
+    "dynamic_client_registration": "DEPRECATED_BACKWARD_COMPATIBILITY_ONLY",
     "self_reported_identity_is_authority": false
   },
   "deprecations": {
-    "minimum_window": "12_MONTHS",
+    "minimum_window": "AT_LEAST_12_MONTHS_PER_2026_07_28_LIFECYCLE",
     "legacy_http_sse": "DEPRECATED",
     "roots": "DEPRECATED",
     "sampling": "DEPRECATED",
     "logging": "DEPRECATED",
+    "include_context_thisServer_allServers": "DEPRECATED",
     "new_janus_implementations_must_not_depend_on_deprecated_features": true
   },
   "janus_publication_policy": {
     "live_mcp_server_exists": false,
     "public_server_json_allowed": false,
     "public_mcp_registry_submission_allowed": false,
-    "future_runtime_must_explicitly_opt_in_or_pin_2026_07_28": true,
+    "future_runtime_must_pin_or_negotiate_2026_07_28": true,
+    "future_runtime_must_implement_server_discover": true,
+    "future_runtime_must_require_per_request_protocol_version_and_client_capabilities_meta": true,
     "future_runtime_must_not_depend_on_mcp_session_id": true,
     "future_runtime_must_not_require_initialize_handshake_for_2026_07_28": true,
-    "future_gateway_may_route_on_mcp_method_and_name_only_after_runtime_validation": true
+    "future_runtime_must_use_subscriptions_listen_for_opt_in_change_notifications_if_supported": true,
+    "future_runtime_must_reject_or_negotiate_unsupported_protocol_version": true,
+    "future_gateway_may_route_on_mcp_method_and_name_only_after_runtime_validation": true,
+    "legacy_version_support_if_any_must_be_explicitly_dual_era_and_tested": true
   },
   "truth_boundary": [
-    "SPEC_SUPPORT_DOES_NOT_PROVE_LIVE_RUNTIME",
+    "SPEC_BASELINE_RECORDED_DOES_NOT_PROVE_LIVE_RUNTIME",
+    "MCP_SERVER_DISCOVER_SUPPORT_DOES_NOT_PROVE_EXTERNAL_IDENTITY",
     "DISCOVERY_DOES_NOT_GRANT_EXECUTION_AUTHORITY",
     "SELF_REPORTED_CLIENT_OR_SERVER_IDENTITY_IS_NOT_SECURITY_AUTHORITY",
+    "REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION_OR_PURCHASE_AUTHORITY",
     "REGISTRY_PUBLICATION_REMAINS_BLOCKED_UNTIL_TRUTHFUL_RUNTIME_EXISTS",
-    "NO_PAYMENT_OR_CLOSED_SKU_GATE_IS_OPENED_BY_THIS_BASELINE"
-  ]
+    "NO_PAYMENT_OR_CLOSED_SKU_GATE_IS_OPENED_BY_THIS_BASELINE",
+    "FOREIGN_AGENT_WITNESS_REMAINS_PERSISTENT_HOME_RECEIPT_ONLY"
+  ],
+  "version": "2.0.0",
+  "extensions_contract": {
+    "tasks": "io.modelcontextprotocol/tasks_EXTENSION_NOT_CORE",
+    "extension_claim_requires_actual_runtime_support": true
+  },
+  "registry_contract": {
+    "registry": "https://registry.modelcontextprotocol.io",
+    "publisher_cli": "mcp-publisher",
+    "init_command": "mcp-publisher init",
+    "publish_command": "mcp-publisher publish [PATH]",
+    "manifest": "server.json",
+    "janus_server_manifest_must_not_exist_before_live_runtime": true,
+    "publish_requires_schema_validation_and_namespace_ownership_checks": true,
+    "listing_is_discovery_not_execution_authority": true
+  }
 }
