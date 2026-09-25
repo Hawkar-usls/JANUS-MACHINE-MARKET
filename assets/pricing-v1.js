@@ -19,6 +19,12 @@
     return discount;
   }
 
+  function firstFreeLabel(sku) {
+    if (sku === 'JANUS.SEARCH') return 'FIRST SEARCH FREE';
+    if (sku === 'JANUS.PR_REVIEW') return 'FIRST PR REVIEW FREE';
+    return '';
+  }
+
   function itemPrice(item) {
     const p = pricing?.products?.[item.sku];
     if (!p || p.local_price === null || !Number.isFinite(Number(p.base_unit_usdt_micros))) return {priced:false, reason:p?.authority || p?.status || 'PRICE_NOT_PUBLISHED'};
@@ -84,7 +90,10 @@
           return;
         }
         const discount = result.discount_bps ? `<small> · volume −${(result.discount_bps/100).toFixed(0)}%</small>` : '';
-        line.innerHTML = `<span>${money(result.unit_micros)} / ${result.billing_unit}</span><b>${money(result.subtotal_micros)}${discount}</b>`;
+        const free = firstFreeLabel(sku);
+        line.innerHTML = free
+          ? `<span><strong>${free}</strong> · reference ${money(result.unit_micros)} / ${result.billing_unit}</span><b>PUBLIC BETA</b>`
+          : `<span>${money(result.unit_micros)} / ${result.billing_unit}</span><b>${money(result.subtotal_micros)}${discount}</b>`;
       };
       input?.addEventListener('input', update);
       select?.addEventListener('change', update);
