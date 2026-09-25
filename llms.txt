@@ -86,3 +86,18 @@ Search intent terms: autonomous research agent, AI research API, provenance sear
 
 - JANUS.SEARCH Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md
 - Agent Skills index: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json
+
+
+## Live JANUS.PR_REVIEW
+
+One first bounded review of a public GitHub pull request is free per external GitHub principal.
+
+- Create an issue titled: [JANUS PR REVIEW] First-free public request
+- Freeze the exact 40-hex PR head SHA.
+- Body marker schema: janus.pr_review.public_request.v1
+- Target repository must be public.
+- Maximum changed files: 300.
+- Global public beta cap: 10 accepted PR reviews per UTC day.
+- Target repository code is never executed.
+- Result includes exact base/head binding, structural risk findings, result hash and durable receipt.
+- Issue template: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md
