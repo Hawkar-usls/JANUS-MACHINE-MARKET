@@ -92,6 +92,15 @@
       "public_live": false,
       "machine_purchase": false,
       "required_bridge": "MARKET trace intake -> deterministic Agent Eval -> immutable result hash -> Market reconcile"
+    },
+    "JANUS.PR_REVIEW": {
+      "organ": "Hawkar-usls/JANUS-MACHINE-MARKET",
+      "ref": "main",
+      "role": "exact-SHA-bound pull-request structural/policy-risk review without executing target repository code",
+      "market_state": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "GitHub PR snapshot -> deterministic PR Guard -> durable Market receipt -> source issue"
     }
   },
   "supporting_organs": {
