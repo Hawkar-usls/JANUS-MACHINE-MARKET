@@ -1,0 +1,71 @@
+name: JANUS IndexNow Agent Discovery
+
+on:
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  submit-indexnow:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Wait for Pages key to be publicly reachable
+        shell: bash
+        run: |
+          set -euo pipefail
+          key='39ab13dd128d58ec3d5b1f781ffc0ca8a35cbd42978298b36439abe8ff9f3488'
+          key_url="https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/$key.txt"
+          for attempt in $(seq 1 12); do
+            body="$(curl -fsSL --max-time 10 "$key_url" || true)"
+            if [ "$body" = "$key" ]; then
+              echo "INDEXNOW_KEY_PUBLIC=TRUE"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "INDEXNOW_KEY_PUBLIC=FALSE"
+          exit 1
+
+      - name: Notify IndexNow of agent discovery surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          key='39ab13dd128d58ec3d5b1f781ffc0ca8a35cbd42978298b36439abe8ff9f3488'
+          cat > "$RUNNER_TEMP/indexnow.json" <<JSON
+          {
+            "host": "hawkar-usls.github.io",
+            "key": "$key",
+            "keyLocation": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/$key.txt",
+            "urlList": [
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENTS.md",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/llms.txt",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/MACHINE_INGRESS.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENT_MARKET.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/BEACON.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json"
+            ]
+          }
+          JSON
+          code="$(curl -sS -o "$RUNNER_TEMP/indexnow-response.txt" -w '%{http_code}' \
+            --max-time 30 \
+            -X POST 'https://api.indexnow.org/IndexNow' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data-binary @"$RUNNER_TEMP/indexnow.json")"
+          echo "INDEXNOW_HTTP_STATUS=$code"
+          cat "$RUNNER_TEMP/indexnow-response.txt" || true
+          case "$code" in
+            200|202) echo "INDEXNOW_SUBMISSION=ACCEPTED" ;;
+            *) echo "INDEXNOW_SUBMISSION=FAILED"; exit 1 ;;
+          esac
