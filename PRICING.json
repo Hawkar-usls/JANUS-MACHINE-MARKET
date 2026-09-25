@@ -175,6 +175,17 @@
       "status": "REFERENCE_ONLY_NOT_LIVE",
       "pricing_alias": "JANUS.RESEARCH_JOB",
       "local_price": null
+    },
+    "JANUS.FRESCO_FORGE": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "billing_unit": "accepted_fresco",
+      "base_unit_usdt_micros": 250000,
+      "modes": {
+        "CANONICAL_V5_4": {
+          "multiplier_bps": 10000
+        }
+      },
+      "payable_quote": false
     }
   },
   "alternative_payment_routes": {
