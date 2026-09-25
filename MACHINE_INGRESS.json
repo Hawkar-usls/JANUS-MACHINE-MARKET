@@ -26,7 +26,7 @@
       "marker": "JANUS_BUYER_QUERY_SHADOW_JSON",
       "request_schema": "janus.machine_market.buyer_query_shadow_request.v1",
       "lane": "PERSISTENT_JANUS_CONVERSATION",
-      "status": "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW",
+      "status": "LIVE_FIRST_SEARCH_FREE_PLUS_OWNER_SHADOW",
       "external_public_beta": {
         "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
         "accepted_event": "issues.opened",
@@ -34,13 +34,18 @@
         "max_message_utf8_bytes": 4000,
         "max_answer_utf8_bytes": 6000,
         "conversation_history_turns": 0,
-        "per_actor_daily_limit": 3,
         "global_daily_limit": 20,
         "one_issue_one_query": true,
         "admission_policy": "runtime/public_search_beta.py",
         "workflow": ".github/workflows/r1-public-search-beta-outbox.yml",
         "issue_template": ".github/ISSUE_TEMPLATE/janus-search-free-beta.md",
-        "issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md"
+        "issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
+        "first_free_per_external_principal": 1,
+        "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
+        "second_new_issue_is_free": false,
+        "exact_retry_same_issue_consumes_second_free_order": false,
+        "second_new_search_is_free": false,
+        "exact_retry_consumes_second_free_order": false
       }
     },
     "JANUS.REPO_AUDIT": {
@@ -59,7 +64,7 @@
     }
   },
   "current_commerce_state": {
-    "price_mode": "ZERO_PRICE_PUBLIC_BETA_FOR_SEARCH_OWNER_SHADOW_FOR_OTHER_LIVE_LANES",
+    "price_mode": "ONE_FIRST_FREE_PUBLIC_SEARCH_PER_EXTERNAL_PRINCIPAL_SPECIALIST_ORGANS_CATALOGUED_NOT_LIVE",
     "money_enabled": false,
     "autonomous_purchase_declared": false,
     "payment_required": false,
@@ -71,8 +76,8 @@
   "browser_ingress": {
     "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_BETA_NO_EMBEDDED_CREDENTIALS",
     "public_now": [
-      "JANUS.SEARCH via direct Free Public Beta GitHub issue template",
-      "JANUS.SEARCH via prefilled GitHub issue composer and external issues.opened admission workflow"
+      "JANUS.SEARCH one first free order per external GitHub principal via direct issue template",
+      "JANUS.SEARCH one first free order via GitHub Issues API"
     ],
     "owner_shadow_only": [
       "JANUS.REPO_AUDIT",
@@ -84,6 +89,14 @@
       "treating unauthenticated browser POST as authority",
       "turning payment into execution authority",
       "opening public REPO_AUDIT or DATASET_SCOUT before SEARCH external roundtrip evidence"
+    ],
+    "specialist_router_prepared": [
+      "JANUS.TOPA_HUNT",
+      "JANUS.DEMIURGE_SCOUT",
+      "JANUS.COUSTEAU_SCAN",
+      "JANUS.META_REGISTRY_SEARCH",
+      "JANUS.FUNDAMENTUM_AUDIT",
+      "JANUS.SWARM_RESEARCH"
     ]
   },
   "proof": {
@@ -115,5 +128,9 @@
     "PUBLIC_INTAKE != COMPLETED_SERVICE",
     "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_GATE_PASSES",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
-  ]
+  ],
+  "specialist_organ_catalog": {
+    "record": "ORGAN_SERVICE_MATRIX.json",
+    "public_execution_live": false
+  }
 }

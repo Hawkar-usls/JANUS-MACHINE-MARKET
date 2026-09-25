@@ -145,6 +145,36 @@
     "JANUS.COMPUTE": {
       "status": "CLOSED",
       "local_price": null
+    },
+    "JANUS.TOPA_HUNT": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
+    },
+    "JANUS.DEMIURGE_SCOUT": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
+    },
+    "JANUS.COUSTEAU_SCAN": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
+    },
+    "JANUS.META_REGISTRY_SEARCH": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
+    },
+    "JANUS.FUNDAMENTUM_AUDIT": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
+    },
+    "JANUS.SWARM_RESEARCH": {
+      "status": "REFERENCE_ONLY_NOT_LIVE",
+      "pricing_alias": "JANUS.RESEARCH_JOB",
+      "local_price": null
     }
   },
   "alternative_payment_routes": {
@@ -161,5 +191,11 @@
       "exact_btt_amount": "FROZEN_ONLY_BY_FUTURE_LIVE_INVOICE_WITH_PRICE_SOURCE",
       "live_quote_allowed": false
     }
+  },
+  "first_free_entitlement": {
+    "sku": "JANUS.SEARCH",
+    "first_free_per_external_github_principal": 1,
+    "exact_retry_same_issue_consumes_second_free_order": false,
+    "later_new_order_price": "USE_LIVE_INVOICE_ONLY_WHEN_COMMERCE_GATE_OPENS"
   }
 }

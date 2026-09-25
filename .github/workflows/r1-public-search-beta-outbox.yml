@@ -34,14 +34,14 @@ jobs:
         run: |
           python - <<'PY'
           from runtime.public_search_beta import (
-              GLOBAL_DAILY_LIMIT, MAX_ANSWER_UTF8_BYTES, MAX_MESSAGE_UTF8_BYTES,
-              MAX_TURNS, PER_ACTOR_DAILY_LIMIT, PUBLIC_ORIGIN,
+              FIRST_FREE_PER_ACTOR, GLOBAL_DAILY_LIMIT, MAX_ANSWER_UTF8_BYTES, MAX_MESSAGE_UTF8_BYTES,
+              MAX_TURNS, PUBLIC_ORIGIN,
           )
           assert PUBLIC_ORIGIN == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
           assert MAX_TURNS == 1
           assert MAX_MESSAGE_UTF8_BYTES == 4000
           assert MAX_ANSWER_UTF8_BYTES == 6000
-          assert PER_ACTOR_DAILY_LIMIT == 3
+          assert FIRST_FREE_PER_ACTOR == 1
           assert GLOBAL_DAILY_LIMIT == 20
           print('PUBLIC_SEARCH_BETA_POLICY=PASS')
           print('PUBLIC_SEARCH_BETA_MONEY_ENABLED=FALSE_BY_R1B_PACKET_CONTRACT')
@@ -240,7 +240,7 @@ jobs:
 
           Reason: \`${REASON}\`
 
-          The zero-price public beta is deliberately bounded: one immutable request per issue, at most 3 accepted SEARCH requests per GitHub actor per UTC day, and at most 20 accepted public SEARCH requests globally per UTC day. Payments remain disabled.
+          The zero-price public beta is deliberately bounded: exactly one first SEARCH request per external GitHub principal, with an additional global safety cap of 20 accepted public SEARCH requests per UTC day. Exact retry of the same immutable issue is not a second free order. Payments remain disabled.
           EOF
           gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/public-beta-reject.md")" >/dev/null
 

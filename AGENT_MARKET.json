@@ -125,6 +125,20 @@
     "archive_scan",
     "repository_audit",
     "bounded_research_job",
-    "technology_pilot_discovery"
-  ]
+    "technology_pilot_discovery",
+    "anomaly_falsification_hunt",
+    "multi_agent_repository_scout",
+    "marine_bathymetry_sonar_scan",
+    "registry_provenance_search",
+    "formal_claim_audit",
+    "parallel_swarm_research"
+  ],
+  "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json",
+  "first_free_offer": {
+    "sku": "JANUS.SEARCH",
+    "entitlement": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL",
+    "public_live": true,
+    "payment_required": false,
+    "subsequent_paid_orders_live": false
+  }
 }

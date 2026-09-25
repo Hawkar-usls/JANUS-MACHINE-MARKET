@@ -3,7 +3,7 @@
   "sku": "JANUS.SEARCH",
   "title": "JANUS Search",
   "class": "search_api",
-  "status": "PAID_ROUTE_ARMED_WITNESS_GATE_CLOSED",
+  "status": "FIRST_SEARCH_FREE_PAID_ROUTE_ARMED_WITNESS_GATE_CLOSED",
   "machine_discovery": true,
   "machine_purchase": false,
   "summary": "One bounded read-only JANUS.SEARCH turn routed through a five-level serialized paid queue into persistent JANUS HOME/HRAiN, returning a result with immutable provenance and explicit uncertainty.",
@@ -124,5 +124,15 @@
     "paid_queue_live": false
   },
   "terms": "docs/PAID_SEARCH_TERMS.md",
-  "license": "Per-product/service terms; marketplace Apache-2.0 does not license underlying inputs, outputs, models, datasets or technology."
+  "license": "Per-product/service terms; marketplace Apache-2.0 does not license underlying inputs, outputs, models, datasets or technology.",
+  "first_free_public_order": {
+    "enabled": true,
+    "price": 0,
+    "entitlement": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL",
+    "amount": 1,
+    "second_new_order_free": false,
+    "exact_retry_same_issue_is_second_order": false,
+    "ingress": "MACHINE_INGRESS.json",
+    "policy": "PUBLIC_SERVICE_BETA.json"
+  }
 }

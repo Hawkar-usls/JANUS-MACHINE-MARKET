@@ -152,7 +152,7 @@ def build_live_documents(
 
     ingress = copy.deepcopy(dict(machine_ingress))
     search = ingress["live_services"]["JANUS.SEARCH"]
-    search["status"] = "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_PAID_ISSUE_CHECKOUT"
+    search["status"] = "LIVE_FIRST_SEARCH_FREE_PLUS_PAID_ISSUE_CHECKOUT"
     search["paid_checkout"] = {
         "status": "LIVE_JANUS_SEARCH_ONLY",
         "title_prefix": "[JANUS PAID SEARCH]",

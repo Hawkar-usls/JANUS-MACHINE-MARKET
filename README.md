@@ -32,13 +32,13 @@ WHAT EXISTS
 
 This repository is a **market/catalog protocol and discovery surface**. It does not silently transfer rights to JANUS technologies, datasets, models, research artifacts, or third-party material.
 
-### TRY JANUS.SEARCH FREE
+### TRY JANUS.SEARCH FREE — FIRST ORDER
 
-The public zero-price beta is live for one bounded search/research turn through GitHub Issues:
+Each external GitHub principal gets **exactly one first JANUS.SEARCH order free**: one bounded search/research turn through GitHub Issues.
 
-**[Open a free JANUS.SEARCH request](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md)**
+**[Open your first free JANUS.SEARCH order](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md)**
 
-GitHub authentication is currently required. No payment is required for this beta.
+A second new SEARCH issue from the same principal is not free. Exact retry of the same immutable admitted issue is not a second order. GitHub authentication is currently required.
 
 ### Machine entry points
 
@@ -47,6 +47,7 @@ GitHub authentication is currently required. No payment is required for this bet
 | [`COMMERCIAL.json`](COMMERCIAL.json) | smallest commercial discovery beacon |
 | [`AGENT_MARKET.json`](AGENT_MARKET.json) | agent-facing market manifest |
 | [`CATALOG.json`](CATALOG.json) | canonical SKU catalog |
+| [`ORGAN_SERVICE_MATRIX.json`](ORGAN_SERVICE_MATRIX.json) | specialist JANUS organ/router truth matrix |
 | [`.well-known/agent-market.json`](.well-known/agent-market.json) | stable discovery pointer |
 | [`products/`](products/) | per-product machine-readable contracts |
 | [`schemas/`](schemas/) | request / quote / purchase-grant / receipt contracts |
@@ -67,11 +68,18 @@ GitHub authentication is currently required. No payment is required for this bet
 | `JANUS.ARCHIVE_SCAN` | bounded archive scan + deduplicated index | DATA / SEARCH | ✅ | ⏳ |
 | `JANUS.REPO_AUDIT` | public repository architecture / claim audit | DATA / SEARCH | ✅ | ⏳ |
 | `JANUS.RESEARCH_JOB` | bounded custom JANUS research job | DATA / SEARCH | ✅ | ⏳ |
+| `JANUS.TOPA_HUNT` | provenance-first anomaly / archive / falsification hunt | SPECIALIST | ✅ | receipt-gated |
+| `JANUS.DEMIURGE_SCOUT` | bounded Demiurge Scout Swarm reconnaissance | SPECIALIST | ✅ | receipt-gated |
+| `JANUS.COUSTEAU_SCAN` | marine bathymetry / sonar / hydroacoustic scan | SPECIALIST | ✅ | receipt-gated |
+| `JANUS.META_REGISTRY_SEARCH` | registry / provenance-lineage search | SPECIALIST | ✅ | receipt-gated |
+| `JANUS.FUNDAMENTUM_AUDIT` | fail-closed source / claim / proof audit | SPECIALIST | ✅ | receipt-gated |
+| `JANUS.SWARM_RESEARCH` | bounded parallel multi-agent research attack | SPECIALIST | ✅ | receipt-gated |
 | `JANUS.INFERENCE` | bounded analyze / compare / classify / synthesize / route | INFERENCE | ✅ | 🔒 |
 | `JANUS.COMPUTE` | allowlisted bounded verified compute | COMPUTE | ✅ | 🔒 |
 | `HELIOS.PILOT` | delegated JANUS HELIOS standard pilot listing | LICENSE | ✅ | canonical HELIOS gate controls |
 
 `⏳` = specified and discoverable; no live general-purpose machine-purchase endpoint is claimed yet.  
+`receipt-gated` = specialist organ exists and is discoverable, but public Market execution waits for a dedicated end-to-end HOME→organ→HOME receipt.  
 `🔒` = deliberately closed until the declared target-execution witness gate is satisfied.
 
 ---

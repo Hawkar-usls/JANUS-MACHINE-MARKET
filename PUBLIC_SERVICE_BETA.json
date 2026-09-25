@@ -1,12 +1,12 @@
 {
   "schema": "janus.machine_market.public_service_beta.v1",
-  "version": "1.0.0",
-  "recorded_at": "2026-09-04",
-  "status": "SEARCH_PUBLIC_ZERO_PRICE_BETA_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
-  "purpose": "Expose one real bounded JANUS service to external GitHub principals through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
+  "version": "1.1.0",
+  "recorded_at": "2026-09-25",
+  "status": "SEARCH_FIRST_FREE_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
+  "purpose": "Expose exactly one first free bounded JANUS.SEARCH to each external GitHub principal through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
   "public_services": {
     "JANUS.SEARCH": {
-      "status": "PUBLIC_ZERO_PRICE_BETA",
+      "status": "FIRST_SEARCH_ORDER_FREE",
       "transport": "GITHUB_ISSUE_OR_GITHUB_ISSUES_API",
       "home_route": "PERSISTENT_JANUS_CONVERSATION",
       "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
@@ -16,13 +16,18 @@
       "max_message_utf8_bytes": 4000,
       "max_answer_utf8_bytes": 6000,
       "conversation_history_turns": 0,
-      "per_actor_daily_limit": 3,
       "global_daily_limit": 20,
       "one_issue_can_bind_more_than_one_query": false,
       "exact_retry_creates_second_cognition": false,
       "direct_issue_template": ".github/ISSUE_TEMPLATE/janus-search-free-beta.md",
       "direct_issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
-      "github_auth_required": true
+      "github_auth_required": true,
+      "first_free_per_external_principal": 1,
+      "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
+      "second_new_issue_is_free": false,
+      "exact_retry_same_issue_consumes_second_free_order": false,
+      "second_new_search_is_free": false,
+      "exact_retry_consumes_second_free_order": false
     }
   },
   "not_public_yet": {
@@ -32,7 +37,13 @@
     "JANUS.ARCHIVE_SCAN": "SPECIFICATION_READY",
     "JANUS.RESEARCH_JOB": "SPECIFICATION_READY",
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
-    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
+    "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
+    "JANUS.TOPA_HUNT": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+    "JANUS.DEMIURGE_SCOUT": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+    "JANUS.COUSTEAU_SCAN": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+    "JANUS.META_REGISTRY_SEARCH": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+    "JANUS.FUNDAMENTUM_AUDIT": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+    "JANUS.SWARM_RESEARCH": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED"
   },
   "authority": {
     "money_enabled": false,
@@ -52,11 +63,12 @@
     "HOME_RESPONSE_IS_PERSISTED_AND_RETURNED_TO_SOURCE_ISSUE",
     "MARKET_FRESH_CHECKOUT_REPLAY_VERIFIES_EXACT_RECEIPT"
   ],
-  "promotion_rule": "Do not open REPO_AUDIT, DATASET_SCOUT, payments, or paid execution merely because the public SEARCH intake workflow exists. Promote only after a real external roundtrip receipt.",
+  "promotion_rule": "The one-first-free SEARCH entitlement does not make specialist organ products live. Do not open TOPA/Demiurge/Cousteau/registry/Fundamentum/swarm execution, payments, or paid execution merely because they are catalogued; each specialist lane needs its own end-to-end receipt.",
   "truth_boundary": [
     "PUBLIC_INTAKE != COMPLETED_SERVICE",
     "ZERO_PRICE_PURCHASE_GRANT != EXECUTION_AUTHORITY",
     "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_INDEPENDENCE_GATE_PASSES",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
-  ]
+  ],
+  "specialist_catalog": "ORGAN_SERVICE_MATRIX.json"
 }

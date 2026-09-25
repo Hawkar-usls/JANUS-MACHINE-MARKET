@@ -30,22 +30,24 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
         witness = json.loads((ROOT / "FOREIGN_AGENT_WITNESS.json").read_text(encoding="utf-8"))
         search = contract["public_services"]["JANUS.SEARCH"]
-        self.assertEqual(search["status"], "PUBLIC_ZERO_PRICE_BETA")
+        self.assertEqual(search["status"], "FIRST_SEARCH_ORDER_FREE")
         self.assertEqual(search["max_turns_per_issue"], 1)
         self.assertEqual(search["max_message_utf8_bytes"], 4000)
         self.assertEqual(search["max_answer_utf8_bytes"], 6000)
-        self.assertEqual(search["per_actor_daily_limit"], 3)
+        self.assertEqual(search["first_free_per_external_principal"], 1)
+        self.assertFalse(search["second_new_issue_is_free"])
+        self.assertFalse(search["exact_retry_same_issue_consumes_second_free_order"])
         self.assertEqual(search["global_daily_limit"], 20)
         self.assertFalse(contract["authority"]["money_enabled"])
         self.assertFalse(contract["authority"]["command_authority_granted"])
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
         if witness["foreign_agent_witness"] is True:
-            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_PAID_ISSUE_CHECKOUT")
+            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_PAID_ISSUE_CHECKOUT")
             self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]["status"], "LIVE_JANUS_SEARCH_ONLY")
         else:
-            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_PUBLIC_ZERO_PRICE_BETA_PLUS_OWNER_SHADOW")
-        self.assertIn("PUBLIC BETA", self.js)
+            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_OWNER_SHADOW")
+        self.assertIn("FIRST ORDER FREE", self.js)
         self.assertIn("OWNER SHADOW", self.js)
 
     def test_pages_uses_existing_repo_audit_contract(self):
