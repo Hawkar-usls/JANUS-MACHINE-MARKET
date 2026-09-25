@@ -21,5 +21,10 @@
     "PRODUCT_LISTING_DOES_NOT_CHANGE_PRODUCT_LICENSE",
     "DISCOVERY_DOES_NOT_IMPLY_AVAILABILITY",
     "CLAIMS_ARE_BOUNDED_TO_DECLARED_EVIDENCE"
-  ]
+  ],
+  "payment_routes": {
+    "canonical_reference": "PRICING.json",
+    "btt_tron_discount_route": "BTT_PAYMENT_ROUTE.json",
+    "money_enabled": false
+  }
 }
