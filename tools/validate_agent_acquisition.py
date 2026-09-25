@@ -72,7 +72,7 @@ for blocked in ["A2A_AGENT_CARD", "OFFICIAL_MCP_REGISTRY", "X402_BAZAAR", "OPENA
 
 require((pointer.get("fastest_live_order") or {}).get("telegram_required") is False, "POINTER_TELEGRAM_DRIFT")
 public_live = set((agent.get("task_execution") or {}).get("public_live_skus") or [])
-require(public_live == {"JANUS.SEARCH"}, "PUBLIC_LIVE_SKU_DRIFT")
+require(public_live == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "PUBLIC_LIVE_SKU_DRIFT")
 require(commerce.get("money_enabled") is False, "ACQUISITION_MUST_NOT_ENABLE_MONEY")
 require(witness.get("foreign_agent_witness") is False, "ACQUISITION_METADATA_MUST_NOT_SELF_PROMOTE_WITNESS")
 
@@ -80,7 +80,7 @@ for forbidden in [".well-known/agent-card.json", "server.json", "openapi.json"]:
     require(not (ROOT / forbidden).exists(), f"PREMATURE_PROTOCOL_DESCRIPTOR:{forbidden}")
 
 print("JANUS_AGENT_ACQUISITION_INTEGRITY_PASS")
-print("PUBLIC_LIVE_SKU=JANUS.SEARCH")
+print("PUBLIC_LIVE_SKUS=JANUS.SEARCH,JANUS.PR_REVIEW")\nprint("JANUS_PR_REVIEW_PUBLIC_ROUTE=TRUE")
 print("TELEGRAM_REQUIRED=FALSE")
 print("MONEY_ENABLED=FALSE")
 print("A2A_RUNTIME_PROMOTED=FALSE")
