@@ -95,7 +95,12 @@
     "provenance-bound image generation",
     "agent visual storytelling",
     "monumental fresco generation",
-    "creative visualization API"
+    "creative visualization API",
+    "AI agent evaluation",
+    "agent trace audit",
+    "agent reliability audit",
+    "tool-call governance",
+    "agent observability evaluation"
   ],
   "discovery_surfaces": [
     {
