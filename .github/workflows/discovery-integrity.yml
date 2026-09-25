@@ -14,6 +14,7 @@ on:
       - '.well-known/apis.json'
       - 'apis.json'
       - 'AGENT_MARKET.json'
+      - 'COMMERCIAL.json'
       - 'CATALOG.json'
       - 'ORGAN_SERVICE_MATRIX.json'
       - 'TELEGRAM_GATEWAY.json'
@@ -34,6 +35,7 @@ on:
     paths:
       - 'BEACON.json'
       - 'AGENT_MARKET.json'
+      - 'COMMERCIAL.json'
       - 'CATALOG.json'
       - 'ORGAN_SERVICE_MATRIX.json'
       - 'TELEGRAM_GATEWAY.json'
@@ -81,6 +83,7 @@ jobs:
           python -m json.tool discovery/GITHUB_ISSUES_INGRESS.openapi.json >/dev/null
           python -m json.tool discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json >/dev/null
           python -m json.tool AGENT_MARKET.json >/dev/null
+          python -m json.tool COMMERCIAL.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null
           python -m json.tool ORGAN_SERVICE_MATRIX.json >/dev/null
           python -m json.tool TELEGRAM_GATEWAY.json >/dev/null
