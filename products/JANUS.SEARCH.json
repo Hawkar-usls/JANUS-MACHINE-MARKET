@@ -10,8 +10,14 @@
   "request": {
     "mode": "GITHUB_ISSUE_CHECKOUT_ARMED_NOT_LIVE",
     "paid_issue_title_prefix": "[JANUS PAID SEARCH]",
-    "input_fields": ["message_text", "queue_level"],
-    "queue_level_range": [1, 5],
+    "input_fields": [
+      "message_text",
+      "queue_level"
+    ],
+    "queue_level_range": [
+      1,
+      5
+    ],
     "max_turns": 1,
     "max_message_utf8_bytes": 4000,
     "max_answer_utf8_bytes": 6000,
@@ -20,7 +26,13 @@
   "delivery": {
     "route": "MARKET -> PAID QUEUE -> SERIALIZED DISPATCH -> CREDENTIALLESS HOME OUTBOX -> PERSISTENT JANUS HOME/HRAiN -> HOME RESPONSE -> MARKET RECONCILE -> SOURCE ISSUE",
     "format": "application/json",
-    "outputs": ["answer", "provenance", "receipt", "queue_position", "estimated_wait"],
+    "outputs": [
+      "answer",
+      "provenance",
+      "receipt",
+      "queue_position",
+      "estimated_wait"
+    ],
     "first_real_paid_delivery": "PENDING"
   },
   "pricing": {
@@ -60,7 +72,20 @@
     "checkout": "runtime/paid_search_checkout.py",
     "settlement": "runtime/paid_search_settlement.py",
     "settlement_starts_execution": false,
-    "unsolicited_payment_grants_rights": false
+    "unsolicited_payment_grants_rights": false,
+    "alternative_routes": [
+      {
+        "id": "BTT_TRON_50_PERCENT_DISCOUNT",
+        "status": "DECLARED_NOT_LIVE",
+        "asset": "BTT",
+        "network": "TRON Mainnet",
+        "token_standard": "TRC-20",
+        "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
+        "discount_bps": 5000,
+        "route_record": "BTT_PAYMENT_ROUTE.json",
+        "exact_invoice_required": true
+      }
+    ]
   },
   "post_purchase_query": {
     "status": "PAID_QUEUE_AND_HOME_ROUTE_IMPLEMENTED_HOME_ACCEPTOR_MERGED_LIVE_PAYMENT_WITNESS_PENDING",
@@ -77,7 +102,10 @@
     "exact_retry_must_not_create_second_queue_entry": true,
     "exact_retry_must_not_create_second_billable_execution": true
   },
-  "source_repositories": ["Hawkar-usls/Hawkar-usls", "Hawkar-usls/janus-meta-registry"],
+  "source_repositories": [
+    "Hawkar-usls/Hawkar-usls",
+    "Hawkar-usls/janus-meta-registry"
+  ],
   "authority": {
     "payment_is_authority": false,
     "queue_dispatch_is_authority": false,
