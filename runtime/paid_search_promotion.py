@@ -133,7 +133,13 @@ def build_live_documents(
     price["version"] = "2026-09-04-search-live-queue5-1"
     price["live_skus"] = ["JANUS.SEARCH"]
     price["preview_only_skus"] = ["JANUS.DATASET_SCOUT", "JANUS.EVIDENCE_PACK", "JANUS.ARCHIVE_SCAN", "JANUS.REPO_AUDIT", "JANUS.RESEARCH_JOB"]
-    price["pricing_law"] = "JANUS.SEARCH browser totals remain non-authoritative previews until the trusted live issue checkout reserves queue capacity and freezes an exact invoice. The five-level queue changes waiting priority only, never command authority. Other local rates remain preview-only."
+    price["pricing_law"] = "JANUS.SEARCH browser totals remain non-authoritative previews until the trusted live issue checkout reserves queue capacity and freezes an exact invoice. The five-level queue changes waiting priority only, never command authority. Other local rates remain preview-only. The BTT/TRON discount route remains non-live until its separate oracle and settlement-observer gates pass."
+    if (price.get("alternative_payment_routes") or {}).get("BTT_TRON"):
+        price["alternative_payment_routes"]["BTT_TRON"]["status"] = "DECLARED_DISCOUNT_ROUTE_NOT_LIVE"
+        price["alternative_payment_routes"]["BTT_TRON"]["live_quote_allowed"] = False
+    if (r.get("alternative_payment_rails") or {}).get("BTT_TRON"):
+        r["alternative_payment_rails"]["BTT_TRON"]["status"] = "DECLARED_DISCOUNT_ROUTE_GATE_CLOSED"
+        r["alternative_payment_rails"]["BTT_TRON"]["live_invoice_allowed"] = False
 
     plane = copy.deepcopy(dict(buyer_plane))
     plane["status"] = "ZERO_PRICE_AND_PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING"
@@ -174,7 +180,7 @@ def promote_pages_html(text: str) -> str:
         '<span class="truth prep">PAID SEARCH <b>ARMED · GATED</b></span>': '<span class="truth live">PAID SEARCH <b>LIVE</b></span>',
         '<div><span>Paid checkout</span><b class="amber">ARMED · WITNESS GATE</b></div>': '<div><span>Paid checkout</span><b>LIVE · 5-LEVEL QUEUE</b></div>',
         '<div><span>Autonomous purchase</span><b>OFF UNTIL GATE</b></div>': '<div><span>Autonomous purchase</span><b>ON · JANUS.SEARCH ONLY</b></div>',
-        'The paid SEARCH transport, invoice, exact Ethereum-USDT observer and persistent HOME delivery path are armed. No payable invoice is issued until the independent external-witness gate is satisfied. <b>Do not send funds without a live invoice for your exact request.</b>': 'Paid JANUS.SEARCH is live through exact issue invoices and a serialized five-level execution queue. Queue capacity is reserved before invoice publication and only one paid request is ACTIVE at a time. <b>Do not send funds without the live invoice for your exact request.</b>',
+        'The paid SEARCH transport, invoice, exact Ethereum-USDT observer and persistent HOME delivery path are armed. A BTT (TRC-20 / TRON) route is declared at 50% off the USDT reference value, but its oracle/observer and the global money gate are still closed. <b>Do not send USDT or BTT without a live invoice for your exact request.</b>': 'Paid JANUS.SEARCH is live through exact Ethereum-USDT issue invoices and a serialized five-level execution queue. Queue capacity is reserved before invoice publication and only one paid request is ACTIVE at a time. The BTT / TRON 50% discount route remains declared but not live until its oracle and settlement observer gates pass. <b>Do not send USDT or BTT without the live invoice for your exact request.</b>',
         '<p>Pending a genuine independent external GitHub principal completing the public Market → persistent HOME/JANUS → Market result roundtrip.</p><b class="status-big amber">PENDING</b>': '<p>A qualifying independent machine-client completed the frozen public Market → persistent HOME/JANUS → Market result roundtrip.</p><b class="status-big cyan">PASS</b>',
         '<p>The issue checkout endpoint, immutable invoice contract, exact Ethereum-mainnet USDT transaction observer, purchase ledger and persistent HOME delivery path are implemented and CI-proven. Live invoices remain witness-gated.</p><b class="status-big amber">ARMED · GATED</b>': '<p>JANUS.SEARCH issue checkout is live with exact invoices, a five-level non-preemptive queue, Ethereum-mainnet USDT observation, purchase ledger and persistent HOME delivery.</p><b class="status-big cyan">LIVE · SEARCH ONLY</b>',
         '<div class="confirm-box pending"><span>JANUS ACCEPT</span><b>WITNESS GATE PENDING</b></div>': '<div class="confirm-box"><span>JANUS ACCEPT</span><b>LIVE SEARCH + QUEUE GATE</b></div>',
