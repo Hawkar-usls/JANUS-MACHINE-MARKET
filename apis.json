@@ -61,6 +61,10 @@
     {
       "type": "IssueTracker",
       "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues"
+    },
+    {
+      "type": "ContentSignal",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/robots.txt"
     }
   ],
   "prompts": [
