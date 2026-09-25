@@ -38,15 +38,18 @@
     "endpoint": null
   },
   "task_execution": {
-    "status": "LIVE_BOUNDED_R1_FOR_THREE_SKUS",
-    "live_skus": [
-      "JANUS.SEARCH",
+    "status": "PUBLIC_FIRST_FREE_SEARCH_PLUS_OWNER_SHADOWS",
+    "public_live_skus": [
+      "JANUS.SEARCH"
+    ],
+    "owner_shadow_skus": [
       "JANUS.REPO_AUDIT",
       "JANUS.DATASET_SCOUT"
     ],
     "ingress": "MACHINE_INGRESS.json",
     "result_transport": "GitHub issue comments + persistent Market receipts",
-    "html_required_for_machine_client": false
+    "html_required_for_machine_client": false,
+    "telegram_required": false
   },
   "discovery_protocols": {
     "janus_native": {
@@ -140,5 +143,14 @@
     "public_live": true,
     "payment_required": false,
     "subsequent_paid_orders_live": false
+  },
+  "agent_quickstart": {
+    "href": "AGENTS.md",
+    "media_type": "text/markdown",
+    "status": "LIVE_GITHUB_FIRST_FREE_SEARCH"
+  },
+  "agent_acquisition": {
+    "href": "discovery/AGENT_ACQUISITION.json",
+    "media_type": "application/json"
   }
 }
