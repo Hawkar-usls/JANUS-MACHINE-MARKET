@@ -53,6 +53,13 @@
     return 'PAYMENT GATE LOCKED';
   }
 
+  function bttRouteLabel(usdtMicros) {
+    const route = pricing?.alternative_payment_routes?.BTT_TRON;
+    if (!route) return null;
+    const discounted = Math.round(Number(usdtMicros || 0) * (10000 - Number(route.discount_bps || 0)) / 10000);
+    return { discounted_reference_micros: discounted, discount_bps: Number(route.discount_bps || 0), live: route.live_quote_allowed === true };
+  }
+
   function refreshCatalogPrices() {
     if (!pricing) return;
     document.querySelectorAll('.sku-card').forEach(card => {
@@ -113,6 +120,7 @@
       <div><span>Gross</span><b>${money(calc.gross_micros)}</b></div>
       <div><span>Volume savings</span><b>${calc.discount_micros ? '−' + money(calc.discount_micros) : money(0)}</b></div>
       <div class="quote-total"><span>Estimated total</span><b>${money(calc.total_micros)}</b></div>
+      ${bttRouteLabel(calc.total_micros) ? `<div><span>BTT route reference</span><b>${money(bttRouteLabel(calc.total_micros).discounted_reference_micros)} equivalent · −${bttRouteLabel(calc.total_micros).discount_bps/100}% · GATED</b></div>` : ''}
       ${unpriced ? `<div><span>Unpriced items</span><b class="amber">${unpriced}</b></div>` : ''}
       <div><span>Quote validity</span><b>${Math.round(Number(pricing.quote_ttl_seconds || 900)/60)} MIN</b></div>
       <div><span>Payments</span><b class="amber">${currentGateLabel()}</b></div>`;
@@ -159,6 +167,7 @@
     box.innerHTML = `
       <div class="pricing-quote-head"><span>FROZEN QUOTE PREVIEW</span><b>${pricing.version}</b></div>
       <div class="pricing-quote-total"><span>TOTAL</span><strong>${money(calc.total_micros)}</strong></div>
+      ${bttRouteLabel(calc.total_micros) ? `<div class="pricing-quote-total"><span>BTT / TRON −50% reference</span><strong>${money(bttRouteLabel(calc.total_micros).discounted_reference_micros)} equivalent</strong></div>` : ''}
       <div class="pricing-quote-grid">
         <span>Asset <b>${pricing.currency}</b></span>
         <span>Network <b>Ethereum Mainnet</b></span>
