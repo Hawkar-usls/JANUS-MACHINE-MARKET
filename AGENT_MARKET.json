@@ -52,7 +52,11 @@
     "ingress": "MACHINE_INGRESS.json",
     "result_transport": "GitHub issue comments + persistent Market receipts",
     "html_required_for_machine_client": false,
-    "telegram_required": false
+    "telegram_required": false,
+    "dual_mode_skus": [
+      "JANUS.PR_REVIEW"
+    ],
+    "dual_mode_note": "JANUS.PR_REVIEW has both a verified owner-shadow witness lane and a separate public first-free external lane; owner-shadow evidence must not be counted as external demand or foreign-agent witness."
   },
   "discovery_protocols": {
     "janus_native": {
