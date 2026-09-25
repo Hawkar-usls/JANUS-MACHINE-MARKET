@@ -2,7 +2,7 @@
   "schema": "janus.machine_market.agent_manifest.v1",
   "name": "JANUS MACHINE MARKET",
   "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
-  "status": "DISCOVERY_AND_BOUNDED_MACHINE_TASK_INGRESS_READY",
+  "status": "DISCOVERY_AND_TWO_BOUNDED_PUBLIC_MACHINE_SERVICES_READY",
   "beacon": {
     "href": "BEACON.json",
     "media_type": "application/json"
@@ -19,7 +19,7 @@
   "machine_ingress": {
     "href": "MACHINE_INGRESS.json",
     "media_type": "application/json",
-    "status": "LIVE_BOUNDED_GITHUB_API_INGRESS"
+    "status": "LIVE_BOUNDED_GITHUB_API_SEARCH_AND_PR_REVIEW"
   },
   "commercial": {
     "href": "COMMERCIAL.json",
@@ -148,12 +148,13 @@
     "entitlement": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL",
     "public_live": true,
     "payment_required": false,
-    "subsequent_paid_orders_live": false
+    "subsequent_paid_orders_live": false,
+    "note": "Legacy single-offer pointer retained for JANUS.SEARCH compatibility; use public_first_free_offers for the complete live set."
   },
   "agent_quickstart": {
     "href": "AGENTS.md",
     "media_type": "text/markdown",
-    "status": "LIVE_GITHUB_FIRST_FREE_SEARCH"
+    "status": "LIVE_GITHUB_FIRST_FREE_SEARCH_AND_PR_REVIEW"
   },
   "agent_acquisition": {
     "href": "discovery/AGENT_ACQUISITION.json",
