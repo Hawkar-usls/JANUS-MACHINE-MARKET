@@ -14,7 +14,7 @@ MAX_MESSAGE_UTF8_BYTES = 4000
 MAX_ANSWER_UTF8_BYTES = 6000
 MAX_TURNS = 1
 HISTORY_TURNS = 0
-PER_ACTOR_DAILY_LIMIT = 3
+FIRST_FREE_PER_ACTOR = 1
 GLOBAL_DAILY_LIMIT = 20
 
 
@@ -119,8 +119,8 @@ def evaluate_outbox_admission(packet: dict[str, Any], existing_packets: Iterable
     require(issue_id > 0 and bool(qid), "PUBLIC_BETA_PACKET_BINDING_INVALID")
     day = _utc_day(created_at)
 
-    actor_count = 0
-    global_count = 0
+    actor_prior_count = 0
+    global_count_today = 0
     for prior in existing_packets:
         if prior.get("request_origin") != PUBLIC_ORIGIN:
             continue
@@ -140,24 +140,23 @@ def evaluate_outbox_admission(packet: dict[str, Any], existing_packets: Iterable
             prior_day = _utc_day(str(pquery.get("created_at") or ""))
         except PublicSearchBetaError:
             continue
-        if prior_day != day:
-            continue
-        global_count += 1
         if str(pquery.get("buyer_actor_id") or "") == actor:
-            actor_count += 1
+            actor_prior_count += 1
+        if prior_day == day:
+            global_count_today += 1
 
-    if actor_count >= PER_ACTOR_DAILY_LIMIT:
+    if actor_prior_count >= FIRST_FREE_PER_ACTOR:
         return {
             "admitted": False,
-            "reason": "PER_ACTOR_DAILY_LIMIT_REACHED",
-            "policy": "PUBLIC_BETA_DAILY_QUOTA",
-            "limit": PER_ACTOR_DAILY_LIMIT,
+            "reason": "FIRST_FREE_SEARCH_ALREADY_USED",
+            "policy": "ONE_FIRST_FREE_SEARCH_PER_EXTERNAL_PRINCIPAL",
+            "limit": FIRST_FREE_PER_ACTOR,
         }
-    if global_count >= GLOBAL_DAILY_LIMIT:
+    if global_count_today >= GLOBAL_DAILY_LIMIT:
         return {
             "admitted": False,
             "reason": "GLOBAL_DAILY_LIMIT_REACHED",
-            "policy": "PUBLIC_BETA_DAILY_QUOTA",
+            "policy": "PUBLIC_BETA_GLOBAL_DAILY_SAFETY_CAP",
             "limit": GLOBAL_DAILY_LIMIT,
         }
     return _stable_admit()
@@ -174,7 +173,7 @@ __all__ = [
     "MAX_MESSAGE_UTF8_BYTES",
     "MAX_TURNS",
     "OWNER_LOGIN",
-    "PER_ACTOR_DAILY_LIMIT",
+    "FIRST_FREE_PER_ACTOR",
     "PUBLIC_ORIGIN",
     "PublicSearchBetaError",
     "evaluate_outbox_admission",
