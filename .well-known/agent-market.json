@@ -23,5 +23,14 @@
       "live_runtime_exists": false,
       "publication_record": "discovery/MCP_PUBLICATION.json"
     }
-  }
+  },
+  "first_free_offer": {
+    "sku": "JANUS.SEARCH",
+    "amount": 1,
+    "price": 0,
+    "principal_model": "external GitHub principal",
+    "direct_issue_template": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md",
+    "second_new_order_free": false
+  },
+  "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"
 }
