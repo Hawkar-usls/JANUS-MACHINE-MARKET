@@ -1,0 +1,46 @@
+{
+  "schema": "janus.machine_market.product.v1",
+  "sku": "JANUS.SWARM_RESEARCH",
+  "title": "JANUS Swarm Research",
+  "class": "research_job",
+  "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+  "machine_discovery": true,
+  "machine_purchase": false,
+  "summary": "Bounded parallel multi-agent research attack with explicit provenance and independence boundaries.",
+  "source": {
+    "repository": "Hawkar-usls/janus-distributed-ai-swarm",
+    "ref": "main"
+  },
+  "request": {
+    "mode": "SPECIALIST_ROUTER_PREPARED_NOT_PUBLIC_LIVE",
+    "modes": [
+      "SMALL",
+      "PARALLEL",
+      "ADVERSARIAL"
+    ],
+    "max_turns": 1,
+    "read_only": true
+  },
+  "pricing": {
+    "mode": "REFERENCE_ONLY_NOT_LIVE",
+    "pricing_alias": "JANUS.RESEARCH_JOB",
+    "payable_quote": false
+  },
+  "execution": {
+    "public_live": false,
+    "route": "MARKET -> HOME/Activator -> specialist organ -> HOME receipt -> Market reconcile",
+    "blocker": "DEDICATED_SPECIALIST_BRIDGE_AND_END_TO_END_RETURN_RECEIPT"
+  },
+  "authority": {
+    "payment_is_authority": false,
+    "command_authority": false,
+    "repository_write_authority": false,
+    "external_effect_authority": false,
+    "scientific_truth_authority": false
+  },
+  "truth_boundary": [
+    "CATALOG_LISTING != LIVE_EXECUTION",
+    "ORGAN_OUTPUT != WORLD_TRUTH",
+    "ROUTE_PROPOSAL != DISPATCH_AUTHORITY"
+  ]
+}
