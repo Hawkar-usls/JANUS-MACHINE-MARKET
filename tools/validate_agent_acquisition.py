@@ -21,6 +21,7 @@ def require(ok, code):
 apis = load("apis.json")
 well_known = load(".well-known/apis.json")
 openapi = load("discovery/GITHUB_ISSUES_INGRESS.openapi.json")
+pr_openapi = load("discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json")
 acq = load("discovery/AGENT_ACQUISITION.json")
 pointer = load(".well-known/agent-market.json")
 agent = load("AGENT_MARKET.json")
@@ -51,13 +52,15 @@ for name in ("janus-search", "janus-pr-review"):
     )
 
 entries = apis.get("apis") or []
-require(len(entries) == 1, "APIS_JSON_EXPECTS_ONE_LIVE_INGRESS")
-entry = entries[0]
-require(entry.get("name") == "JANUS.SEARCH GitHub Ingress", "APIS_JSON_LIVE_ENTRY_DRIFT")
-require(
-    str(entry.get("baseURL", "")).startswith("https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET"),
-    "APIS_JSON_BASEURL_DRIFT",
-)
+api_by_name = {row.get("name"): row for row in entries}
+require(set(api_by_name) == {"JANUS.SEARCH GitHub Ingress", "JANUS.PR_REVIEW GitHub Ingress"}, "APIS_JSON_LIVE_INGRESS_SET_DRIFT")
+for entry in api_by_name.values():
+    require(
+        str(entry.get("baseURL", "")).startswith("https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET"),
+        "APIS_JSON_BASEURL_DRIFT",
+    )
+pr_api = api_by_name["JANUS.PR_REVIEW GitHub Ingress"]
+require(any(x.get("type") == "OpenAPI" and "PR_REVIEW_GITHUB_INGRESS.openapi.json" in str(x.get("url", "")) for x in (pr_api.get("properties") or [])), "PR_REVIEW_OPENAPI_PROPERTY_MISSING")
 
 require(openapi.get("openapi") == "3.1.0", "INGRESS_OPENAPI_VERSION_DRIFT")
 paths = openapi.get("paths") or {}
@@ -66,6 +69,12 @@ require(issue_path in paths, "INGRESS_OPENAPI_CREATE_ISSUE_MISSING")
 post = (paths[issue_path] or {}).get("post") or {}
 require(post.get("operationId") == "createJanusFirstFreeSearchOrder", "INGRESS_OPENAPI_OPERATION_DRIFT")
 require((openapi.get("servers") or [{}])[0].get("url") == "https://api.github.com", "INGRESS_OPENAPI_SERVER_DRIFT")
+require(pr_openapi.get("openapi") == "3.1.0", "PR_REVIEW_OPENAPI_VERSION_DRIFT")
+pr_paths = pr_openapi.get("paths") or {}
+require(issue_path in pr_paths, "PR_REVIEW_OPENAPI_CREATE_ISSUE_MISSING")
+pr_post = (pr_paths[issue_path] or {}).get("post") or {}
+require(pr_post.get("operationId") == "createJanusFirstFreePRReview", "PR_REVIEW_OPENAPI_OPERATION_DRIFT")
+require((pr_openapi.get("servers") or [{}])[0].get("url") == "https://api.github.com", "PR_REVIEW_OPENAPI_SERVER_DRIFT")
 
 fast = acq.get("fastest_live_path") or {}
 require(fast.get("sku") == "JANUS.SEARCH", "ACQUISITION_SKU_DRIFT")
