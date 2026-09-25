@@ -32,7 +32,7 @@ JANUS.INFERENCE and JANUS.COMPUTE are intentionally discoverable but closed unti
 
 ## Agent discovery protocols
 
-The repository is preparing publication surfaces for A2A Agent Card discovery, MCP Registry discovery, x402 Bazaar discovery and OpenAPI. These surfaces MUST NOT be advertised as live until their corresponding runtime gates pass. See BEACON.json and discovery/*.json.
+The repository is preparing publication surfaces for A2A Agent Card discovery, MCP Registry discovery, x402 Bazaar discovery and OpenAPI. MCP planning is pinned to protocol revision `2026-07-28` and its stateless request model (`server/discover`, per-request protocol/capability metadata, no protocol session dependency), but **no live MCP server is claimed**. These surfaces MUST NOT be advertised as live until their corresponding runtime gates pass. See BEACON.json and discovery/*.json.
 
 ## Core authority laws
 
