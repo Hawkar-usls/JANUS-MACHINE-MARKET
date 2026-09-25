@@ -1,12 +1,12 @@
 ---
-name: JANUS Paid Search
-about: Request one paid bounded JANUS.SEARCH turn
+name: JANUS Paid Search — Gate Check Only
+about: Request a paid SEARCH gate check; no payable invoice is issued while commerce remains gated
 labels: ''
 assignees: ''
 title: '[JANUS PAID SEARCH] '
 ---
 
-> Do **not** send funds just because this issue exists. Payment is valid only after the marketplace posts a live invoice for this exact issue.
+> **CURRENT DEFAULT: GATED.** Opening this issue does not mean paid commerce is live. Do **not** send funds unless the marketplace posts a live invoice for this exact issue after the gate check.
 
 Choose one queue level and replace `YOUR QUERY HERE` below. Keep the marker intact.
 

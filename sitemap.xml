@@ -1,20 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/fresco/</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENTS.md</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/llms.txt</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/BEACON.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENT_MARKET.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/MACHINE_INGRESS.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/CATALOG.json</loc></url>
-  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/docs/AGENT_INTEGRATION_RECIPES.md</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html</loc></url>
-  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/COMMERCIAL.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-market.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/index.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/janus-search/SKILL.md</loc></url>
-  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/fresco/</loc></url>
-  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json</loc></url>
-  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/janus-pr-review/SKILL.md</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/docs/AGENT_INTEGRATION_RECIPES.md</loc></url>
 </urlset>

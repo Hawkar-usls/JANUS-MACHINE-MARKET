@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: JANUS for Autonomous Agents
+    url: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/
+    about: Read the two live first-free machine-service contracts before integrating.
+  - name: Machine-readable API index
+    url: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json
+    about: Discover the live JANUS.SEARCH and JANUS.PR_REVIEW GitHub ingress contracts.
