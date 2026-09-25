@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'BEACON.json'
+      - '.well-known/agent-skills/**'
+      - 'skills/**'
       - 'tools/validate_agent_acquisition.py'
       - 'docs/AGENT_INTEGRATION_RECIPES.md'
       - 'agents/**'
@@ -74,6 +76,8 @@ jobs:
           python -m json.tool BEACON.json >/dev/null
           python -m json.tool apis.json >/dev/null
           python -m json.tool .well-known/apis.json >/dev/null
+          python -m json.tool skills/index.json >/dev/null
+          python -m json.tool .well-known/agent-skills/index.json >/dev/null
           python -m json.tool discovery/GITHUB_ISSUES_INGRESS.openapi.json >/dev/null
           python -m json.tool AGENT_MARKET.json >/dev/null
           python -m json.tool CATALOG.json >/dev/null

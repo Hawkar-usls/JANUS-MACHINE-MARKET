@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "janus-search",
+      "type": "skill-md",
+      "description": "Delegate bounded provenance-aware research/search to JANUS through the live GitHub Issues API ingress.",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md",
+      "digest": "sha256:23fd7df9234a096807958a5225e9b9eb451bed9adaa6e253704ffa72bcd6f28f"
+    }
+  ]
+}

@@ -1,6 +1,22 @@
 name: JANUS IndexNow Agent Discovery
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'llms.txt'
+      - 'AGENTS.md'
+      - 'MACHINE_INGRESS.json'
+      - 'AGENT_MARKET.json'
+      - 'BEACON.json'
+      - 'apis.json'
+      - '.well-known/**'
+      - 'agents/**'
+      - 'skills/**'
+      - 'discovery/**'
   workflow_run:
     workflows: ["pages build and deployment"]
     types: [completed]
@@ -11,7 +27,7 @@ permissions:
 
 jobs:
   submit-indexnow:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -54,7 +70,9 @@ jobs:
               "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENT_MARKET.json",
               "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/BEACON.json",
               "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json",
-              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json"
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json",
+              "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md"
             ]
           }
           JSON

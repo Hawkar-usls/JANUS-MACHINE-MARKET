@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 from pathlib import Path
 
@@ -25,11 +26,24 @@ pointer = load(".well-known/agent-market.json")
 agent = load("AGENT_MARKET.json")
 commerce = load("COMMERCE_READINESS.json")
 witness = load("FOREIGN_AGENT_WITNESS.json")
+skill_index = load(".well-known/agent-skills/index.json")
+skill_index_mirror = load("skills/index.json")
+skill_path = ROOT / ".well-known/agent-skills/janus-search/SKILL.md"
+skill_mirror_path = ROOT / "skills/janus-search/SKILL.md"
 
 require(apis == well_known, "APIS_JSON_MIRROR_DRIFT")
 require(apis.get("specificationVersion") == "0.23", "APIS_JSON_SPEC_DRIFT")
 require(apis.get("type") == "Index", "APIS_JSON_TYPE_DRIFT")
 require(apis.get("kind") == "opensource", "APIS_JSON_KIND_DRIFT")
+
+require(skill_index == skill_index_mirror, "AGENT_SKILLS_INDEX_MIRROR_DRIFT")
+require(skill_path.is_file() and skill_mirror_path.is_file(), "JANUS_SEARCH_SKILL_MISSING")
+require(skill_path.read_bytes() == skill_mirror_path.read_bytes(), "JANUS_SEARCH_SKILL_MIRROR_DRIFT")
+skills = skill_index.get("skills") or []
+require(len(skills) == 1 and skills[0].get("name") == "janus-search", "AGENT_SKILL_SET_DRIFT")
+actual_skill_digest = "sha256:" + hashlib.sha256(skill_path.read_bytes()).hexdigest()
+require(skills[0].get("digest") == actual_skill_digest, "AGENT_SKILL_DIGEST_DRIFT")
+require(any(x.get("type") == "AgentSkill" and "janus-search" in str(x.get("url", "")) for x in (apis.get("common") or [])), "APIS_JSON_AGENT_SKILL_MISSING")
 
 entries = apis.get("apis") or []
 require(len(entries) == 1, "APIS_JSON_EXPECTS_ONE_LIVE_INGRESS")
@@ -71,3 +85,4 @@ print("TELEGRAM_REQUIRED=FALSE")
 print("MONEY_ENABLED=FALSE")
 print("A2A_RUNTIME_PROMOTED=FALSE")
 print("MCP_RUNTIME_PROMOTED=FALSE")
+print("JANUS_SEARCH_AGENT_SKILL=VALID")

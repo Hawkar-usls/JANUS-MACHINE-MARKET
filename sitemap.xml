@@ -9,4 +9,8 @@
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/CATALOG.json</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/docs/AGENT_INTEGRATION_RECIPES.md</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt</loc></url>\n  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/frameworks.html</loc></url>
   <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/index.json</loc></url>
+  <url><loc>https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/skills/janus-search/SKILL.md</loc></url>
 </urlset>
