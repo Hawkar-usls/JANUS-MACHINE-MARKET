@@ -27,8 +27,8 @@
       "candidate": "JANUS.PR_REVIEW",
       "market_need": "Independent high-signal review of agent-generated pull requests, tests, policy and regression risk",
       "janus_fit": "HIGH",
-      "current_state": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
-      "next_gate": "CI_THEN_REAL_OWNER_SHADOW_PR_WITNESS_THEN_PUBLIC_QUOTA_PRIVACY_POLICY",
+      "current_state": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
+      "next_gate": "PUBLIC_QUOTA_PRIVACY_POLICY_AND_REAL_EXTERNAL_PRINCIPAL_RECEIPT",
       "demand_evidence": [
         "https://github.com/resources/insights/enterprise-content-roundup-april-26",
         "https://docs.github.com/en/copilot/concepts/agents/code-review"

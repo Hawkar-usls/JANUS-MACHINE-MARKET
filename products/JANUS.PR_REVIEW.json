@@ -3,7 +3,7 @@
   "sku": "JANUS.PR_REVIEW",
   "title": "JANUS PR Guard",
   "class": "repository_analysis",
-  "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+  "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
   "machine_discovery": true,
   "machine_purchase": false,
   "summary": "Bounded GitHub pull-request structural and policy-risk review bound to exact base/head commit SHAs, returning machine-readable findings and a durable receipt without executing target repository code.",
@@ -61,7 +61,7 @@
     "public_live": false,
     "paid_execution": false,
     "target_repository_code_executed": false,
-    "blocker": "OWNER_SHADOW_LIVE_WITNESS_THEN_PUBLIC_QUOTA_PRIVACY_POLICY_AND_FOREIGN_PRINCIPAL_RECEIPT"
+    "blocker": "PUBLIC_QUOTA_PRIVACY_POLICY_AND_REAL_EXTERNAL_PRINCIPAL_RECEIPT"
   },
   "authority": {
     "payment_is_authority": false,
@@ -77,5 +77,25 @@
     "FAIL != EXPLOITABILITY_PROOF",
     "REVIEW != SECURITY_CERTIFICATION",
     "PAYMENT != EXECUTION_AUTHORITY"
-  ]
+  ],
+  "live_witness": {
+    "mode": "OWNER_SHADOW_PROXY",
+    "source_issue": 70,
+    "target_pull_request": 69,
+    "target_repository": "Hawkar-usls/JANUS-MACHINE-MARKET",
+    "base_sha": "1d2ac6acc7ddb023e671b1581ef7d6b1778fa75c",
+    "head_sha": "a22e4b16b72f17deafa43104622777f278510cca",
+    "snapshot_sha256": "2dbfcdf5a38b69386cf399b56fc69a7869f7ae8583a2950bd073dd51c5b63af2",
+    "result_sha256": "71beea06edf7733a998053ff9c42d05fae6532c0410d314264a0149cd318acfe",
+    "receipt_id": "prr-71beea06edf7733a998053ff9c42d05fae6532c0",
+    "receipt_hash": "07c7a468cde26112f695e7f72afa064ef21ccd54573929365fe57a9af6c9b5bf",
+    "market_state_commit": "f4d1233d41b5ded8069781bdb4902c0a89474c3a",
+    "verdict": "PASS",
+    "score_0_100": 100,
+    "snapshot_complete": true,
+    "findings": 0,
+    "target_repository_code_executed": false,
+    "production_money_used": false,
+    "foreign_agent_witness": false
+  }
 }

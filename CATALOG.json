@@ -162,7 +162,7 @@
       "sku": "JANUS.PR_REVIEW",
       "title": "JANUS PR Guard",
       "class": "repository_analysis",
-      "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "status": "LIVE_BOUNDED_OWNER_SHADOW_VERIFIED",
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.PR_REVIEW.json"
