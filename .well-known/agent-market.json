@@ -10,9 +10,18 @@
   "transaction_api_status": "NOT_ESTABLISHED",
   "standard_discovery_status": {
     "a2a": "PREPARED_NOT_PUBLISHED_NO_A2A_RUNTIME",
-    "mcp": "PREPARED_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
+    "mcp": "PREPARED_2026_07_28_BASELINE_NOT_PUBLISHED_NO_LIVE_MCP_SERVER",
     "x402_bazaar": "PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE",
     "openapi": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API"
   },
-  "warning": "Discoverable does not mean purchasable. Unsolicited payment grants nothing."
+  "warning": "Discoverable does not mean purchasable. Unsolicited payment grants nothing.",
+  "standard_discovery_detail": {
+    "mcp": {
+      "target_spec_revision": "2026-07-28",
+      "runtime_model": "STATELESS_REQUEST_RESPONSE",
+      "server_discover_required": true,
+      "live_runtime_exists": false,
+      "publication_record": "discovery/MCP_PUBLICATION.json"
+    }
+  }
 }
