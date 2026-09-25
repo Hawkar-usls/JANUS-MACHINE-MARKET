@@ -35,7 +35,7 @@
       "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/llms.txt"
     },
     {
-      "type": "GitHubRepository",
+      "type": "GitHubRepo",
       "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET"
     },
     {
