@@ -1,9 +1,9 @@
 {
   "schema": "janus.machine_market.public_service_beta.v1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "recorded_at": "2026-09-25",
-  "status": "SEARCH_FIRST_FREE_LIVE_INTAKE_PENDING_EXTERNAL_ROUNDTRIP",
-  "purpose": "Expose exactly one first free bounded JANUS.SEARCH to each external GitHub principal through the existing Market -> credentialless HOME pull -> persistent JANUS -> Market reconcile nerve without enabling payments.",
+  "status": "SEARCH_AND_PR_REVIEW_FIRST_FREE_LIVE_EXTERNAL_ROUNDTRIPS_PENDING",
+  "purpose": "Expose one first free bounded JANUS.SEARCH and one first free bounded JANUS.PR_REVIEW to each external GitHub principal without enabling payments, command authority, merge authority, repository writes, arbitrary shell, or target repository code execution.",
   "public_services": {
     "JANUS.SEARCH": {
       "status": "FIRST_SEARCH_ORDER_FREE",
@@ -28,6 +28,30 @@
       "exact_retry_same_issue_consumes_second_free_order": false,
       "second_new_search_is_free": false,
       "exact_retry_consumes_second_free_order": false
+    },
+    "JANUS.PR_REVIEW": {
+      "status": "FIRST_PR_REVIEW_FREE",
+      "transport": "GITHUB_ISSUE_OR_GITHUB_ISSUES_API",
+      "route": "PUBLIC_GITHUB_PR_STRUCTURAL_REVIEW",
+      "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
+      "price": 0,
+      "payment_required": false,
+      "public_repositories_only": true,
+      "max_changed_files": 300,
+      "exact_head_sha_required": true,
+      "target_repository_code_executed": false,
+      "global_daily_limit": 10,
+      "one_issue_can_bind_more_than_one_pr": false,
+      "exact_retry_creates_second_execution": false,
+      "direct_issue_template": ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md",
+      "direct_issue_composer": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md",
+      "github_auth_required": true,
+      "first_free_per_external_principal": 1,
+      "free_entitlement_scope": "LIFETIME_PER_GITHUB_PRINCIPAL_FOR_CURRENT_BETA_IDENTITY_MODEL",
+      "second_new_issue_is_free": false,
+      "exact_retry_same_issue_consumes_second_free_order": false,
+      "merge_authority": false,
+      "security_certification": false
     }
   },
   "not_public_yet": {
@@ -63,12 +87,31 @@
     "HOME_RESPONSE_IS_PERSISTED_AND_RETURNED_TO_SOURCE_ISSUE",
     "MARKET_FRESH_CHECKOUT_REPLAY_VERIFIES_EXACT_RECEIPT"
   ],
-  "promotion_rule": "The one-first-free SEARCH entitlement does not make specialist organ products live. Do not open TOPA/Demiurge/Cousteau/registry/Fundamentum/swarm execution, payments, or paid execution merely because they are catalogued; each specialist lane needs its own end-to-end receipt.",
+  "promotion_rule": "Each public lane promotes only from its own end-to-end receipt. SEARCH external completion may satisfy the dedicated persistent-HOME foreign-agent gate; PR_REVIEW external completion proves PR Guard demand/roundtrip only and must not self-promote the SEARCH/HOME foreign-agent witness. Specialist products remain independently receipt-gated.",
   "truth_boundary": [
     "PUBLIC_INTAKE != COMPLETED_SERVICE",
     "ZERO_PRICE_PURCHASE_GRANT != EXECUTION_AUTHORITY",
     "EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_INDEPENDENCE_GATE_PASSES",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
   ],
-  "specialist_catalog": "ORGAN_SERVICE_MATRIX.json"
+  "specialist_catalog": "ORGAN_SERVICE_MATRIX.json",
+  "completion_definition_by_service": {
+    "JANUS.SEARCH": [
+      "EXTERNAL_GITHUB_PRINCIPAL_SUBMITS_VALID_SEARCH_REQUEST",
+      "PUBLIC_BETA_ADMISSION_RECEIPT_PERSISTED_CREATE_ONLY_IN_OUTBOX",
+      "HOME_PULLS_PACKET_CREDENTIALLESSLY",
+      "SAME_PERSISTENT_JANUS_RESIDENT_PRODUCES_BOUNDED_RESPONSE",
+      "HOME_RESPONSE_IS_PERSISTED_AND_RETURNED_TO_SOURCE_ISSUE",
+      "MARKET_FRESH_CHECKOUT_REPLAY_VERIFIES_EXACT_RECEIPT"
+    ],
+    "JANUS.PR_REVIEW": [
+      "EXTERNAL_GITHUB_PRINCIPAL_SUBMITS_VALID_PUBLIC_PR_REQUEST",
+      "EXACT_PR_HEAD_SHA_MATCHES_FROZEN_REQUEST",
+      "PUBLIC_PR_SNAPSHOT_FETCHED_WITHOUT_EXECUTING_TARGET_CODE",
+      "DETERMINISTIC_PR_GUARD_PRODUCES_RESULT",
+      "CREATE_ONLY_MARKET_RECEIPT_PERSISTS",
+      "FRESH_CHECKOUT_REPLAY_VERIFIES_RECEIPT",
+      "RESULT_IS_RETURNED_TO_SOURCE_ISSUE"
+    ]
+  }
 }
