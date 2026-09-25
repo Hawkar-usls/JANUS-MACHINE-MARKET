@@ -7,6 +7,7 @@ on:
       - 'runtime/public_search_beta.py'
       - 'runtime/r1b_shadow_buyer_query.py'
       - 'tests/test_public_search_beta.py'
+      - '.github/ISSUE_TEMPLATE/janus-search-free-beta.md'
       - '.github/workflows/r1-public-search-beta-outbox.yml'
   issues:
     types: [opened]
