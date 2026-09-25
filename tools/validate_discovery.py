@@ -23,6 +23,7 @@ def require(condition: bool, code: str):
 beacon = load_json("BEACON.json")
 agent = load_json("AGENT_MARKET.json")
 catalog = load_json("CATALOG.json")
+organ_matrix = load_json("ORGAN_SERVICE_MATRIX.json")
 pointer = load_json(".well-known/agent-market.json")
 a2a = load_json("discovery/A2A_PUBLICATION.json")
 global_a2a = load_json("discovery/GLOBAL_A2A_REGISTRY.json")
@@ -40,6 +41,26 @@ require(pointer.get("transaction_api_status") == "NOT_ESTABLISHED", "WELL_KNOWN_
 require(agent.get("x402", {}).get("status") == "PLANNED_NOT_ACTIVE", "X402_MUST_REMAIN_INACTIVE_BEFORE_R1")
 
 products = {row.get("sku"): row for row in catalog.get("products", [])}
+specialists = {
+    "JANUS.TOPA_HUNT": ("Hawkar-usls/TOPA", "main"),
+    "JANUS.DEMIURGE_SCOUT": ("Hawkar-usls/Janus-Demiurge", "main"),
+    "JANUS.COUSTEAU_SCAN": ("Hawkar-usls/Janus-Cosmos", "janus-echo-cousteau"),
+    "JANUS.META_REGISTRY_SEARCH": ("Hawkar-usls/janus-meta-registry", "main"),
+    "JANUS.FUNDAMENTUM_AUDIT": ("Hawkar-usls/Janus-Fundamentum", "main"),
+    "JANUS.SWARM_RESEARCH": ("Hawkar-usls/janus-distributed-ai-swarm", "main"),
+}
+organ_services = organ_matrix.get("services") or {}
+for sku, (repository, ref) in specialists.items():
+    require(sku in products, f"SPECIALIST_SKU_MISSING:{sku}")
+    require(products[sku].get("machine_discovery") is True, f"SPECIALIST_ORGAN_NOT_DISCOVERABLE:{sku}")
+    require(products[sku].get("machine_purchase") is False, f"SPECIALIST_ORGAN_PREMATURE_PURCHASE:{sku}")
+    require(products[sku].get("status") == "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED", f"SPECIALIST_ORGAN_STATUS_DRIFT:{sku}")
+    svc = organ_services.get(sku) or {}
+    require(svc.get("organ") == repository, f"SPECIALIST_ORGAN_REPOSITORY_DRIFT:{sku}")
+    require(svc.get("ref") == ref, f"SPECIALIST_ORGAN_REF_DRIFT:{sku}")
+    require(svc.get("public_live") is False, f"SPECIALIST_ORGAN_FALSE_LIVE:{sku}")
+    require(svc.get("machine_purchase") is False, f"SPECIALIST_ORGAN_FALSE_PURCHASE:{sku}")
+
 for sku in beacon.get("priority_skus", []):
     require(sku in products, f"BEACON_PRIORITY_SKU_NOT_IN_CATALOG:{sku}")
     require(products[sku].get("machine_discovery") is True, f"PRIORITY_SKU_NOT_DISCOVERABLE:{sku}")
