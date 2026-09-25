@@ -49,6 +49,7 @@ specialists = {
     "JANUS.META_REGISTRY_SEARCH": ("Hawkar-usls/janus-meta-registry", "main"),
     "JANUS.FUNDAMENTUM_AUDIT": ("Hawkar-usls/Janus-Fundamentum", "main"),
     "JANUS.SWARM_RESEARCH": ("Hawkar-usls/janus-distributed-ai-swarm", "main"),
+    "JANUS.FRESCO_FORGE": ("Hawkar-usls/janus-meta-registry", "main"),
 }
 organ_services = organ_matrix.get("services") or {}
 require(
