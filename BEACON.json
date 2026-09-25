@@ -100,7 +100,12 @@
     "agent trace audit",
     "agent reliability audit",
     "tool-call governance",
-    "agent observability evaluation"
+    "agent observability evaluation",
+    "AI code review",
+    "pull request review API",
+    "agent-generated code review",
+    "PR risk audit",
+    "GitHub PR guard"
   ],
   "discovery_surfaces": [
     {
