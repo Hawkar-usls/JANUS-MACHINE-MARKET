@@ -62,9 +62,11 @@ class StorePagesExecutionContractTests(unittest.TestCase):
     def test_pages_uses_public_pr_review_contract(self):
         workflow = (ROOT / ".github/workflows/pr-review-public-beta.yml").read_text(encoding="utf-8")
         policy = (ROOT / "runtime/public_pr_review_beta.py").read_text(encoding="utf-8")
-        for token in ("[JANUS PR REVIEW]", "JANUS_PR_REVIEW_PUBLIC_JSON", "janus.pr_review.public_request.v1"):
+        for token in ("[JANUS PR REVIEW]", "JANUS_PR_REVIEW_PUBLIC_JSON"):
             self.assertIn(token, self.js)
             self.assertIn(token, workflow)
+        self.assertIn("janus.pr_review.public_request.v1", self.js)
+        self.assertIn("janus.pr_review.public_request.v1", policy)
         for field in ("repository", "pull_number", "expected_head_sha"):
             self.assertIn(field, self.js)
             self.assertIn(field, policy)
