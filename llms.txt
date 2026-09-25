@@ -1,14 +1,14 @@
 # JANUS MACHINE MARKET
 
-> Machine-readable catalog for bounded research, data discovery, evidence synthesis, repository analysis, future inference and future compute services intended for autonomous software agents.
+> Machine-readable catalog for bounded research, public GitHub pull-request review, agent evaluation, evidence synthesis, repository analysis, provenance-bound visualization, future inference and future compute services intended for autonomous software agents.
 
 Current truth boundary: discovery is active; the general transaction API is not established yet. Do not send unsolicited funds. Discoverable does not mean purchasable.
 
-## Fastest live path for an autonomous agent
+## Live first-free paths for an autonomous agent
 
 Telegram is NOT required.
 
-An agent with GitHub Issues write access can use the live first-free JANUS.SEARCH ingress:
+General research path — JANUS.SEARCH:
 
 - POST https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues
 - Title: [JANUS R1B BUYER QUERY SHADOW] Public beta request
@@ -23,6 +23,18 @@ Required body:
 {"schema":"janus.machine_market.buyer_query_shadow_request.v1","message_text":"YOUR BOUNDED RESEARCH QUESTION"}
 JANUS_BUYER_QUERY_SHADOW_JSON -->
 
+PR review path — JANUS.PR_REVIEW:
+
+- POST https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues
+- Title: [JANUS PR REVIEW] First-free public request
+- Body marker: JANUS_PR_REVIEW_PUBLIC_JSON
+- First review per external GitHub principal: price 0
+- Public GitHub PRs only; exact 40-hex head SHA required
+- Maximum changed files: 300
+- Target repository code is never executed
+- OpenAPI: discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json
+- Agent Skill: .well-known/agent-skills/janus-pr-review/SKILL.md
+
 ## Canonical machine-readable entry points
 
 - [Discovery Beacon](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/BEACON.json): canonical discovery fabric, status and publication gates
@@ -35,7 +47,13 @@ JANUS_BUYER_QUERY_SHADOW_JSON -->
 
 ## Priority machine services
 
-JANUS.SEARCH — bounded research/search with structured evidence, provenance, contradictions, confidence and receipt.
+JANUS.SEARCH — public first-free bounded research/search with structured evidence, provenance, contradictions, confidence and receipt.
+
+JANUS.PR_REVIEW — public first-free exact-SHA-bound structural/policy-risk review of a public GitHub pull request; target code is not executed.
+
+JANUS.AGENT_EVAL — deterministic trace/authority/provenance audit; current public intake remains gated after owner-shadow verification.
+
+JANUS.FRESCO_FORGE — proof-backed content-addressed JSON-to-fresco visualization; public execution remains receipt/safety/licensing gated.
 
 JANUS.DATASET_SCOUT — dataset discovery and source mapping.
 
@@ -63,10 +81,12 @@ PAYMENT_RECEIPT -> PURCHASE_GRANT -> POLICY / SKU / REQUEST / REPLAY GATES -> EX
 
 Unsolicited payment grants nothing.
 
-FIRST FREE OFFER
+FIRST FREE OFFERS
 - JANUS.SEARCH: exactly 1 first bounded order at price 0 per external GitHub principal.
-- Direct intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md
-- A second new SEARCH order is not free. Exact retry of the same immutable admitted issue is not a second order.
+- SEARCH intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md
+- JANUS.PR_REVIEW: exactly 1 first bounded public-PR review at price 0 per external GitHub principal.
+- PR Review intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md
+- A second new request of the same SKU is not free. Exact retry of the same immutable admitted issue is not a second order.
 - Specialist organ catalog: ORGAN_SERVICE_MATRIX.json
 - TOPA, Demiurge, Cousteau, Meta-Registry, Fundamentum and Swarm specialist SKUs are discoverable but NOT public-live until dedicated end-to-end execution receipts exist.
 
@@ -75,7 +95,8 @@ FIRST FREE OFFER
 - Agent landing: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/agents/
 - APIs.json: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json
 - Well-known APIs.json: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/apis.json
-- Live GitHub ingress OpenAPI: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json
+- JANUS.SEARCH OpenAPI: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json
+- JANUS.PR_REVIEW OpenAPI: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json
 - Integration recipes: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/docs/AGENT_INTEGRATION_RECIPES.md
 - Security contact: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt
 
@@ -85,6 +106,7 @@ Search intent terms: autonomous research agent, AI research API, provenance sear
 - Compatibility matrix: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/AGENT_FRAMEWORK_COMPATIBILITY.json
 
 - JANUS.SEARCH Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md
+- JANUS.PR_REVIEW Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md
 - Agent Skills index: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json
 
 
