@@ -54,8 +54,15 @@ class OrganServiceCatalogTests(unittest.TestCase):
         live_block = self.store_js[start:end]
         for sku in SPECIALISTS:
             self.assertNotIn(sku, live_block)
-        for sku in ("JANUS.SEARCH", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"):
+        for sku in ("JANUS.SEARCH", "JANUS.PR_REVIEW", "JANUS.REPO_AUDIT", "JANUS.DATASET_SCOUT"):
             self.assertIn(sku, live_block)
+
+    def test_pr_review_is_public_but_not_a_specialist_organ(self):
+        pr = self.matrix["services"]["JANUS.PR_REVIEW"]
+        self.assertTrue(pr["public_live"])
+        self.assertFalse(pr["machine_purchase"])
+        self.assertIn("pull-request", pr["role"])
+        self.assertFalse(json.loads((ROOT / "products/JANUS.PR_REVIEW.json").read_text(encoding="utf-8"))["execution"]["paid_execution"])
 
     def test_first_free_search_is_separate_from_specialist_catalog(self):
         search = self.matrix["services"]["JANUS.SEARCH"]
