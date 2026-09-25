@@ -139,6 +139,15 @@
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.SWARM_RESEARCH.json"
+    },
+    {
+      "sku": "JANUS.FRESCO_FORGE",
+      "title": "JANUS Fresco Forge",
+      "class": "creative_visualization",
+      "status": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.FRESCO_FORGE.json"
     }
   ],
   "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"

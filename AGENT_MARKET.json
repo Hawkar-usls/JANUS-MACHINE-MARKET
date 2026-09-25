@@ -134,7 +134,8 @@
     "marine_bathymetry_sonar_scan",
     "registry_provenance_search",
     "formal_claim_audit",
-    "parallel_swarm_research"
+    "parallel_swarm_research",
+    "provenance_bound_fresco_generation"
   ],
   "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json",
   "first_free_offer": {

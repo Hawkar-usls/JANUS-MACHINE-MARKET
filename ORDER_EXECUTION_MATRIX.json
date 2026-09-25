@@ -77,6 +77,14 @@
       "paid_execution": false,
       "public_execution": false,
       "blocker": "DEDICATED_MARKET_TO_COUSTEAU_DATA_BOUND_EXECUTION_AND_RETURN_RECEIPT"
+    },
+    "JANUS.FRESCO_FORGE": {
+      "current_mode": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "organ": "Hawkar-usls/janus-meta-registry",
+      "capability": "content-addressed canonical JSON-to-fresco visualization with semantic quality gates and provenance receipt",
+      "paid_execution": false,
+      "public_execution": false,
+      "blocker": "DEDICATED_CUSTOMER_INPUT_SANDBOX_PLUS_MARKET_TO_FRESCO_DISPATCH_PLUS_RETURN_RECEIPT_AND_LICENSE_POLICY"
     }
   },
   "public_beta_promotion_requirements": [

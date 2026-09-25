@@ -74,6 +74,15 @@
       "public_live": false,
       "machine_purchase": false,
       "required_bridge": "MARKET -> HOME/Activator -> bounded swarm manifest -> receipt aggregation -> Market reconcile"
+    },
+    "JANUS.FRESCO_FORGE": {
+      "organ": "Hawkar-usls/janus-meta-registry",
+      "ref": "main",
+      "role": "content-addressed canonical JSON-to-monumental-fresco visualization with semantic projection, visual anti-collapse gates and per-image provenance receipt",
+      "market_state": "ROUTER_PREPARED_EXECUTION_RECEIPT_REQUIRED",
+      "public_live": false,
+      "machine_purchase": false,
+      "required_bridge": "MARKET -> HOME/Activator -> isolated Fresco Forge input staging -> v5.4 render/gate -> provenance receipt -> HOME -> Market reconcile"
     }
   },
   "supporting_organs": {
