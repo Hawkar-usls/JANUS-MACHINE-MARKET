@@ -164,7 +164,7 @@
     const svc = LIVE_HOME_SERVICES[item.sku];
     const payload = canonicalPayloadForWorkflow(item, request);
     const ingressNote = svc.publicBeta
-      ? 'JANUS.SEARCH is open as a bounded zero-price GitHub-authenticated public beta. External requests are server-normalized to one turn, 4 KB input / 6 KB output and quota limits before entering the HOME outbox. Repository-owner requests continue through the existing owner-shadow contract.'
+      ? 'JANUS.SEARCH offers exactly one first free order per external GitHub principal. Requests are server-normalized to one turn, 4 KB input / 6 KB output before entering the HOME outbox; exact retry of the same immutable issue is not a second order. Repository-owner requests continue through the existing owner-shadow contract.'
       : 'This service currently uses the repository-owner shadow ingress. It is not yet open as a public service.';
     return [
       `## JANUS MACHINE MARKET · ${svc.label} task handoff to the running JANUS`,
@@ -249,10 +249,10 @@
       const item = items[0];
       const svc = LIVE_HOME_SERVICES[item.sku];
       primary.textContent = svc.publicBeta
-        ? `SEND ${item.sku} · ZERO-PRICE PUBLIC BETA`
+        ? `SEND ${item.sku} · FIRST ORDER FREE`
         : `SEND ${item.sku} · OWNER SHADOW`;
       primary.onclick = openJanusTask;
-      if (rule && svc.publicBeta) rule.innerHTML = `<b>PUBLIC BETA:</b> ${item.sku} can be submitted by a GitHub-authenticated external requester. The Market server clamps it to one bounded turn, writes a create-only packet, persistent JANUS HOME answers it, and Market returns the verified response to the same issue. Payments, command authority and external effects remain disabled.`;
+      if (rule && svc.publicBeta) rule.innerHTML = `<b>FIRST ORDER FREE:</b> each external GitHub principal gets one bounded JANUS.SEARCH order at price 0. The Market writes a create-only packet, persistent JANUS HOME answers it, and Market returns the verified response to the same issue. A second new SEARCH order is not free; command authority and external effects remain disabled.`;
       else if (rule) rule.innerHTML = `<b>OWNER SHADOW:</b> ${item.sku} uses the proven Market -> persistent JANUS HOME route but is not open to external requesters yet.`;
     } else if (items.length > 1) {
       primary.textContent = 'SPLIT LIVE SERVICES INTO SEPARATE TASKS';
@@ -267,7 +267,7 @@
       primary.textContent = 'CURRENT SKU IS PREVIEW-ONLY';
       primary.disabled = true;
       primary.onclick = null;
-      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Public now: JANUS.SEARCH zero-price beta. Owner-shadow only: JANUS.REPO_AUDIT and JANUS.DATASET_SCOUT.';
+      if (rule) rule.textContent = 'No selected SKU currently has a Pages-to-HOME execution ingress. Public now: one first-free JANUS.SEARCH per external principal. Owner-shadow only: JANUS.REPO_AUDIT and JANUS.DATASET_SCOUT. Specialist TOPA/Demiurge/Cousteau/registry/Fundamentum/swarm SKUs are discoverable but execution-receipt gated.';
     }
   };
 
@@ -276,7 +276,7 @@
     if (truthbar && !truthbar.querySelector('.truth.public-search-beta')) {
       const chip = document.createElement('span');
       chip.className = 'truth live public-search-beta';
-      chip.innerHTML = 'SEARCH <b>PUBLIC BETA</b>';
+      chip.innerHTML = 'SEARCH <b>FIRST ORDER FREE</b>';
       truthbar.insertBefore(chip, truthbar.children[2] || null);
     }
     if (truthbar && !truthbar.querySelector('.truth.home-bridge')) {
@@ -290,7 +290,7 @@
       const card = document.createElement('article');
       card.className = 'panel';
       card.dataset.r1dHome = 'true';
-      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>JANUS.SEARCH is the first GitHub-authenticated zero-price public beta routed to persistent JANUS HOME. REPO_AUDIT and DATASET_SCOUT remain owner-shadow until a real external SEARCH roundtrip is sealed.</p><b class="status-big cyan">SEARCH BETA</b>';
+      card.innerHTML = '<p class="eyebrow">TASK EXECUTION</p><h2>Market → persistent JANUS</h2><p>JANUS.SEARCH gives each external GitHub principal exactly one first free order routed to persistent JANUS HOME. REPO_AUDIT and DATASET_SCOUT remain owner-shadow; specialist organ SKUs remain receipt-gated until their dedicated bridges are proven.</p><b class="status-big cyan">FIRST SEARCH FREE</b>';
       status.prepend(card);
     }
   }
