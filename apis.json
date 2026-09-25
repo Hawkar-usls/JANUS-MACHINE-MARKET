@@ -45,6 +45,22 @@
     {
       "type": "Support",
       "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues"
+    },
+    {
+      "type": "SecurityTxt",
+      "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/security.txt"
+    },
+    {
+      "type": "SecurityPolicy",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/SECURITY.md"
+    },
+    {
+      "type": "SourceCode",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET"
+    },
+    {
+      "type": "IssueTracker",
+      "url": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues"
     }
   ],
   "prompts": [
