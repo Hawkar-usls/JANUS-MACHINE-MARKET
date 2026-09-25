@@ -1,0 +1,307 @@
+name: JANUS PR Guard Public First-Free Beta
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/pr_review.py'
+      - 'runtime/public_pr_review_beta.py'
+      - 'tests/test_pr_review.py'
+      - 'tests/test_public_pr_review_beta.py'
+      - '.github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md'
+      - '.github/workflows/pr-review-public-beta.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/pr_review.py'
+      - 'runtime/public_pr_review_beta.py'
+      - 'tests/test_pr_review.py'
+      - 'tests/test_public_pr_review_beta.py'
+      - '.github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md'
+      - '.github/workflows/pr-review-public-beta.yml'
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test public PR Guard admission
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m py_compile runtime/pr_review.py runtime/public_pr_review_beta.py tests/test_pr_review.py tests/test_public_pr_review_beta.py
+          python -m unittest -v tests.test_pr_review tests.test_public_pr_review_beta
+      - name: Enforce public beta caps
+        env:
+          PYTHONPATH: .
+        run: |
+          python - <<'PY'
+          from runtime.public_pr_review_beta import FIRST_FREE_PER_ACTOR, GLOBAL_DAILY_LIMIT, PUBLIC_ORIGIN
+          assert PUBLIC_ORIGIN == 'FOREIGN_PUBLIC_ZERO_PRICE_BETA'
+          assert FIRST_FREE_PER_ACTOR == 1
+          assert GLOBAL_DAILY_LIMIT == 10
+          print('PUBLIC_PR_REVIEW_POLICY=PASS')
+          PY
+
+  public-review:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS PR REVIEW]') &&
+      github.event.issue.user.login != github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout canonical Market
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Mount durable Market state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JANUS PR Guard Public Beta'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          state="$RUNNER_TEMP/public-pr-review-market-state"
+          rm -rf "$state"
+          if git ls-remote --exit-code --heads origin janus/market-state >/dev/null 2>&1; then
+            git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+            git worktree add -B janus-public-pr-review-state "$state" origin/janus/market-state
+          else
+            git worktree add --detach "$state" HEAD
+            cd "$state"
+            git switch --orphan janus-public-pr-review-state
+            git rm -rf --ignore-unmatch .
+            cd - >/dev/null
+          fi
+          echo "MARKET_STATE_WT=$state" >> "$GITHUB_ENV"
+
+      - name: Normalize request and apply first-free quota
+        id: admission
+        env:
+          PYTHONPATH: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p runtime/pr-review-public
+          python - <<'PY'
+          import json, os, pathlib
+          from runtime.public_pr_review_beta import evaluate_admission, normalize_public_request
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8'))
+          body=str(event['issue'].get('body') or '')
+          begin='<!-- JANUS_PR_REVIEW_PUBLIC_JSON'
+          end='JANUS_PR_REVIEW_PUBLIC_JSON -->'
+          s=body.find(begin); e=body.find(end)
+          if s < 0 or e < 0 or e <= s:
+              raise SystemExit('PUBLIC_PR_REVIEW_MARKER_MISSING')
+          raw=json.loads(body[s+len(begin):e].strip())
+          req=normalize_public_request(event['issue'],raw,owner_login=event['repository']['owner']['login'])
+          receipts=[]
+          root=pathlib.Path(os.environ['MARKET_STATE_WT'])/'state/r4-services/pr-review/receipts'
+          if root.exists():
+              for p in sorted(root.glob('*.json')):
+                  try:
+                      v=json.loads(p.read_text(encoding='utf-8'))
+                  except Exception:
+                      continue
+                  if isinstance(v,dict): receipts.append(v)
+          decision=evaluate_admission(req,receipts)
+          pathlib.Path('runtime/pr-review-public/request.json').write_text(json.dumps(req,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          pathlib.Path('runtime/pr-review-public/admission.json').write_text(json.dumps(decision,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('PUBLIC_PR_REVIEW_ADMISSION='+decision['reason'])
+          PY
+          admitted="$(python -c "import json; print('true' if json.load(open('runtime/pr-review-public/admission.json'))['admitted'] else 'false')")"
+          reason="$(python -c "import json; print(json.load(open('runtime/pr-review-public/admission.json'))['reason'])")"
+          echo "admitted=$admitted" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+      - name: Return non-admission decision
+        if: steps.admission.outputs.admitted != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REASON: ${{ steps.admission.outputs.reason }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/pr-review-reject.md" <<EOF
+          ## JANUS.PR_REVIEW · public beta request not executed
+
+          Reason: \`${REASON}\`
+
+          The public beta allows exactly one first free PR review per external GitHub principal and at most 10 accepted public reviews per UTC day. Exact retry does not create a second execution. No payment was requested.
+          EOF
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/pr-review-reject.md")" >/dev/null
+
+      - name: Fetch anonymous public PR snapshot
+        if: steps.admission.outputs.admitted == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,pathlib,urllib.request
+          req=json.load(open('runtime/pr-review-public/request.json'))
+          repo=req['repository']; num=req['pull_number']
+          headers={'Accept':'application/vnd.github+json','User-Agent':'janus-public-pr-guard/1.0','X-GitHub-Api-Version':'2022-11-28'}
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=30) as r:
+                  return json.load(r)
+          repo_meta=get(f'https://api.github.com/repos/{repo}')
+          if repo_meta.get('private') is not False:
+              raise SystemExit('PUBLIC_PR_REVIEW_PUBLIC_REPOSITORY_REQUIRED')
+          base=f'https://api.github.com/repos/{repo}/pulls/{num}'
+          pr=get(base)
+          head=str((pr.get('head') or {}).get('sha') or '')
+          base_sha=str((pr.get('base') or {}).get('sha') or '')
+          if head != req['expected_head_sha']:
+              raise SystemExit(f'PUBLIC_PR_REVIEW_HEAD_SHA_DRIFT expected={req["expected_head_sha"]} actual={head}')
+          reported=int(pr.get('changed_files') or 0)
+          if reported > 300:
+              raise SystemExit('PUBLIC_PR_REVIEW_CHANGED_FILES_HARD_CAP_EXCEEDED')
+          files=[]
+          for page in range(1,5):
+              batch=get(base+f'/files?per_page=100&page={page}')
+              if not isinstance(batch,list): raise SystemExit('PUBLIC_PR_REVIEW_FILES_INVALID')
+              files.extend(batch)
+              if len(batch)<100: break
+          normalized=[{
+              'filename':x.get('filename'),'status':x.get('status'),'additions':x.get('additions',0),
+              'deletions':x.get('deletions',0),'changes':x.get('changes',0),'patch':x.get('patch')
+          } for x in files[:300]]
+          snap={
+              'schema':'janus.pr_review.snapshot.v1','repository':repo,'pull_number':num,
+              'base_sha':base_sha,'head_sha':head,'title':str(pr.get('title') or '')[:500],
+              'draft':bool(pr.get('draft',False)),'additions':int(pr.get('additions') or 0),
+              'deletions':int(pr.get('deletions') or 0),'changed_files_reported':reported,
+              'snapshot_complete':len(normalized)==reported,'files':normalized
+          }
+          pathlib.Path('runtime/pr-review-public/snapshot.json').write_text(json.dumps(snap,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print('PUBLIC_PR_REVIEW_ANONYMOUS_FETCH=PASS')
+          print('TARGET_REPOSITORY_CODE_EXECUTED=FALSE')
+          PY
+
+      - name: Run deterministic PR Guard
+        if: steps.admission.outputs.admitted == 'true'
+        run: python runtime/pr_review.py --snapshot runtime/pr-review-public/snapshot.json --output runtime/pr-review-public/result.json
+
+      - name: Persist public result receipt
+        if: steps.admission.outputs.admitted == 'true'
+        id: persist
+        env:
+          BUYER_ACTOR: github:${{ github.event.issue.user.login }}
+          SOURCE_ISSUE_NUMBER: ${{ github.event.issue.number }}
+          SOURCE_ISSUE_ID: ${{ github.event.issue.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATE="$MARKET_STATE_WT" python - <<'PY'
+          import hashlib,json,os,pathlib
+          req=json.load(open('runtime/pr-review-public/request.json'))
+          snap=json.load(open('runtime/pr-review-public/snapshot.json'))
+          result=json.load(open('runtime/pr-review-public/result.json'))
+          body={
+            'schema':'janus.machine_market.pr_review_delivery_receipt.v1','sku':'JANUS.PR_REVIEW',
+            'request_origin':req['request_origin'],'requested_at':req['created_at'],
+            'buyer_actor_id':os.environ['BUYER_ACTOR'],'source_issue_id':int(os.environ['SOURCE_ISSUE_ID']),
+            'source_issue_number':int(os.environ['SOURCE_ISSUE_NUMBER']),'repository':snap['repository'],
+            'pull_number':snap['pull_number'],'base_sha':snap['base_sha'],'head_sha':snap['head_sha'],
+            'expected_head_sha':req['expected_head_sha'],'snapshot_sha256':result['snapshot_sha256'],
+            'result_sha256':result['result_sha256'],'verdict':result['verdict'],'score_0_100':result['score_0_100'],
+            'finding_codes':[x['code'] for x in result['findings']],'snapshot_complete':result['snapshot_complete'],
+            'target_repository_code_executed':False,'repository_write_authorized':False,
+            'external_effect_authorized':False,'money_enabled':False
+          }
+          enc=json.dumps(body,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+          body['receipt_hash']=hashlib.sha256(enc.encode()).hexdigest()
+          body['receipt_id']='prr-'+body['result_sha256'][:40]
+          out=pathlib.Path('runtime/pr-review-public/delivery-receipt.json')
+          out.write_text(json.dumps(body,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          root=pathlib.Path(os.environ['STATE'])/'state/r4-services/pr-review/receipts'
+          root.mkdir(parents=True,exist_ok=True)
+          target=root/(body['receipt_id']+'.json')
+          if target.exists() and target.read_bytes()!=out.read_bytes(): raise SystemExit('PUBLIC_PR_REVIEW_RECEIPT_CONFLICT')
+          if not target.exists(): target.write_bytes(out.read_bytes())
+          PY
+          rid="$(python -c "import json; print(json.load(open('runtime/pr-review-public/delivery-receipt.json'))['receipt_id'])")"
+          cd "$MARKET_STATE_WT"
+          git add state/r4-services/pr-review
+          if git diff --cached --quiet; then
+            echo 'PUBLIC_PR_REVIEW_STATE_COMMIT=NO_CHANGE'
+          else
+            git commit -m "Deliver public PR review $rid"
+            git push origin HEAD:refs/heads/janus/market-state
+          fi
+          echo "receipt_id=$rid" >> "$GITHUB_OUTPUT"
+          echo "market_state_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Fresh-checkout verify public receipt
+        if: steps.admission.outputs.admitted == 'true'
+        env:
+          RECEIPT_ID: ${{ steps.persist.outputs.receipt_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          replay="$RUNNER_TEMP/public-pr-review-replay"
+          rm -rf "$replay"
+          git worktree add --detach "$replay" origin/janus/market-state
+          test -f "$replay/state/r4-services/pr-review/receipts/${RECEIPT_ID}.json"
+          echo 'PUBLIC_PR_REVIEW_FRESH_CHECKOUT_RECEIPT=PASS'
+
+      - name: Return public PR Guard result
+        if: steps.admission.outputs.admitted == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MARKET_STATE_COMMIT: ${{ steps.persist.outputs.market_state_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/pr-review-result.md"
+          import json,os
+          r=json.load(open('runtime/pr-review-public/result.json'))
+          rec=json.load(open('runtime/pr-review-public/delivery-receipt.json'))
+          print('## JANUS.PR_REVIEW · first-free public result\n')
+          print(f"- target: `{r['repository']}#{r['pull_number']}`")
+          print(f"- head_sha: `{r['head_sha']}`")
+          print(f"- verdict: `{r['verdict']}`")
+          print(f"- structural_score: `{r['score_0_100']}`")
+          print(f"- high/medium/low: `{r['severity_counts']['high']}/{r['severity_counts']['medium']}/{r['severity_counts']['low']}`")
+          print(f"- finding_codes: `{','.join(rec['finding_codes']) if rec['finding_codes'] else 'NONE'}`")
+          print(f"- result_sha256: `{r['result_sha256']}`")
+          print(f"- receipt_id: `{rec['receipt_id']}`")
+          print(f"- receipt_hash: `{rec['receipt_hash']}`")
+          print(f"- market_state_commit: `{os.environ['MARKET_STATE_COMMIT']}`")
+          print('- price: `0`')
+          print('- target_repository_code_executed: `false`')
+          print('\nThis is a bounded structural/diff risk audit, not merge approval, exploitability proof, security certification or full semantic correctness proof.')
+          PY
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" -f body="$(cat "$RUNNER_TEMP/pr-review-result.md")" >/dev/null
+
+      - name: Upload public PR Guard witness
+        if: steps.admission.outputs.admitted == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-public-pr-review-${{ steps.persist.outputs.receipt_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime/pr-review-public/
+          if-no-files-found: error
