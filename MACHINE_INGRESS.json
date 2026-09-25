@@ -89,6 +89,14 @@
       "treating unauthenticated browser POST as authority",
       "turning payment into execution authority",
       "opening public REPO_AUDIT or DATASET_SCOUT before SEARCH external roundtrip evidence"
+    ],
+    "specialist_router_prepared": [
+      "JANUS.TOPA_HUNT",
+      "JANUS.DEMIURGE_SCOUT",
+      "JANUS.COUSTEAU_SCAN",
+      "JANUS.META_REGISTRY_SEARCH",
+      "JANUS.FUNDAMENTUM_AUDIT",
+      "JANUS.SWARM_RESEARCH"
     ]
   },
   "proof": {
