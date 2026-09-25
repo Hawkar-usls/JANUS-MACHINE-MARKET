@@ -148,6 +148,15 @@
       "machine_discovery": true,
       "machine_purchase": false,
       "product": "products/JANUS.FRESCO_FORGE.json"
+    },
+    {
+      "sku": "JANUS.AGENT_EVAL",
+      "title": "JANUS Agent Eval — Trace Guard",
+      "class": "agent_evaluation",
+      "status": "OWNER_SHADOW_IMPLEMENTED_VALIDATION_PENDING",
+      "machine_discovery": true,
+      "machine_purchase": false,
+      "product": "products/JANUS.AGENT_EVAL.json"
     }
   ],
   "organ_service_matrix": "ORGAN_SERVICE_MATRIX.json"
