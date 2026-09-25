@@ -36,6 +36,27 @@ offer_hash
 + payment reference
 ```
 
+## Alternative BTT / TRON route
+
+JANUS declares an additional **BTT (TRC-20 on TRON Mainnet)** receiving route in `BTT_PAYMENT_ROUTE.json`.
+
+The commercial rule is:
+
+```text
+canonical USDT reference total
+→ apply BTT route discount of 50%
+→ freeze an exact BTT/USD price source + timestamp + rounding rule
+→ freeze exact BTT atomic amount in the live invoice
+```
+
+The declared receiver is `TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1`.
+
+This is the new BTT TRC-20 token, not BTTOLD. The route is currently **declared but not live**: there is no trusted BTT price oracle or TRON settlement observer wired into JANUS yet, and the global money gate remains closed.
+
+> **DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS INVOICE.**
+
+A published receiving address does not create an order, settlement, purchase grant, execution grant, refund obligation, or delivery obligation.
+
 ## Idempotency
 
 The market adopts this commercial invariant:
