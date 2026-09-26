@@ -1,0 +1,42 @@
+name: JANUS x402 Buyer CI
+
+on:
+  pull_request:
+    paths:
+      - 'X402_BUYER_POLICY.json'
+      - 'runtime/x402_buyer_call.mjs'
+      - 'tests/test_x402_buyer_policy.py'
+      - '.github/workflows/x402-buyer-*.yml'
+      - 'PAYMENT_POLICY.md'
+  push:
+    branches: [main]
+    paths:
+      - 'X402_BUYER_POLICY.json'
+      - 'runtime/x402_buyer_call.mjs'
+      - 'tests/test_x402_buyer_policy.py'
+      - '.github/workflows/x402-buyer-*.yml'
+      - 'PAYMENT_POLICY.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate files
+        run: |
+          python -m json.tool X402_BUYER_POLICY.json >/dev/null
+          node --check runtime/x402_buyer_call.mjs
+      - name: Run policy tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q tests/test_x402_buyer_policy.py
