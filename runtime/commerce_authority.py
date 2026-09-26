@@ -1,8 +1,8 @@
 """Fail-closed JANUS MACHINE MARKET commerce authority primitives.
 
-This module deliberately does not perform network I/O and does not enable money.
-It binds REQUEST -> QUOTE -> PAYMENT_RECEIPT -> PURCHASE_GRANT and refuses to
-admit a purchase while the canonical commerce/foreign-agent gates are closed.
+This module deliberately does not perform network I/O. It binds
+REQUEST -> QUOTE -> PAYMENT_RECEIPT -> PURCHASE_GRANT and separates
+seller-commerce authorization from FOREIGN_AGENT_WITNESS evidence.
 """
 from __future__ import annotations
 
@@ -127,13 +127,14 @@ def _paid_search_entitlement(*, purchase_id: str, buyer_actor_id: str) -> dict[s
 def admit_purchase(*, readiness: dict[str, Any], foreign_witness: dict[str, Any], product: dict[str, Any], request: dict[str, Any], quote: dict[str, Any], payment_receipt: dict[str, Any], consumed_payment_refs: Iterable[str] = (), now: datetime | None = None, buyer_actor_id: str | None = None) -> dict[str, Any]:
     """Return deterministic canonical PURCHASE_GRANT, never EXECUTION_GRANT.
 
-    Quote expiry is enforced at payment block time, not at grant-admission time:
-    a transfer mined before expiry may safely accumulate confirmations after the
-    quote itself expires.
+    Seller activation is controlled by explicit commerce policy. A foreign-agent
+    witness is evidence about an independent roundtrip, not permission to sell.
+    Quote expiry is enforced at payment block time, not grant-admission time.
     """
+    if readiness.get("seller_commerce_authorized") is not True: raise CommerceBlocked("seller commerce is not authorized")
     if readiness.get("money_enabled") is not True: raise CommerceBlocked("money_enabled is false")
     if readiness.get("autonomous_purchase_declared") is not True: raise CommerceBlocked("autonomous purchase is not declared")
-    if foreign_witness.get("foreign_agent_witness") is not True: raise CommerceBlocked("foreign agent witness is not established")
+    if foreign_witness.get("foreign_agent_witness") not in (True, False): raise CommerceBlocked("foreign agent witness state is malformed")
     if product.get("machine_purchase") is not True: raise CommerceBlocked("product is not machine-purchasable")
     if quote.get("sku") != product.get("sku"): raise CommerceInvalid("quote/product SKU mismatch")
 
@@ -164,6 +165,8 @@ def admit_purchase(*, readiness: dict[str, Any], foreign_witness: dict[str, Any]
             "external_effect_authority": False
         },
         "buyer_query_entitlement": entitlement,
+        "foreign_agent_witness_at_purchase": bool(foreign_witness.get("foreign_agent_witness")),
+        "foreign_agent_witness_required_for_purchase": False,
         "expires_at": None,
         "reasons": ["PAYMENT_CONFIRMED_PURCHASE_GRANT_IS_NOT_EXECUTION_AUTHORITY"],
     }
