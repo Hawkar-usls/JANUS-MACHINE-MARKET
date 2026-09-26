@@ -148,7 +148,51 @@ Do not send funds unless an exact product-specific active purchase route or invo
 
 ## x402
 
-x402 is a planned integration target for low-friction machine purchases. It is **not active** in this repository until a live HTTP endpoint, policy-bound pricing, replay protection, purchase ledger, settlement verification and execution-grant bridge are established and tested.
+x402 has two independent authority directions and they MUST NOT share a gate implicitly.
+
+### JANUS as x402 seller
+
+Selling JANUS services through x402 remains **not active** until a live JANUS HTTP endpoint, policy-bound pricing, replay protection, purchase ledger, settlement verification and execution-grant bridge are established and the governing seller-side promotion gates pass.
+
+```text
+JANUS_X402_SELLER
+!= JANUS_X402_BUYER
+```
+
+The seller-side state remains controlled by `COMMERCE_READINESS.json`, `FOREIGN_AGENT_WITNESS.json`, product `machine_purchase`, and the canonical JANUS purchase/execution authority chain.
+
+### JANUS as x402 buyer
+
+A tightly bounded external x402 purchase MAY be enabled independently under `X402_BUYER_POLICY.json`.
+
+The buyer-side pilot does not sell a JANUS service, does not accept customer money, does not grant a buyer command authority, and therefore does not require the seller-side `foreign_agent_witness` gate merely to spend a pre-authorized micro-budget on an external resource.
+
+Current pilot authority is intentionally narrow:
+
+```text
+OWNER_AUTHORIZED_BOUNDED_BUYER_PILOT_ENABLED
+resource = https://api.mach.gallery/api/base/block-number
+method = GET
+network = Base mainnet / eip155:8453
+asset = native Circle USDC on Base
+max payment = 5000 atomic USDC = 0.005 USDC
+max rolling 24h spend = 5000 atomic USDC
+```
+
+The runtime is `runtime/x402_buyer_call.mjs`; the explicit operator-triggered workflow is `.github/workflows/x402-buyer-mach-live.yml`.
+
+Required buyer-side invariants:
+
+```text
+EXTERNAL_BUYER_SPEND_ENABLED != SELLER_MONEY_ENABLED
+BUYER_PAYMENT != FOREIGN_AGENT_WITNESS
+BUYER_PAYMENT != JANUS.SEARCH PURCHASE AUTHORITY
+BUYER_PAYMENT != COMMAND AUTHORITY
+BUYER_PAYMENT != EXECUTION AUTHORITY
+ONE AMBIGUOUS POST-SIGNATURE OUTCOME => NO AUTOMATIC PAID RETRY
+```
+
+The first pilot uses a managed signer and hard spend controls. No private key is committed to the repository. A live run additionally requires the configured signer credentials and a funded Base-USDC payer wallet.
 
 ## Prohibited inference
 
