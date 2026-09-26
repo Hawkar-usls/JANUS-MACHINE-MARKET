@@ -1,0 +1,81 @@
+{
+  "schema": "janus.machine_market.x402_buyer_policy.v1",
+  "version": "1.0.0",
+  "recorded_at": "2026-09-27",
+  "status": "OWNER_AUTHORIZED_BOUNDED_BUYER_PILOT_ENABLED",
+  "purpose": "Allow JANUS to buy a tightly bounded external x402 resource without opening JANUS seller-side paid commerce or changing the foreign-agent witness gate.",
+  "separation_law": {
+    "external_buyer_spend_enabled": true,
+    "seller_money_enabled": false,
+    "foreign_agent_witness_required_for_buyer_call": false,
+    "buyer_call_can_promote_foreign_agent_witness": false,
+    "buyer_call_can_enable_paid_janus_search": false,
+    "payment_is_command_authority": false,
+    "payment_is_execution_authority": false
+  },
+  "pilot": {
+    "provider": "MACH Base",
+    "provider_principal": "TheAliphant",
+    "method": "GET",
+    "resource": "https://api.mach.gallery/api/base/block-number",
+    "network": "eip155:8453",
+    "asset": {
+      "symbol": "USDC",
+      "issuer": "Circle",
+      "contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6
+    },
+    "max_atomic_per_payment": 5000,
+    "max_usdc_per_payment": "0.005000",
+    "max_atomic_per_24h": 5000,
+    "max_calls_per_24h": 1,
+    "allowed_hosts": ["api.mach.gallery"],
+    "allowed_paths": ["/api/base/block-number"],
+    "allowed_methods": ["GET"]
+  },
+  "runtime_rules": [
+    "THE_RESOURCE_URL_MUST_MATCH_THE_FROZEN_ALLOWLIST_EXACTLY",
+    "THE_NETWORK_MUST_BE_BASE_MAINNET_EIP155_8453",
+    "THE_ASSET_MUST_BE_NATIVE_CIRCLE_USDC_ON_BASE",
+    "THE_PAYMENT_CAP_IS_5000_USDC_ATOMIC_UNITS",
+    "ONE_WORKFLOW_RUN_MAY_CREATE_AT_MOST_ONE_PAID_RESOURCE_RESULT",
+    "NO_AUTOMATIC_RETRY_AFTER_AN_AMBIGUOUS_POST_SIGNATURE_OUTCOME",
+    "PERSIST_THE_PROVIDER_RESPONSE_HASH_AND_PAYMENT_RESPONSE_METADATA",
+    "OWNER_AUTHORIZED_BUYER_TEST_IS_NOT_A_FOREIGN_AGENT_WITNESS",
+    "DO_NOT_MUTATE_FOREIGN_AGENT_WITNESS_JSON",
+    "DO_NOT_MUTATE_SELLER_MONEY_ENABLED_STATE"
+  ],
+  "signer": {
+    "adapter": "CDP_MANAGED_X402_CLIENT",
+    "required_environment_secrets": [
+      "CDP_API_KEY_ID",
+      "CDP_API_KEY_SECRET",
+      "CDP_WALLET_SECRET"
+    ],
+    "private_key_in_repository": false,
+    "wallet_must_be_funded_with": "Base mainnet native USDC"
+  },
+  "receipt": {
+    "schema": "janus.machine_market.x402_buyer_receipt.v1",
+    "artifact_directory": "artifacts/x402-buyer",
+    "must_include": [
+      "provider",
+      "resource",
+      "payer_address",
+      "network",
+      "asset",
+      "max_atomic_authorized",
+      "http_status",
+      "response_sha256",
+      "payment_response_header_sha256",
+      "owner_authorized_buyer_test",
+      "foreign_agent_witness"
+    ]
+  },
+  "foreign_agent_witness": {
+    "canonical_state_file": "FOREIGN_AGENT_WITNESS.json",
+    "expected_during_this_pilot": false,
+    "promotion_authority": "PERSISTENT_HOME_RECEIPT_ONLY",
+    "this_pilot_is_a_nonqualifier": true
+  }
+}
