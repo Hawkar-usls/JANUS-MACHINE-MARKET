@@ -1,0 +1,84 @@
+name: JANUS x402 Buyer — MACH Base Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type PAY_0_005_USDC_TO_MACH to authorize exactly one bounded buyer-side payment attempt"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janus-x402-buyer-mach-live
+  cancel-in-progress: false
+
+jobs:
+  live-buyer-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      JANUS_X402_OPERATOR_CONFIRM: ${{ inputs.confirm }}
+      JANUS_X402_TARGET: https://api.mach.gallery/api/base/block-number
+      JANUS_X402_POLICY: X402_BUYER_POLICY.json
+      JANUS_X402_RECEIPT: artifacts/x402-buyer/latest.json
+      CDP_API_KEY_ID: ${{ secrets.CDP_API_KEY_ID }}
+      CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET }}
+      CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enforce explicit operator authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$JANUS_X402_OPERATOR_CONFIRM" = "PAY_0_005_USDC_TO_MACH"
+          test -n "$CDP_API_KEY_ID"
+          test -n "$CDP_API_KEY_SECRET"
+          test -n "$CDP_WALLET_SECRET"
+
+      - name: Validate frozen buyer policy
+        run: |
+          node -e 'const p=require("./X402_BUYER_POLICY.json"); if(!p.separation_law.external_buyer_spend_enabled||p.separation_law.seller_money_enabled||p.pilot.max_atomic_per_payment!==5000||p.pilot.network!=="eip155:8453") process.exit(1); console.log("X402_BUYER_POLICY=PASS")'
+
+      - name: Install pinned x402 buyer dependencies
+        run: |
+          npm install --no-save --ignore-scripts \
+            @coinbase/cdp-sdk@1.56.0 \
+            @x402/core@2.27.0 \
+            @x402/evm@2.27.0 \
+            @x402/fetch@2.27.0
+
+      - name: Execute exactly one bounded MACH x402 buyer call
+        run: node runtime/x402_buyer_call.mjs
+
+      - name: Upload immutable run receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-x402-buyer-mach-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/x402-buyer/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Authority ceiling
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('X402_BUYER_POLICY.json','utf8'));
+          const f=JSON.parse(fs.readFileSync('FOREIGN_AGENT_WITNESS.json','utf8'));
+          if (p.separation_law.seller_money_enabled !== false) process.exit(1);
+          if (p.separation_law.buyer_call_can_promote_foreign_agent_witness !== false) process.exit(1);
+          if (f.foreign_agent_witness !== false) process.exit(1);
+          if (f.money_enabled !== false) process.exit(1);
+          console.log('SELLER_MONEY_ENABLED=FALSE');
+          console.log('FOREIGN_AGENT_WITNESS=FALSE');
+          console.log('BUYER_SIDE_X402_PILOT=SEPARATE_AUTHORITY');
+          NODE
