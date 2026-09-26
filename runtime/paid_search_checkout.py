@@ -18,7 +18,7 @@ from runtime.paid_search_packet import build_paid_home_packet
 
 SKU="JANUS.SEARCH"
 MODE="FAST"
-POLICY_VERSION="commerce-paid-search-v2-queue5"
+POLICY_VERSION="commerce-paid-search-v3-seller-live"
 INVOICE_SCHEMA="janus.machine_market.paid_search_invoice.v1"
 DEFAULT_RECEIVER="0x7149081aea54fbef57effeb52a5a966b81cc03a0"
 
@@ -29,14 +29,24 @@ def _require(condition: bool, message: str) -> None:
 
 
 def checkout_gate(*, readiness: dict[str,Any], witness: dict[str,Any], product: dict[str,Any]) -> None:
+    """Gate seller-side paid SEARCH independently from witness evidence.
+
+    FOREIGN_AGENT_WITNESS remains an evidentiary state and MUST NOT be treated
+    as a prerequisite for accepting a legitimate paid JANUS.SEARCH order.
+    """
+    if readiness.get("seller_commerce_authorized") is not True:
+        raise CommerceBlocked("seller commerce is not authorized")
     if readiness.get("money_enabled") is not True:
         raise CommerceBlocked("money_enabled is false")
     if readiness.get("autonomous_purchase_declared") is not True:
         raise CommerceBlocked("autonomous purchase is not declared")
-    if witness.get("foreign_agent_witness") is not True:
-        raise CommerceBlocked("foreign agent witness is not established")
     if product.get("sku") != SKU or product.get("machine_purchase") is not True:
         raise CommerceBlocked("JANUS.SEARCH machine purchase is not live")
+    # witness is intentionally non-authoritative for seller activation.
+    # A later genuine external roundtrip may promote witness evidence, but
+    # witness=false must not close an otherwise authorized paid checkout.
+    if witness.get("foreign_agent_witness") not in (True, False):
+        raise CommerceBlocked("foreign agent witness state is malformed")
 
 
 def _queue_price_spec(pricing: dict[str,Any], queue_level: int) -> dict[str,Any]:
