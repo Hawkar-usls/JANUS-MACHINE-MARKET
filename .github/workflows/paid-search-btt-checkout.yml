@@ -73,16 +73,40 @@ jobs:
           python -m json.tool BTT_PAYMENT_ROUTE.json >/dev/null
       - name: Run BTT pricing and solidified-settlement adversarial tests
         run: PYTHONPATH=. python -m pytest -q tests/test_btt_paid_search_checkout.py tests/test_tron_btt_observer.py tests/test_btt_payment_route.py
-      - name: Live public BTTUSDT oracle smoke
+      - name: Reject stale pre-redenomination oracle contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/paid-search-btt-checkout.yml').read_text(encoding='utf-8')
+          stale=(
+              'Live public BTT' + 'USDT oracle smoke',
+              "o['provider']=='BINANCE_SPOT_" + "PUBLIC'",
+              "o['symbol']=='BTT" + "USDT'",
+              'Frozen BTT' + 'USDT price',
+              'Binance avg' + 'Price',
+          )
+          found=[token for token in stale if token in text]
+          if found:
+              raise SystemExit('STALE_BTT_ORACLE_CONTRACT:' + ','.join(found))
+          print('STALE_BTT_ORACLE_CONTRACT=ABSENT')
+          PY
+      - name: Live public BTTCUSDT order-book oracle smoke
         run: |
           PYTHONPATH=. python - <<'PY'
           from runtime.btt_paid_search_checkout import fetch_bttusdt_oracle
           o=fetch_bttusdt_oracle(timeout=15)
-          assert o['provider']=='BINANCE_SPOT_PUBLIC' and o['symbol']=='BTTUSDT'
+          assert o['provider']=='BINANCE_SPOT_PUBLIC_BOOK_TICKER'
+          assert o['symbol']=='BTTCUSDT'
+          assert o['exchange_ticker']=='BTTC'
+          assert o['payment_asset']=='BTT'
+          assert float(o['bid_price']) > 0
+          assert float(o['ask_price']) >= float(o['bid_price'])
           assert float(o['price']) > 0
-          print('BTTUSDT_ORACLE_LIVE=TRUE')
-          print('BTTUSDT_PRICE=' + o['price'])
-          print('BTTUSDT_CLOSE_TIME=' + o['close_time'])
+          assert float(o['spread_bps']) <= float(o['max_spread_bps'])
+          print('BITTORRENT_TOKEN_ORACLE=PASS')
+          print('BINANCE_SYMBOL=' + o['symbol'])
+          print('BTT_PRICE_USDT=' + o['price'])
+          print('BTT_ORACLE_OBSERVED_AT=' + o['observed_at'])
           PY
       - name: Live TRON solidified endpoint smoke
         env:
@@ -188,7 +212,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REASON: ${{ steps.invoice.outputs.reason }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS BTT checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send BTT.**"
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS BTT checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send BTT.**"
       - name: Publish exact live BTT invoice
         if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
         env:
@@ -203,7 +228,7 @@ jobs:
           print(f"Queue: **L{i['queue_level']} · {i['queue_code']}**")
           print(f"Canonical USDT reference: **{Decimal(i['reference_usdt_micros'])/Decimal(1_000_000):f} USDT**")
           print('BTT route discount: **50%**')
-          print(f"Frozen BTTUSDT price: **{q['oracle']['price']}** (Binance avgPrice, close `{q['oracle']['close_time']}`)")
+          print(f"Frozen BTTCUSDT midpoint: **{q['oracle']['price']} USDT/BTT** (Binance public bookTicker; exchange ticker `BTTC`, payment asset `BTT`; observed `{q['oracle']['observed_at']}`)")
           print(f"Exact amount: **{amount:f} BTT**")
           print(f"Exact atomic amount: `{i['amount_atomic']}`")
           print('Network: **TRON Mainnet · TRC-20**')
@@ -284,7 +309,8 @@ jobs:
         if: steps.settle.outputs.settled != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT payment proof status: **${{ steps.settle.outputs.status }}**. ${{ steps.settle.outputs.reason }} No purchase, queue entry, or execution was admitted."
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT payment proof status: **${{ steps.settle.outputs.status }}**. ${{ steps.settle.outputs.reason }} No purchase, queue entry, or execution was admitted."
       - name: Commit settled BTT purchase and queue entry atomically
         if: steps.settle.outputs.settled == 'true'
         run: |
@@ -297,4 +323,5 @@ jobs:
         if: steps.settle.outputs.settled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT transfer is **SOLIDIFIED + VERIFIED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min**. Settlement is not execution start; exact retry does not create a second charge or execution."
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT transfer is **SOLIDIFIED + VERIFIED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min**. Settlement is not execution start; exact retry does not create a second charge or execution."
