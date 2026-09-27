@@ -23,13 +23,8 @@ def load(rel):
     return json.loads((ROOT / rel).read_text(encoding="utf-8"))
 
 
-def canonical_live() -> bool:
+def canonical_witness_live() -> bool:
     return load("FOREIGN_AGENT_WITNESS.json").get("foreign_agent_witness") is True
-
-
-def require_blocked() -> None:
-    if canonical_live():
-        pytest.skip("canonical JANUS.SEARCH is already witness-backed live; prospective promotion simulation is no longer applicable")
 
 
 def evidence():
@@ -50,7 +45,8 @@ def evidence():
 
 
 def promoted():
-    require_blocked()
+    if canonical_witness_live():
+        pytest.skip("canonical witness already promoted")
     first, receipt = evidence()
     return build_live_documents(
         first=first,
@@ -66,78 +62,43 @@ def promoted():
     )
 
 
-def test_canonical_live_state_if_promoted_is_search_only_and_witness_bound():
-    if not canonical_live():
-        pytest.skip("canonical JANUS.SEARCH is still blocked pending a real R1E persistent-HOME witness")
-
-    witness = load("FOREIGN_AGENT_WITNESS.json")
+def test_canonical_seller_is_live_independently_of_witness():
     readiness = load("COMMERCE_READINESS.json")
     product = load("products/JANUS.SEARCH.json")
-    pricing = load("PRICING.json")
-    ingress = load("MACHINE_INGRESS.json")
-    queue = load("PAID_QUEUE_POLICY.json")
-
-    assert witness["status"] == "PERSISTENT_HOME_EXTERNAL_MACHINE_WITNESS_CONFIRMED"
-    assert witness["foreign_agent_witness"] is True
-    assert witness["promotion_authority"] == "PERSISTENT_HOME_RECEIPT_VERIFIED"
-    assert witness["witness_id"].startswith("faw-home-")
-    assert len(witness["witness_receipt_hash"]) == 64
-    assert len(witness["witness_state_commit"]) == 40
-    assert witness["witness_receipt_itself_enables_money"] is False
-    assert witness["money_enabled"] is False
-
-    assert readiness["status"] == "PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING"
+    witness = load("FOREIGN_AGENT_WITNESS.json")
+    assert readiness["seller_commerce_authorized"] is True
     assert readiness["money_enabled"] is True
     assert readiness["autonomous_purchase_declared"] is True
-    assert readiness["promotion_evidence"]["witness_id"] == witness["witness_id"]
-    assert readiness["promotion_evidence"]["witness_receipt_hash"] == witness["witness_receipt_hash"]
-    assert readiness["promotion_evidence"]["market_state_commit"] == witness["witness_state_commit"]
-    assert readiness["paid_execution_queue"]["max_active_paid_search"] == 1
-    assert readiness["paid_execution_queue"]["preemption"] is False
-    assert readiness["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
-    assert readiness["closed_skus"]["JANUS.COMPUTE"].startswith("CLOSED_")
-
     assert product["machine_purchase"] is True
     assert product["live_gate"]["checkout_live"] is True
-    assert product["live_gate"]["paid_queue_live"] is True
-    assert product["live_gate"]["witness_id"] == witness["witness_id"]
-    assert product["queue"]["max_active_paid_search"] == 1
-    assert product["queue"]["preemption"] is False
-    checkout_gate(readiness=readiness, witness=witness, product=product)
-
-    assert pricing["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
-    assert pricing["live_skus"] == ["JANUS.SEARCH"]
-    assert "JANUS.REPO_AUDIT" in pricing["preview_only_skus"]
-    assert "JANUS.DATASET_SCOUT" in pricing["preview_only_skus"]
-
-    assert queue["queue_levels"] == 5
-    assert queue["max_active_paid_search"] == 1
-    assert queue["preemption"] is False
-    assert queue["valid_paid_settlement_can_be_rejected_for_capacity"] is False
-
-    assert ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]["status"] == "LIVE_JANUS_SEARCH_ONLY"
-    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.REPO_AUDIT"]["status"]
-    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.DATASET_SCOUT"]["status"]
-
-
-def test_valid_persistent_home_witness_promotes_only_search_commerce_with_queue():
-    docs = promoted(); witness = docs["FOREIGN_AGENT_WITNESS.json"]; readiness = docs["COMMERCE_READINESS.json"]; product = docs["products/JANUS.SEARCH.json"]
-    assert witness["foreign_agent_witness"] is True
-    assert witness["money_enabled"] is False
-    assert witness["witness_receipt_itself_enables_money"] is False
-    assert readiness["money_enabled"] is True and readiness["autonomous_purchase_declared"] is True
-    assert readiness["paid_execution_queue"]["status"] == "LIVE_FIVE_LEVEL_SERIALIZED_NON_PREEMPTIVE"
-    assert readiness["paid_execution_queue"]["max_active_paid_search"] == 1
-    assert readiness["paid_execution_queue"]["preemption"] is False
-    assert product["machine_purchase"] is True
-    assert product["live_gate"]["checkout_live"] is True and product["live_gate"]["paid_queue_live"] is True
-    assert product["queue"]["status"] == "LIVE_FIVE_LEVEL_SERIALIZED_NON_PREEMPTIVE"
-    assert readiness["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
-    assert readiness["closed_skus"]["JANUS.COMPUTE"].startswith("CLOSED_")
+    assert product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"] is False
     checkout_gate(readiness=readiness, witness=witness, product=product)
 
 
-def test_promotion_binds_exact_witness_id_hash_market_state_and_queue_policy():
+def test_valid_persistent_home_witness_promotes_evidence_not_seller_authority():
+    docs = promoted()
+    before_r = load("COMMERCE_READINESS.json")
+    before_p = load("products/JANUS.SEARCH.json")
+    w = docs["FOREIGN_AGENT_WITNESS.json"]
+    r = docs["COMMERCE_READINESS.json"]
+    p = docs["products/JANUS.SEARCH.json"]
+    assert w["foreign_agent_witness"] is True
+    assert w["money_enabled"] is False
+    assert w["witness_receipt_itself_enables_money"] is False
+    assert w["seller_commerce_was_already_live_before_witness"] is True
+    assert r["seller_commerce_authorized"] is before_r["seller_commerce_authorized"] is True
+    assert r["money_enabled"] is before_r["money_enabled"] is True
+    assert r["autonomous_purchase_declared"] is before_r["autonomous_purchase_declared"] is True
+    assert r["promotion_evidence"]["seller_authority_changed"] is False
+    assert p["machine_purchase"] is before_p["machine_purchase"] is True
+    assert p["live_gate"]["checkout_live"] is True
+    assert p["live_gate"]["foreign_agent_witness"] is True
+    assert p["live_gate"]["foreign_agent_witness_is_seller_prerequisite"] is False
+    assert r["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
+    assert r["closed_skus"]["JANUS.COMPUTE"].startswith("CLOSED_")
+
+
+def test_promotion_binds_exact_witness_id_hash_and_market_state():
     docs = promoted(); w = docs["FOREIGN_AGENT_WITNESS.json"]; r = docs["COMMERCE_READINESS.json"]
     assert w["witness_id"] == r["promotion_evidence"]["witness_id"]
     assert w["witness_receipt_hash"] == r["promotion_evidence"]["witness_receipt_hash"]
@@ -145,61 +106,45 @@ def test_promotion_binds_exact_witness_id_hash_market_state_and_queue_policy():
     assert r["promotion_evidence"]["queue_policy"] == "PAID_QUEUE_POLICY.json"
 
 
-def test_pricing_becomes_mixed_not_falsely_all_live():
+def test_pricing_is_identical_before_and_after_witness_promotion():
     docs = promoted()
-    price = docs["PRICING.json"]
-    readiness = docs["COMMERCE_READINESS.json"]
-    assert price["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
-    assert price["live_skus"] == ["JANUS.SEARCH"]
-    assert "JANUS.REPO_AUDIT" in price["preview_only_skus"] and "JANUS.DATASET_SCOUT" in price["preview_only_skus"]
-    assert price["version"] == "2026-09-04-search-live-queue5-1"
-    assert price["alternative_payment_routes"]["BTT_TRON"]["live_quote_allowed"] is False
-    assert price["alternative_payment_routes"]["BTT_TRON"]["status"] == "DECLARED_DISCOUNT_ROUTE_NOT_LIVE"
-    assert readiness["alternative_payment_rails"]["BTT_TRON"]["live_invoice_allowed"] is False
+    assert docs["PRICING.json"] == load("PRICING.json")
+    assert docs["PRICING.json"]["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
+    assert docs["PRICING.json"]["live_skus"] == ["JANUS.SEARCH"]
+    assert docs["PRICING.json"]["alternative_payment_routes"]["BTT_TRON"]["live_quote_allowed"] is False
 
 
-def test_buyer_plane_and_machine_ingress_become_search_live_only_with_queue():
+def test_buyer_plane_and_machine_ingress_gain_witness_evidence_only():
     docs = promoted(); plane = docs["BUYER_QUERY_PLANE.json"]; ingress = docs["MACHINE_INGRESS.json"]
     assert plane["current_gates"]["payment_endpoint"] == "LIVE_JANUS_SEARCH_ONLY"
     assert plane["current_gates"]["live_publication_allowed"] is True
+    assert plane["current_gates"]["foreign_buyer_query_witness"] == "PASS_PERSISTENT_HOME_EXTERNAL_MACHINE"
     paid = ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]
     assert paid["status"] == "LIVE_JANUS_SEARCH_ONLY"
-    assert paid["queue_levels"] == 5 and paid["max_active_paid_search"] == 1 and paid["preemption"] is False
-    assert paid["payment_settled_is_execution_started"] is False
-    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.REPO_AUDIT"]["status"]
-    assert "OWNER_SHADOW" in ingress["live_services"]["JANUS.DATASET_SCOUT"]["status"]
+    assert paid["foreign_agent_witness_is_seller_prerequisite"] is False
+    assert ingress["proof"]["public_search_beta"]["external_roundtrip_observed"] is True
+    assert ingress["proof"]["public_search_beta"]["foreign_agent_witness"] is True
 
 
-def test_pages_promotion_rewrites_only_exact_known_truth_sentinels():
-    require_blocked()
-    before = (ROOT / "index.html").read_text(encoding="utf-8"); after = promote_pages_html(before)
-    assert "PAID SEARCH <b>LIVE</b>" in after
-    assert "LIVE · 5-LEVEL QUEUE" in after
-    assert "ON · JANUS.SEARCH ONLY" in after
-    assert "LIVE · SEARCH ONLY" in after
-    assert "INFERENCE <b>CLOSED</b>" in after and "COMPUTE <b>CLOSED</b>" in after
-    assert "PAID SEARCH <b>ARMED · GATED</b>" not in after
-
-
-def test_payment_policy_changes_only_to_search_specific_live_route():
-    require_blocked()
-    before = (ROOT / "PAYMENT_POLICY.md").read_text(encoding="utf-8"); after = promote_payment_policy(before)
-    assert "JANUS.SEARCH has a live issue-based exact-invoice purchase route with serialized paid queue dispatch" in after
-    assert "no other general JANUS MACHINE MARKET purchase endpoint is active" in after
-    assert "UNSOLICITED PAYMENT GRANTS NOTHING" in after
+def test_witness_promotion_does_not_rewrite_pages_or_payment_policy():
+    before_html = (ROOT / "index.html").read_text(encoding="utf-8")
+    before_policy = (ROOT / "PAYMENT_POLICY.md").read_text(encoding="utf-8")
+    assert promote_pages_html(before_html) == before_html
+    assert promote_payment_policy(before_policy) == before_policy
+    assert "SELLER_COMMERCE_AUTHORIZED != FOREIGN_AGENT_WITNESS" in before_policy
 
 
 def test_wrong_first_receipt_hash_blocks_promotion():
-    require_blocked()
+    if canonical_witness_live(): pytest.skip("canonical witness already promoted")
     first, receipt = evidence(); first = deepcopy(first); first["receipt_hash"] = "0" * 64
     with pytest.raises(PaidSearchPromotionInvalid, match="WITNESS_HASH"):
         build_live_documents(first=first,receipt=receipt,witness_status=load("FOREIGN_AGENT_WITNESS.json"),readiness=load("COMMERCE_READINESS.json"),product=load("products/JANUS.SEARCH.json"),pricing=load("PRICING.json"),queue_policy=load("PAID_QUEUE_POLICY.json"),buyer_plane=load("BUYER_QUERY_PLANE.json"),machine_ingress=load("MACHINE_INGRESS.json"),market_state_commit="a"*40)
 
 
-def test_synthetic_state_cannot_promote_if_canonical_money_already_changed():
-    require_blocked()
-    first, receipt = evidence(); readiness = load("COMMERCE_READINESS.json"); readiness["money_enabled"] = True
-    with pytest.raises(PaidSearchPromotionInvalid, match="COMMERCE_ALREADY_LIVE"):
+def test_witness_promotion_refuses_to_be_source_of_seller_activation():
+    if canonical_witness_live(): pytest.skip("canonical witness already promoted")
+    first, receipt = evidence(); readiness = deepcopy(load("COMMERCE_READINESS.json")); readiness["seller_commerce_authorized"] = False
+    with pytest.raises(PaidSearchPromotionInvalid, match="SELLER_COMMERCE_MUST_ALREADY_BE_AUTHORIZED"):
         build_live_documents(first=first,receipt=receipt,witness_status=load("FOREIGN_AGENT_WITNESS.json"),readiness=readiness,product=load("products/JANUS.SEARCH.json"),pricing=load("PRICING.json"),queue_policy=load("PAID_QUEUE_POLICY.json"),buyer_plane=load("BUYER_QUERY_PLANE.json"),machine_ingress=load("MACHINE_INGRESS.json"),market_state_commit="a"*40)
 
 
