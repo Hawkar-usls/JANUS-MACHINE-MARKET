@@ -49,7 +49,7 @@ A real qualifying customer delivery may later provide the evidence needed to pro
 
 ## Live USDT / Ethereum route
 
-`JANUS.SEARCH` now has a live issue-based exact-invoice checkout route.
+`JANUS.SEARCH` has a live issue-based exact-invoice checkout route.
 
 ```text
 Network: Ethereum Mainnet
@@ -64,22 +64,39 @@ The receiving address alone is **not** a universal checkout endpoint. The buyer 
 
 > **UNSOLICITED PAYMENT GRANTS NOTHING.**
 
-## Alternative BTT / TRON route
+## Live BTT / TRON route
 
-JANUS declares an additional **BTT (TRC-20 on TRON Mainnet)** receiving route in `BTT_PAYMENT_ROUTE.json`.
+`JANUS.SEARCH` also has a live exact-invoice route for the post-redenomination **BitTorrent Token**, paid as **BTT TRC-20 on TRON Mainnet**. The buyer opens a `[JANUS PAID SEARCH BTT]` issue; a published wallet address by itself is not an order.
 
-The commercial rule is:
+The route is frozen by `BTT_PAYMENT_ROUTE.json`:
 
 ```text
 canonical USDT reference total
 → apply BTT route discount of 50%
-→ freeze an exact BTT/USD price source + timestamp + rounding rule
-→ freeze exact BTT atomic amount in the live invoice
+→ fetch fresh Binance BTTCUSDT best bid / ask
+→ enforce bounded order-book spread
+→ freeze midpoint + observation timestamp in the invoice
+→ compute exact BTT amount
+→ CEILING to the 18-decimal BTT atomic unit
+→ bind token contract + receiver + amount + expiry + request hash
 ```
+
+The names are intentionally explicit:
+
+```text
+payment asset = BTT / BitTorrent Token
+Binance exchange ticker = BTTC
+Binance market symbol = BTTCUSDT
+network = TRON Mainnet
+standard = TRC-20
+new-token contract = TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4
+```
+
+`BTTC` in the oracle does **not** mean JANUS accepts a different asset. It is Binance's ticker for the post-redenomination BitTorrent Token market. The payment proof must still be the exact BTT TRC-20 transfer specified by the invoice. BTTOLD is not accepted.
 
 The declared receiver is `TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1`.
 
-This is the new BTT TRC-20 token, not BTTOLD. The rail is being upgraded to a real exact-invoice route; until its oracle and solidified TRC-20 observer are merged and pass CI, **do not send BTT**.
+Settlement is admitted only from TRON solidified state. JANUS requires both the solidified transaction body and the solidified execution receipt, successful smart-contract execution, the exact BTT token contract, the exact receiver, and the exact atomic amount. Replay identity is `tron:<txid>:<event_index>`.
 
 > **DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS BTT INVOICE.**
 
@@ -91,6 +108,8 @@ The market adopts this commercial invariant:
 
 ```text
 1 purchase_id => <= 1 billable execution
+1 Ethereum tx_hash + 1 ERC20 log_index => <= 1 accepted purchase
+1 TRON txid + 1 TRC20 event_index => <= 1 accepted purchase
 1 settled purchase => <= 1 paid queue entry
 1 paid SEARCH runtime => <= 1 ACTIVE paid execution at a time
 ```
@@ -103,7 +122,7 @@ The five-level scheduler is governed by `PAID_QUEUE_POLICY.json`.
 
 A queue level changes only the order among requests that have **not started**. It does not grant command authority, broaden the product scope, or permit an active request to be interrupted. The current active execution cap is exactly one paid `JANUS.SEARCH` request.
 
-Queue-depth and per-buyer limits are checked before a payable invoice is published. A create-only reservation binds capacity to the exact issue/request/invoice. Once an exact payment was validly mined within the invoice deadline and independently verified, later queue fullness is not a lawful reason to discard the purchase.
+Queue-depth and per-buyer limits are checked before a payable invoice is published. A create-only reservation binds capacity to the exact issue/request/invoice. Once an exact payment was validly included within the invoice deadline and independently verified, later queue fullness is not a lawful reason to discard the purchase.
 
 ```text
 QUEUE CAPACITY LIMIT = INVOICE ADMISSION LIMIT
@@ -160,11 +179,11 @@ x402 has two independent authority directions and they MUST NOT share a gate imp
 
 ### JANUS as x402 seller
 
-Native HTTP x402 selling remains separate from the live GitHub-issue/USDT seller path. JANUS must not advertise an x402 seller endpoint until a real HTTP resource, policy-bound pricing, replay protection, settlement verification and HOME delivery binding are actually deployed.
+Native HTTP x402 selling remains separate from the live GitHub-issue USDT/BTT seller paths. JANUS must not advertise an x402 seller endpoint until a real HTTP resource, policy-bound pricing, replay protection, settlement verification and HOME delivery binding are actually deployed.
 
 ```text
 JANUS_X402_SELLER
-!= JANUS_GITHUB_ISSUE_USDT_SELLER
+!= JANUS_GITHUB_ISSUE_USDT_BTT_SELLER
 != JANUS_X402_BUYER
 ```
 
