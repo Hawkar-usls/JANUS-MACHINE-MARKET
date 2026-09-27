@@ -6,6 +6,7 @@
   "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
   "fastest_live_path": {
     "sku": "JANUS.SEARCH",
+    "price": 0,
     "first_order_price": 0,
     "subsequent_paid_orders_live": true,
     "telegram_required": false,
@@ -113,9 +114,9 @@
       "callable": false
     },
     {
-      "id": "GENERAL_TRANSACTION_OPENAPI",
+      "id": "OPENAPI",
       "status": "BLOCKED_UNTIL_LIVE_HTTPS_TRANSACTION_API",
-      "purpose": "Future generic direct JANUS transaction API discovery",
+      "purpose": "Future generic direct JANUS transaction API discovery; distinct from the already-live GitHub Issues OpenAPI descriptor",
       "callable": false
     }
   ],
