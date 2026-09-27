@@ -1,14 +1,12 @@
 {
   "schema": "janus.machine_market.btt_payment_route.v1",
-  "version": "1.0.0",
-  "recorded_at": "2026-09-25",
-  "status": "DECLARED_50_PERCENT_DISCOUNT_ROUTE_GATE_CLOSED",
+  "version": "2.0.0",
+  "recorded_at": "2026-09-27",
+  "status": "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY",
   "asset": {
     "canonical_symbol": "BTT",
-    "display_aliases": [
-      "BTT",
-      "BTTC"
-    ],
+    "exchange_ticker": "BTTC",
+    "display_aliases": ["BTT", "BTTC"],
     "name": "BitTorrent Token",
     "network": "TRON Mainnet",
     "token_standard": "TRC-20",
@@ -26,25 +24,41 @@
     "order_of_operations": [
       "COMPUTE_CANONICAL_USDT_REFERENCE_TOTAL",
       "APPLY_BTT_ROUTE_DISCOUNT_5000_BPS",
-      "FREEZE_BTT_USD_PRICE_SOURCE_IN_EXACT_INVOICE",
+      "FREEZE_BTTCUSDT_ORDER_BOOK_OBSERVATION_IN_EXACT_INVOICE",
       "COMPUTE_EXACT_BTT_ATOMIC_AMOUNT",
+      "CEILING_TO_18_DECIMAL_BTT_ATOMIC_UNIT",
       "BIND_PRICE_SOURCE_TIMESTAMP_AND_AMOUNT_TO_INVOICE"
     ],
-    "btt_usd_oracle": "NOT_IMPLEMENTED_YET",
-    "live_quote_allowed": false,
-    "rounding": "MUST_BE_DEFINED_BY_FUTURE_TRUSTED_INVOICE_IMPLEMENTATION"
+    "btt_usd_oracle": {
+      "implementation": "runtime/btt_paid_search_checkout.py",
+      "provider": "BINANCE_SPOT_PUBLIC_BOOK_TICKER",
+      "exchange_market_symbol": "BTTCUSDT",
+      "payment_asset": "BTT",
+      "endpoint": "https://data-api.binance.vision/api/v3/ticker/bookTicker",
+      "max_observation_age_seconds": 120,
+      "max_spread_bps": 500,
+      "timestamp_semantics": "HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE"
+    },
+    "live_quote_allowed": true,
+    "rounding": "CEILING_TO_BTT_ATOMIC_UNIT"
   },
   "settlement": {
-    "observer": "NOT_IMPLEMENTED_YET",
+    "observer": "runtime/tron_btt_observer.py",
+    "settlement_runtime": "runtime/btt_paid_search_settlement.py",
+    "workflow": ".github/workflows/paid-search-btt-checkout.yml",
+    "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md",
     "exact_transfer_identity": "TRON_TXID_PLUS_TRC20_TRANSFER_EVENT_INDEX",
-    "required_confirmations": "TO_BE_FROZEN_BEFORE_LIVE_ACTIVATION",
+    "finality": "TRON_SOLIDIFIED_TRANSACTION_BODY_PLUS_SOLIDIFIED_EXECUTION_RECEIPT",
+    "contract_execution_required": "SUCCESS",
+    "exact_receiver_required": true,
+    "exact_atomic_amount_required": true,
     "settlement_starts_execution": false
   },
   "commerce_gate": {
-    "money_enabled": false,
-    "machine_purchase": false,
-    "live_invoice_allowed": false,
-    "foreign_agent_witness_required": true,
+    "money_enabled": true,
+    "machine_purchase": true,
+    "live_invoice_allowed": true,
+    "foreign_agent_witness_required": false,
     "payment_observer_required": true,
     "persistent_purchase_ledger_required": true,
     "purchase_grant_required": true,
@@ -54,11 +68,14 @@
     "DO_NOT_SEND_BTT_WITHOUT_AN_EXACT_LIVE_INVOICE",
     "UNSOLICITED_PAYMENT_GRANTS_NOTHING",
     "PAYMENT_IS_EVIDENCE_NOT_EXECUTION_AUTHORITY",
-    "BTT_ROUTE_DECLARATION_DOES_NOT_ENABLE_MONEY",
+    "EXCHANGE_TICKER_BTTC_IS_THE_POST_REDENOMINATION_BITTORRENT_TOKEN_MARKET_SYMBOL",
+    "PAYMENT_ASSET_REMAINS_BTT_BITTORRENT_TOKEN",
     "ADDRESS_IS_FOR_NEW_BTT_TRC20_ON_TRON_NOT_BTTOLD"
   ],
   "sources": [
-    "https://medium.com/@BitTorrent/launch-of-bttc-mainnet-and-btt-redenomination-plan-2eacfe26d22",
-    "https://bt.io/"
+    "https://www.binance.com/en/support/announcement/binance-will-support-the-bittorrent-btt-token-migration-redenomination-and-renaming-plan-e98b86e5bb7f44d88c976c79a8c8b519",
+    "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints",
+    "https://developers.tron.network/reference/gettransactionbyid-1",
+    "https://developers.tron.network/reference/gettransactioninfobyid-1"
   ]
 }
