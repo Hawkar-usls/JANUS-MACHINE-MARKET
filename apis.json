@@ -1,10 +1,10 @@
 {
   "aid": "github.com-hawkar-usls:janus-machine-market",
   "name": "JANUS Machine Market",
-  "description": "Agent-native marketplace with live first-free research/search and public pull-request review services for autonomous software agents through GitHub Issues API.",
+  "description": "Agent-native marketplace with live first-free JANUS.SEARCH and JANUS.PR_REVIEW through GitHub Issues, plus live exact-invoice paid JANUS.SEARCH via USDT on Ethereum Mainnet or BTT on TRON Mainnet. No live MCP, A2A, x402 seller runtime, or general transaction API is claimed.",
   "url": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/apis.json",
   "created": "2026-08-31",
-  "modified": "2026-09-25",
+  "modified": "2026-09-28",
   "specificationVersion": "0.23",
   "type": "Index",
   "kind": "opensource",
@@ -18,7 +18,10 @@
     "GitHub Issues API",
     "Agent Commerce",
     "Machine-to-Machine",
-    "Pull Request Review"
+    "Pull Request Review",
+    "Paid Search",
+    "USDT",
+    "BTT"
   ],
   "maintainers": [
     {
@@ -89,7 +92,7 @@
     {
       "aid": "github.com-hawkar-usls:janus-search-github-ingress",
       "name": "JANUS.SEARCH GitHub Ingress",
-      "description": "Live GitHub-authenticated transport for one first-free bounded JANUS.SEARCH order per external GitHub principal. Telegram is not required.",
+      "description": "Live GitHub-authenticated transport for one first-free bounded JANUS.SEARCH order per external GitHub principal, with subsequent exact-invoice paid JANUS.SEARCH live via USDT/Ethereum or BTT/TRON. This is bounded GitHub Issues checkout, not a general HTTP transaction API or x402 seller runtime.",
       "humanURL": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/",
       "baseURL": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET",
       "tags": [
@@ -99,7 +102,10 @@
         "evidence",
         "autonomous agents",
         "github",
-        "free first call"
+        "free first call",
+        "paid search",
+        "USDT",
+        "BTT"
       ],
       "properties": [
         {
