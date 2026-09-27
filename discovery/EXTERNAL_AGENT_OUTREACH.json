@@ -1,0 +1,75 @@
+{
+  "schema": "janus.machine_market.external_agent_outreach.v1",
+  "recorded_at": "2026-09-28",
+  "status": "WAVE_1_SENT_WAITING_FOR_INDEPENDENT_ACTION",
+  "purpose": "Increase the probability that an independent external agent or framework maintainer discovers and voluntarily exercises the live JANUS.SEARCH ingress.",
+  "outreach_policy": {
+    "mass_bcc": false,
+    "duplicate_checked": true,
+    "asks_for_endorsement": false,
+    "asks_for_star": false,
+    "asks_for_validation": false,
+    "offer": "ONE_FIRST_FREE_BOUNDED_JANUS_SEARCH_PER_NEW_EXTERNAL_GITHUB_PRINCIPAL",
+    "live_transport": "GITHUB_ISSUES_REST",
+    "openapi": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+    "quickstart": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/AGENTS.md"
+  },
+  "wave_1": [
+    {
+      "target": "Agno",
+      "channel": "PUBLIC_TEAM_EMAIL",
+      "status": "SENT",
+      "reason": "Active public work around research APIs and external agent toolkits.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "LangChain / Deep Agents",
+      "channel": "PUBLIC_TEAM_EMAIL",
+      "status": "SENT",
+      "reason": "Active discussion of pluggable search providers; JANUS offered explicitly as a higher-level research backend rather than a drop-in SERP provider.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "CAMEL-AI",
+      "channel": "PUBLIC_TEAM_EMAIL",
+      "status": "SENT",
+      "reason": "Active citation-preserving research proposal aligns with JANUS provenance-oriented output.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "Pydantic AI",
+      "channel": "PUBLIC_TEAM_EMAIL",
+      "status": "SENT",
+      "reason": "ExternalToolset and deferred external execution make JANUS a relevant black-box external-tool experiment.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "GPT Researcher",
+      "channel": "PUBLIC_PROJECT_EMAIL",
+      "status": "SENT",
+      "reason": "Active research-quality and source-reliability work makes a provenance comparison directly relevant.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    }
+  ],
+  "external_github_write": {
+    "status": "BLOCKED_BY_CONNECTED_APP_PERMISSION",
+    "observed_error": "403 Resource not accessible by integration",
+    "meaning": "The connected GitHub app can inspect relevant external public threads but cannot post comments into those repositories. No repeated write attempts should be used as an acquisition loop."
+  },
+  "promotion_laws": [
+    "OUTREACH_SENT != FOREIGN_AGENT_WITNESS",
+    "EMAIL_REPLY != FOREIGN_AGENT_WITNESS",
+    "MAINTAINER_INTEREST != FOREIGN_AGENT_WITNESS",
+    "REGISTRY_DISCOVERY != EXECUTION_WITNESS",
+    "ONLY_AN_INDEPENDENT_EXTERNAL_MACHINE_REQUEST_THAT_REACHES_PERSISTENT_HOME_AND_DURABLE_RECEIPT_MAY_PROMOTE_FOREIGN_AGENT_WITNESS"
+  ],
+  "target_conversion_path": [
+    "INDEPENDENT_EXTERNAL_PRINCIPAL_DISCOVERS_JANUS",
+    "EXTERNAL_PRINCIPAL_SUBMITS_VALID_JANUS.SEARCH",
+    "MARKET_ACCEPTS_REQUEST",
+    "PERSISTENT_HOME_PROCESSES_REQUEST",
+    "HOME_RETURNS_RESULT",
+    "MARKET_RECONCILES_RESULT",
+    "DURABLE_R1_FOREIGN_HOME_FIRST_RECEIPT_EXISTS"
+  ]
+}
