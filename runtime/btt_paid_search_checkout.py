@@ -23,9 +23,9 @@ from runtime.paid_search_checkout import MODE, SKU, search_price_usdt_micros
 
 INVOICE_SCHEMA = "janus.machine_market.btt_paid_search_invoice.v1"
 POLICY_VERSION = "commerce-paid-search-btt-tron-v1"
-ORACLE_PROVIDER = "BINANCE_SPOT_PUBLIC"
+ORACLE_PROVIDER = "BINANCE_SPOT_PUBLIC_MARKET_DATA"
 ORACLE_SYMBOL = "BTTUSDT"
-ORACLE_ENDPOINT = "https://api.binance.com/api/v3/avgPrice"
+ORACLE_ENDPOINT = "https://data-api.binance.vision/api/v3/avgPrice"
 MAX_ORACLE_AGE_SECONDS = 600
 DISCOUNT_BPS = 5000
 
@@ -42,7 +42,7 @@ def _iso(dt: datetime) -> str:
 
 
 def fetch_bttusdt_oracle(*, now: datetime | None = None, timeout: int = 10) -> dict[str, Any]:
-    """Fetch Binance public 5-minute average price and freeze its market timestamp."""
+    """Fetch Binance public 5-minute average price from the market-data-only host."""
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     url = ORACLE_ENDPOINT + "?" + urlencode({"symbol": ORACLE_SYMBOL})
     req = Request(url, headers={"User-Agent": "JANUS-MACHINE-MARKET/1.0", "Accept": "application/json"})
@@ -77,7 +77,6 @@ def fetch_bttusdt_oracle(*, now: datetime | None = None, timeout: int = 10) -> d
 def discounted_reference_micros(reference_usdt_micros: int) -> int:
     ref = int(reference_usdt_micros)
     _require(ref > 0, "canonical USDT reference must be positive")
-    # Round the discounted micro-USDT reference upward if a future rate produces a half-micro.
     return (ref * (10_000 - DISCOUNT_BPS) + 9_999) // 10_000
 
 
@@ -102,19 +101,11 @@ def _queue_spec(pricing: dict[str, Any], level: int) -> dict[str, Any]:
     return spec
 
 
-def issue_btt_invoice(
-    *,
-    request: dict[str, Any],
-    pricing: dict[str, Any],
-    issued_at: datetime,
-    oracle: dict[str, Any] | None = None,
-    mode: str = MODE,
-) -> dict[str, Any]:
+def issue_btt_invoice(*, request: dict[str, Any], pricing: dict[str, Any], issued_at: datetime, oracle: dict[str, Any] | None = None, mode: str = MODE) -> dict[str, Any]:
     issued_at = issued_at.astimezone(timezone.utc)
     ttl = int(pricing.get("quote_ttl_seconds", 0))
     _require(60 <= ttl <= 3600, "quote ttl outside production bounds")
-    route = str(request.get("payment_route") or "")
-    _require(route == "BTT_TRON", "BTT invoice requires payment_route=BTT_TRON")
+    _require(str(request.get("payment_route") or "") == "BTT_TRON", "BTT invoice requires payment_route=BTT_TRON")
     queue_level = int(request.get("queue_level", 1))
     spec = _queue_spec(pricing, queue_level)
     reference = search_price_usdt_micros(pricing, mode=mode, queue_level=queue_level)
@@ -127,69 +118,23 @@ def issue_btt_invoice(
     issued_text = _iso(issued_at)
     expires = _iso(issued_at + timedelta(seconds=ttl))
     req_hash = request_hash(request)
-    nonce = "paid-search-btt-" + digest({
-        "request_hash": req_hash,
-        "issued_at": issued_text,
-        "queue_level": queue_level,
-        "policy_version": POLICY_VERSION,
-        "oracle": oracle,
-        "amount_atomic": amount_atomic,
-    })[:32]
+    nonce = "paid-search-btt-" + digest({"request_hash":req_hash,"issued_at":issued_text,"queue_level":queue_level,"policy_version":POLICY_VERSION,"oracle":oracle,"amount_atomic":amount_atomic})[:32]
     quote_body = {
-        "schema": "janus.machine_market.quote.v1",
-        "sku": SKU,
-        "request_hash": req_hash,
-        "payment_route": "BTT_TRON",
-        "amount_usdt_micros": discounted,
-        "reference_usdt_micros": reference,
-        "discount_bps": DISCOUNT_BPS,
-        "asset": "BTT",
-        "network": TRON_NETWORK,
-        "token_standard": "TRC-20",
-        "token_contract": BTT_TRON,
-        "decimals": BTT_DECIMALS,
-        "amount_atomic": amount_atomic,
-        "receiving_address": BTT_RECEIVER,
-        "oracle": oracle,
-        "rounding": "CEILING_TO_BTT_ATOMIC_UNIT",
-        "expires_at": expires,
-        "nonce": nonce,
-        "policy_version": POLICY_VERSION,
+        "schema":"janus.machine_market.quote.v1","sku":SKU,"request_hash":req_hash,"payment_route":"BTT_TRON","amount_usdt_micros":discounted,
+        "reference_usdt_micros":reference,"discount_bps":DISCOUNT_BPS,"asset":"BTT","network":TRON_NETWORK,"token_standard":"TRC-20",
+        "token_contract":BTT_TRON,"decimals":BTT_DECIMALS,"amount_atomic":amount_atomic,"receiving_address":BTT_RECEIVER,"oracle":oracle,
+        "rounding":"CEILING_TO_BTT_ATOMIC_UNIT","expires_at":expires,"nonce":nonce,"policy_version":POLICY_VERSION,
     }
     quote = {**quote_body, "quote_hash": digest(quote_body)}
     verify_quote(quote, request, now=issued_at, require_unexpired=True)
-    invoice_id = "inv-search-btt-" + digest({"request_hash": req_hash, "quote_hash": quote["quote_hash"]})[:40]
+    invoice_id = "inv-search-btt-" + digest({"request_hash":req_hash,"quote_hash":quote["quote_hash"]})[:40]
     invoice = {
-        "schema": INVOICE_SCHEMA,
-        "invoice_id": invoice_id,
-        "sku": SKU,
-        "mode": mode,
-        "payment_route": "BTT_TRON",
-        "queue_level": queue_level,
-        "queue_code": spec.get("code"),
-        "queue_multiplier_bps": int(spec.get("multiplier_bps", 0)),
-        "queue_level_is_frozen": True,
-        "active_request_preemption_allowed": False,
-        "buyer_actor_id": request.get("buyer_actor_id"),
-        "request_id": request.get("request_id"),
-        "request_hash": req_hash,
-        "issued_at": issued_text,
-        "expires_at": expires,
-        "quote": quote,
-        "quote_hash": quote["quote_hash"],
-        "reference_usdt_micros": reference,
-        "amount_usdt_micros": discounted,
-        "discount_bps": DISCOUNT_BPS,
-        "asset": "BTT",
-        "network": TRON_NETWORK,
-        "token_contract": BTT_TRON,
-        "amount_atomic": amount_atomic,
-        "receiving_address": BTT_RECEIVER,
-        "payment_required": True,
-        "payment_is_execution_authority": False,
-        "payment_settled_is_execution_started": False,
-        "unsolicited_payment_grants_nothing": True,
-        "status": "AWAITING_PAYMENT",
+        "schema":INVOICE_SCHEMA,"invoice_id":invoice_id,"sku":SKU,"mode":mode,"payment_route":"BTT_TRON","queue_level":queue_level,
+        "queue_code":spec.get("code"),"queue_multiplier_bps":int(spec.get("multiplier_bps",0)),"queue_level_is_frozen":True,"active_request_preemption_allowed":False,
+        "buyer_actor_id":request.get("buyer_actor_id"),"request_id":request.get("request_id"),"request_hash":req_hash,"issued_at":issued_text,"expires_at":expires,
+        "quote":quote,"quote_hash":quote["quote_hash"],"reference_usdt_micros":reference,"amount_usdt_micros":discounted,"discount_bps":DISCOUNT_BPS,
+        "asset":"BTT","network":TRON_NETWORK,"token_contract":BTT_TRON,"amount_atomic":amount_atomic,"receiving_address":BTT_RECEIVER,
+        "payment_required":True,"payment_is_execution_authority":False,"payment_settled_is_execution_started":False,"unsolicited_payment_grants_nothing":True,"status":"AWAITING_PAYMENT",
     }
     invoice["invoice_hash"] = digest(invoice)
     return invoice
@@ -206,8 +151,4 @@ def verify_btt_invoice(invoice: dict[str, Any], request: dict[str, Any]) -> None
     verify_quote(invoice["quote"], request, now=parse_time(invoice["issued_at"]), require_unexpired=True)
 
 
-__all__ = [
-    "DISCOUNT_BPS", "INVOICE_SCHEMA", "MAX_ORACLE_AGE_SECONDS", "ORACLE_ENDPOINT",
-    "ORACLE_PROVIDER", "ORACLE_SYMBOL", "POLICY_VERSION", "btt_atomic_from_reference",
-    "discounted_reference_micros", "fetch_bttusdt_oracle", "issue_btt_invoice", "verify_btt_invoice",
-]
+__all__ = ["DISCOUNT_BPS","INVOICE_SCHEMA","MAX_ORACLE_AGE_SECONDS","ORACLE_ENDPOINT","ORACLE_PROVIDER","ORACLE_SYMBOL","POLICY_VERSION","btt_atomic_from_reference","discounted_reference_micros","fetch_bttusdt_oracle","issue_btt_invoice","verify_btt_invoice"]
