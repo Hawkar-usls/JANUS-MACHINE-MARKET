@@ -25,10 +25,11 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertIn("PHYSARIUS_CREDENTIALLESS_PULL", owner_workflow)
         self.assertIn("janus/market-home-outbox", public_workflow)
 
-    def test_public_search_beta_remains_explicit_when_paid_search_later_goes_live(self):
+    def test_public_search_beta_remains_explicit_beside_live_paid_search(self):
         contract = json.loads((ROOT / "PUBLIC_SERVICE_BETA.json").read_text(encoding="utf-8"))
         ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
         witness = json.loads((ROOT / "FOREIGN_AGENT_WITNESS.json").read_text(encoding="utf-8"))
+        readiness = json.loads((ROOT / "COMMERCE_READINESS.json").read_text(encoding="utf-8"))
         search = contract["public_services"]["JANUS.SEARCH"]
         self.assertEqual(search["status"], "FIRST_SEARCH_ORDER_FREE")
         self.assertEqual(search["max_turns_per_issue"], 1)
@@ -42,11 +43,13 @@ class StorePagesExecutionContractTests(unittest.TestCase):
         self.assertFalse(contract["authority"]["command_authority_granted"])
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.REPO_AUDIT"].lower())
         self.assertIn("owner_shadow", contract["not_public_yet"]["JANUS.DATASET_SCOUT"].lower())
-        if witness["foreign_agent_witness"] is True:
-            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_PAID_ISSUE_CHECKOUT")
-            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]["status"], "LIVE_JANUS_SEARCH_ONLY")
-        else:
-            self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_OWNER_SHADOW")
+        self.assertTrue(readiness["seller_commerce_authorized"])
+        self.assertTrue(readiness["money_enabled"])
+        self.assertFalse(witness["foreign_agent_witness"])
+        self.assertEqual(ingress["live_services"]["JANUS.SEARCH"]["status"], "LIVE_FIRST_SEARCH_FREE_PLUS_PAID_ISSUE_CHECKOUT")
+        paid = ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]
+        self.assertEqual(paid["status"], "LIVE_JANUS_SEARCH_ONLY")
+        self.assertFalse(paid["foreign_agent_witness_is_seller_prerequisite"])
         self.assertIn("FIRST ORDER FREE", self.js)
         self.assertIn("OWNER SHADOW", self.js)
         pr = contract["public_services"]["JANUS.PR_REVIEW"]
