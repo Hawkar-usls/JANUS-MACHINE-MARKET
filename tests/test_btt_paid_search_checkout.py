@@ -19,10 +19,15 @@ def request(level=1):
 
 
 def oracle(price="0.00000050", close=NOW):
+    center=float(price)
+    bid=f"{center*0.999:.12f}"
+    ask=f"{center*1.001:.12f}"
     return {
-        "provider":"BINANCE_SPOT_PUBLIC_MARKET_DATA","endpoint":"https://data-api.binance.vision/api/v3/avgPrice","symbol":"BTTUSDT","price":price,
-        "interval_minutes":5,"close_time_ms":int(close.timestamp()*1000),"close_time":close.isoformat().replace('+00:00','Z'),
-        "fetched_at":NOW.isoformat().replace('+00:00','Z'),"max_age_seconds":600,
+        "provider":"BINANCE_SPOT_PUBLIC_BOOK_TICKER","endpoint":"https://data-api.binance.vision/api/v3/ticker/bookTicker","symbol":"BTTUSDT",
+        "bid_price":bid,"ask_price":ask,"price":f"{center:.12f}","spread_bps":"20","max_spread_bps":500,
+        "observed_at":close.isoformat().replace('+00:00','Z'),"fetched_at":NOW.isoformat().replace('+00:00','Z'),
+        "close_time_ms":int(close.timestamp()*1000),"close_time":close.isoformat().replace('+00:00','Z'),
+        "timestamp_semantics":"HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE","max_age_seconds":120,
     }
 
 
@@ -32,7 +37,7 @@ def test_exact_btt_amount_is_50_percent_discount_and_ceiling_atomic():
     assert atomic==50_000 * 10**18
 
 
-def test_btt_invoice_freezes_oracle_price_amount_receiver_and_route():
+def test_btt_invoice_freezes_orderbook_amount_receiver_and_route():
     inv=issue_btt_invoice(request=request(),pricing=pricing(),issued_at=NOW,oracle=oracle())
     verify_btt_invoice(inv,request())
     q=inv["quote"]
@@ -44,12 +49,13 @@ def test_btt_invoice_freezes_oracle_price_amount_receiver_and_route():
     assert q["token_contract"]=="TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"
     assert q["receiving_address"]=="TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"
     assert q["rounding"]=="CEILING_TO_BTT_ATOMIC_UNIT"
-    assert q["oracle"]["endpoint"]=="https://data-api.binance.vision/api/v3/avgPrice"
+    assert q["oracle"]["endpoint"]=="https://data-api.binance.vision/api/v3/ticker/bookTicker"
+    assert q["oracle"]["timestamp_semantics"]=="HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE"
 
 
 def test_stale_btt_oracle_fails_closed():
     with pytest.raises(CommerceInvalid,match="oracle outside freshness"):
-        issue_btt_invoice(request=request(),pricing=pricing(),issued_at=NOW,oracle=oracle(close=NOW-timedelta(minutes=11)))
+        issue_btt_invoice(request=request(),pricing=pricing(),issued_at=NOW,oracle=oracle(close=NOW-timedelta(minutes=3)))
 
 
 def test_payment_route_is_cryptographically_bound_by_request_hash():
@@ -64,3 +70,9 @@ def test_queue_multiplier_affects_reference_before_btt_discount():
     assert inv["reference_usdt_micros"]==250_000
     assert inv["amount_usdt_micros"]==125_000
     assert inv["amount_atomic"]==250_000 * 10**18
+
+
+def test_wide_orderbook_spread_fails_closed():
+    o=oracle(); o["bid_price"]="0.00000040"; o["ask_price"]="0.00000060"; o["price"]="0.00000050"
+    with pytest.raises(CommerceInvalid,match="spread exceeds"):
+        issue_btt_invoice(request=request(),pricing=pricing(),issued_at=NOW,oracle=o)
