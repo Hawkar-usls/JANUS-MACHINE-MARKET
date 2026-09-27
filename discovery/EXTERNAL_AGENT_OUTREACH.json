@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.external_agent_outreach.v1",
   "recorded_at": "2026-09-28",
-  "status": "WAVE_1_SENT_WAITING_FOR_INDEPENDENT_ACTION",
+  "status": "TEN_TARGETS_CONTACTED_WAITING_FOR_INDEPENDENT_ACTION",
   "purpose": "Increase the probability that an independent external agent or framework maintainer discovers and voluntarily exercises the live JANUS.SEARCH ingress.",
   "outreach_policy": {
     "mass_bcc": false,
@@ -51,6 +51,49 @@
       "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
     }
   ],
+  "wave_2": [
+    {
+      "target": "OpenHands",
+      "channel": "PUBLIC_PROJECT_EMAIL",
+      "status": "SENT",
+      "reason": "Autonomous software agents and public information-gathering evaluation make a provenance-producing external research service directly testable.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "Browser Use",
+      "channel": "PUBLIC_AGENT_SDK_AUTHOR_EMAIL",
+      "status": "SENT",
+      "reason": "Browser-native agents provide a strong comparison between direct navigation and delegated bounded research with provenance.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "Composio",
+      "channel": "PUBLIC_VERIFIED_ORG_EMAIL",
+      "status": "SENT",
+      "reason": "Agent tool discovery and execution infrastructure makes the external JANUS lifecycle a relevant black-box tool case.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "LlamaIndex",
+      "channel": "PUBLIC_PACKAGE_AUTHOR_EMAIL",
+      "status": "SENT",
+      "reason": "Retrieval, research, and agent workflows make source provenance a directly comparable output dimension.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    },
+    {
+      "target": "Haystack / deepset",
+      "channel": "PUBLIC_PACKAGE_AUTHOR_EMAIL",
+      "status": "SENT",
+      "reason": "Haystack Deep Research produces cited reports and is a clean comparison surface for JANUS provenance-oriented research.",
+      "conversion_requested": "OPTIONAL_BLACK_BOX_BOUNDED_RESEARCH_TEST"
+    }
+  ],
+  "counts": {
+    "targets_contacted": 10,
+    "mass_messages": 0,
+    "foreign_agent_witnesses_created_by_outreach": 0,
+    "durable_first_receipts_created_by_outreach": 0
+  },
   "external_github_write": {
     "status": "BLOCKED_BY_CONNECTED_APP_PERMISSION",
     "observed_error": "403 Resource not accessible by integration",
