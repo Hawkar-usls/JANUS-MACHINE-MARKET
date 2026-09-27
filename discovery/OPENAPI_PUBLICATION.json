@@ -1,27 +1,75 @@
 {
-  "schema": "janus.machine_market.openapi_publication.v1",
+  "schema": "janus.machine_market.openapi_publication.v2",
   "standard": "OPENAPI",
-  "target_version": "3.1.x_or_newer_runtime_supported",
-  "status": "PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API",
-  "current_publication_allowed": false,
-  "planned_first_paths": [
-    "GET /catalog",
-    "POST /quote",
-    "POST /purchase",
-    "GET /purchases/{purchase_id}",
-    "POST /jobs/search",
-    "GET /jobs/{job_id}",
-    "GET /receipts/{receipt_id}"
+  "target_version": "3.1.x",
+  "recorded_at": "2026-09-28",
+  "status": "LIVE_GITHUB_ISSUES_INGRESS_OPENAPI_GENERAL_TRANSACTION_API_GATED",
+  "published_descriptors": [
+    {
+      "sku": "JANUS.SEARCH",
+      "path": "discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+      "status": "LIVE",
+      "transport": "GITHUB_ISSUES_REST",
+      "server": "https://api.github.com",
+      "first_free": true,
+      "paid_exact_invoice_available": true,
+      "general_transaction_api": false
+    },
+    {
+      "sku": "JANUS.PR_REVIEW",
+      "path": "discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json",
+      "status": "LIVE_FIRST_FREE",
+      "transport": "GITHUB_ISSUES_REST",
+      "server": "https://api.github.com",
+      "general_transaction_api": false
+    }
   ],
-  "publication_gates": [
-    "LIVE_PUBLIC_HTTPS_API",
-    "ZERO_PRICE_SHADOW_MODE_ACTIVE",
-    "REQUEST_SCHEMA_BOUND",
-    "QUOTE_SCHEMA_BOUND",
-    "PURCHASE_GRANT_SCHEMA_BOUND",
-    "RESULT_RECEIPT_SCHEMA_BOUND",
-    "IDEMPOTENCY_AND_REPLAY_TESTS_PASS",
-    "NO_PAYMENT_ROUTE_ADVERTISED_BEFORE_AUTHORITY_GREEN"
-  ],
-  "truth_boundary": "An OpenAPI document must describe the deployed behavior, not future behavior. Publish only after the shadow endpoint exists and the documented routes pass contract tests."
+  "external_discovery": {
+    "apis_io": {
+      "status": "LISTED_REPROFILE_REQUESTED_AFTER_PAID_SEARCH_UPDATE",
+      "source": "apis.json"
+    },
+    "apis_guru": {
+      "status": "SUBMISSION_READY_ACCOUNT_OR_EXTERNAL_WRITE_REQUIRED",
+      "descriptor": "discovery/GITHUB_ISSUES_INGRESS.openapi.json"
+    },
+    "postman_api_network": {
+      "status": "PUBLICATION_READY_ACCOUNT_REQUIRED",
+      "collection": "discovery/postman/JANUS_SEARCH.postman_collection.json"
+    },
+    "rapidapi_hub": {
+      "status": "EVALUATE_PROVIDER_ACCOUNT_PATH",
+      "note": "Do not represent the GitHub Issues ingress as a general direct JANUS HTTP transaction API."
+    }
+  },
+  "general_transaction_api": {
+    "status": "NOT_ESTABLISHED",
+    "publication_allowed": false,
+    "planned_first_paths": [
+      "GET /catalog",
+      "POST /quote",
+      "POST /purchase",
+      "GET /purchases/{purchase_id}",
+      "POST /jobs/search",
+      "GET /jobs/{job_id}",
+      "GET /receipts/{receipt_id}"
+    ],
+    "publication_gates": [
+      "LIVE_PUBLIC_HTTPS_API",
+      "ZERO_PRICE_SHADOW_MODE_ACTIVE",
+      "REQUEST_SCHEMA_BOUND",
+      "QUOTE_SCHEMA_BOUND",
+      "PURCHASE_GRANT_SCHEMA_BOUND",
+      "RESULT_RECEIPT_SCHEMA_BOUND",
+      "IDEMPOTENCY_AND_REPLAY_TESTS_PASS",
+      "NO_PAYMENT_ROUTE_ADVERTISED_BEFORE_AUTHORITY_GREEN"
+    ]
+  },
+  "truth_boundary": [
+    "GITHUB_ISSUES_OPENAPI_IS_LIVE",
+    "GITHUB_ISSUES_OPENAPI != GENERAL_TRANSACTION_API",
+    "OPENAPI_DISCOVERY != FOREIGN_AGENT_WITNESS",
+    "OPENAPI_DISCOVERY != EXECUTION_AUTHORITY",
+    "AN_OPENAPI_DOCUMENT_MUST_DESCRIBE_DEPLOYED_BEHAVIOR_NOT_FUTURE_BEHAVIOR"
+  ]
 }
