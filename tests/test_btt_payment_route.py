@@ -49,17 +49,17 @@ class BttPaymentRouteTests(unittest.TestCase):
             discounted = round(micros * (10_000 - alt["discount_bps"]) / 10_000)
             self.assertEqual(discounted, micros // 2)
 
-    def test_route_is_declared_but_cannot_accept_live_payment_yet(self):
+    def test_btt_rail_remains_closed_even_while_usdt_seller_is_live(self):
+        self.assertTrue(self.readiness["seller_commerce_authorized"])
+        self.assertTrue(self.readiness["money_enabled"])
         self.assertFalse(self.route["pricing"]["live_quote_allowed"])
         self.assertEqual(self.route["pricing"]["btt_usd_oracle"], "NOT_IMPLEMENTED_YET")
         self.assertEqual(self.route["settlement"]["observer"], "NOT_IMPLEMENTED_YET")
         self.assertFalse(self.route["commerce_gate"]["money_enabled"])
         self.assertFalse(self.route["commerce_gate"]["live_invoice_allowed"])
-        self.assertFalse(self.readiness["money_enabled"])
-        self.assertEqual(
-            self.readiness["alternative_payment_rails"]["BTT_TRON"]["status"],
-            "DECLARED_DISCOUNT_ROUTE_GATE_CLOSED",
-        )
+        alt = self.readiness["alternative_payment_rails"]["BTT_TRON"]
+        self.assertEqual(alt["status"], "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE")
+        self.assertFalse(alt["live_invoice_allowed"])
 
     def test_public_manifests_and_policy_match(self):
         match = [x for x in self.agent["payment_routes"] if x["id"] == "BTT_TRON_DECLARED_DISCOUNT_RECEIVER"]
@@ -67,7 +67,7 @@ class BttPaymentRouteTests(unittest.TestCase):
         self.assertEqual(match[0]["discount_bps"], 5000)
         self.assertEqual(match[0]["receiving_address"], self.route["asset"]["receiver"])
         self.assertIn(self.route["asset"]["receiver"], self.policy)
-        self.assertIn("DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS INVOICE", self.policy)
+        self.assertIn("DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS BTT INVOICE", self.policy)
 
 if __name__ == "__main__":
     unittest.main()
