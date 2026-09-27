@@ -23,6 +23,9 @@ class BttPaymentRouteTests(unittest.TestCase):
         self.pricing = json.loads((ROOT / "PRICING.json").read_text(encoding="utf-8"))
         self.agent = json.loads((ROOT / "AGENT_MARKET.json").read_text(encoding="utf-8"))
         self.readiness = json.loads((ROOT / "COMMERCE_READINESS.json").read_text(encoding="utf-8"))
+        self.product = json.loads((ROOT / "products/JANUS.SEARCH.json").read_text(encoding="utf-8"))
+        self.ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
+        self.witness = json.loads((ROOT / "FOREIGN_AGENT_WITNESS.json").read_text(encoding="utf-8"))
         self.policy = (ROOT / "PAYMENT_POLICY.md").read_text(encoding="utf-8")
 
     def test_receiver_is_valid_tron_base58check(self):
@@ -34,6 +37,7 @@ class BttPaymentRouteTests(unittest.TestCase):
     def test_btt_asset_identity_is_frozen(self):
         asset = self.route["asset"]
         self.assertEqual(asset["canonical_symbol"], "BTT")
+        self.assertEqual(asset["exchange_ticker"], "BTTC")
         self.assertEqual(asset["network"], "TRON Mainnet")
         self.assertEqual(asset["token_standard"], "TRC-20")
         self.assertEqual(asset["token_contract"], "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4")
@@ -49,17 +53,30 @@ class BttPaymentRouteTests(unittest.TestCase):
             discounted = round(micros * (10_000 - alt["discount_bps"]) / 10_000)
             self.assertEqual(discounted, micros // 2)
 
-    def test_btt_rail_remains_closed_even_while_usdt_seller_is_live(self):
+    def test_btt_rail_is_live_beside_usdt_seller(self):
         self.assertTrue(self.readiness["seller_commerce_authorized"])
         self.assertTrue(self.readiness["money_enabled"])
-        self.assertFalse(self.route["pricing"]["live_quote_allowed"])
-        self.assertEqual(self.route["pricing"]["btt_usd_oracle"], "NOT_IMPLEMENTED_YET")
-        self.assertEqual(self.route["settlement"]["observer"], "NOT_IMPLEMENTED_YET")
-        self.assertFalse(self.route["commerce_gate"]["money_enabled"])
-        self.assertFalse(self.route["commerce_gate"]["live_invoice_allowed"])
+        self.assertEqual(self.route["status"], "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY")
+        self.assertTrue(self.route["pricing"]["live_quote_allowed"])
+        oracle = self.route["pricing"]["btt_usd_oracle"]
+        self.assertEqual(oracle["exchange_market_symbol"], "BTTCUSDT")
+        self.assertEqual(oracle["payment_asset"], "BTT")
+        self.assertEqual(self.route["settlement"]["observer"], "runtime/tron_btt_observer.py")
+        self.assertEqual(self.route["settlement"]["finality"], "TRON_SOLIDIFIED_TRANSACTION_BODY_PLUS_SOLIDIFIED_EXECUTION_RECEIPT")
+        self.assertTrue(self.route["commerce_gate"]["money_enabled"])
+        self.assertTrue(self.route["commerce_gate"]["live_invoice_allowed"])
+        self.assertFalse(self.route["commerce_gate"]["foreign_agent_witness_required"])
         alt = self.readiness["alternative_payment_rails"]["BTT_TRON"]
-        self.assertEqual(alt["status"], "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE")
-        self.assertFalse(alt["live_invoice_allowed"])
+        self.assertEqual(alt["status"], "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY")
+        self.assertTrue(alt["live_invoice_allowed"])
+        self.assertTrue(self.product["live_gate"]["btt_checkout_live"])
+        paid = self.ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]
+        self.assertEqual(paid["payment_routes"]["BTT_TRON"]["status"], "LIVE_EXACT_INVOICE")
+
+    def test_btt_live_does_not_fabricate_foreign_agent_witness(self):
+        self.assertFalse(self.witness["foreign_agent_witness"])
+        self.assertFalse(self.readiness["required_live_gates"]["foreign_agent_witness_is_seller_prerequisite"])
+        self.assertFalse(self.product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"])
 
     def test_public_manifests_and_policy_match(self):
         match = [x for x in self.agent["payment_routes"] if x["id"] == "BTT_TRON_DECLARED_DISCOUNT_RECEIVER"]
@@ -68,6 +85,8 @@ class BttPaymentRouteTests(unittest.TestCase):
         self.assertEqual(match[0]["receiving_address"], self.route["asset"]["receiver"])
         self.assertIn(self.route["asset"]["receiver"], self.policy)
         self.assertIn("DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS BTT INVOICE", self.policy)
+        self.assertIn("BTTCUSDT", self.policy)
+        self.assertIn("payment asset = BTT / BitTorrent Token", self.policy)
 
 if __name__ == "__main__":
     unittest.main()
