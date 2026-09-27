@@ -24,10 +24,12 @@ class PricingUiContractTests(unittest.TestCase):
         self.assertTrue(self.readiness["seller_commerce_authorized"])
         self.assertTrue(self.readiness["money_enabled"])
         self.assertTrue(self.readiness["autonomous_purchase_declared"])
-        self.assertEqual(self.pricing["status"], "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW")
+        self.assertEqual(self.pricing["status"], "MIXED_JANUS_SEARCH_DUAL_RAIL_LIVE_OTHER_SKUS_PREVIEW")
         self.assertEqual(self.pricing["live_skus"], ["JANUS.SEARCH"])
         self.assertTrue(self.product["machine_purchase"])
         self.assertTrue(self.product["live_gate"]["checkout_live"])
+        self.assertTrue(self.product["live_gate"]["usdt_checkout_live"])
+        self.assertTrue(self.product["live_gate"]["btt_checkout_live"])
         self.assertFalse(self.product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"])
         self.assertFalse(self.witness["foreign_agent_witness"])
 
@@ -36,6 +38,9 @@ class PricingUiContractTests(unittest.TestCase):
         self.assertIn(address, self.payment_policy)
         self.assertEqual(address.lower(), self.readiness["payment_rail"]["declared_receiving_address"].lower())
         self.assertEqual(self.pricing["token_contract"].lower(), self.readiness["payment_rail"]["token_contract"].lower())
+        btt = self.pricing["alternative_payment_routes"]["BTT_TRON"]
+        self.assertIn(btt["receiving_address"], self.payment_policy)
+        self.assertEqual(btt["receiving_address"], self.readiness["alternative_payment_rails"]["BTT_TRON"]["receiver"])
 
     def test_bounded_services_have_integer_micro_usdt_prices_and_mode_multipliers(self):
         for sku in (
@@ -74,29 +79,36 @@ class PricingUiContractTests(unittest.TestCase):
         self.assertLess(store, pricing)
         self.assertIn('href="PRICING.json"', self.html)
 
-    def test_btt_route_is_visible_but_nonpayable(self):
+    def test_btt_route_is_live_and_exact_invoice_only(self):
         route = self.pricing["alternative_payment_routes"]["BTT_TRON"]
         self.assertEqual(route["discount_bps"], 5000)
-        self.assertFalse(route["live_quote_allowed"])
+        self.assertTrue(route["live_quote_allowed"])
+        self.assertEqual(route["exchange_ticker"], "BTTC")
+        self.assertEqual(route["exchange_market_symbol"], "BTTCUSDT")
         self.assertIn("BTT route reference", self.js)
         self.assertIn("BTT / TRON −50%", self.js)
+        self.assertIn("LIVE INVOICE", self.js)
+        self.assertIn("template=janus-paid-search-btt.md", self.js)
+        self.assertIn("BTT EXACT INVOICE", self.js)
         self.assertIn("TRY JANUS.SEARCH FREE", self.html)
         self.assertIn("REVIEW A PUBLIC PR FREE", self.html)
         self.assertIn("FIRST SEARCH FREE", self.js)
         self.assertIn("FIRST PR REVIEW FREE", self.js)
-        template = (ROOT / ".github/ISSUE_TEMPLATE/janus-search-free-beta.md").read_text(encoding="utf-8")
-        self.assertIn("JANUS_BUYER_QUERY_SHADOW_JSON", template)
-        self.assertIn("Price: 0", template)
+        btt_template = (ROOT / ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md").read_text(encoding="utf-8")
+        self.assertIn("JANUS_PAID_SEARCH_BTT_JSON", btt_template)
+        self.assertIn("BTTCUSDT", btt_template)
+        self.assertIn("BitTorrent Token", btt_template)
 
-    def test_browser_quote_remains_preview_but_live_checkout_is_explicit(self):
+    def test_browser_quote_remains_preview_but_dual_live_checkout_is_explicit(self):
         for token in (
             "browser preview is not a payable invoice",
             "COMMERCE_READINESS.json",
             "FROZEN QUOTE PREVIEW",
             "total_usdt_micros",
-            "LIVE EXACT-INVOICE CHECKOUT",
-            "BUY JANUS.SEARCH · GET EXACT INVOICE",
-            "PAID SEARCH <b>LIVE · USDT</b>",
+            "LIVE EXACT-INVOICE · USDT + BTT",
+            "BUY JANUS.SEARCH · USDT EXACT INVOICE",
+            "BUY JANUS.SEARCH · BTT EXACT INVOICE",
+            "PAID SEARCH <b>LIVE · USDT + BTT</b>",
         ):
             self.assertIn(token, self.js)
         self.assertIn("PAYMENT != COMMAND", self.payment_policy)
