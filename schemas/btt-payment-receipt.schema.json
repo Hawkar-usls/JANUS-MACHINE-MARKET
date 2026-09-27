@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema", "status", "quote_hash", "asset", "network", "token_standard",
-    "token_contract", "to", "amount_atomic", "decimals", "txid", "event_index",
+    "token_contract", "to", "amount_atomic", "decimals", "txid", "event_index", "log_index",
     "payment_reference", "block_number", "block_timestamp",
     "solidified_transaction_body", "solidified_execution_receipt", "contract_execution_success"
   ],
@@ -23,6 +23,7 @@
     "decimals": {"const": 18},
     "txid": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
     "event_index": {"type": "integer", "minimum": 0},
+    "log_index": {"type": "integer", "minimum": 0, "description": "Rail-neutral queue-ordering alias equal to event_index."},
     "payment_reference": {"type": "string", "pattern": "^tron:[0-9a-fA-F]{64}:[0-9]+$"},
     "block_number": {"type": "integer", "minimum": 1},
     "block_timestamp": {"type": "string", "format": "date-time"},
