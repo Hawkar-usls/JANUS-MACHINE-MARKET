@@ -23,7 +23,8 @@ def oracle(price="0.00000050", close=NOW):
     bid=f"{center*0.999:.12f}"
     ask=f"{center*1.001:.12f}"
     return {
-        "provider":"BINANCE_SPOT_PUBLIC_BOOK_TICKER","endpoint":"https://data-api.binance.vision/api/v3/ticker/bookTicker","symbol":"BTTUSDT",
+        "provider":"BINANCE_SPOT_PUBLIC_BOOK_TICKER","endpoint":"https://data-api.binance.vision/api/v3/ticker/bookTicker","symbol":"BTTCUSDT",
+        "exchange_ticker":"BTTC","payment_asset":"BTT",
         "bid_price":bid,"ask_price":ask,"price":f"{center:.12f}","spread_bps":"20","max_spread_bps":500,
         "observed_at":close.isoformat().replace('+00:00','Z'),"fetched_at":NOW.isoformat().replace('+00:00','Z'),
         "close_time_ms":int(close.timestamp()*1000),"close_time":close.isoformat().replace('+00:00','Z'),
@@ -49,6 +50,9 @@ def test_btt_invoice_freezes_orderbook_amount_receiver_and_route():
     assert q["token_contract"]=="TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"
     assert q["receiving_address"]=="TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"
     assert q["rounding"]=="CEILING_TO_BTT_ATOMIC_UNIT"
+    assert q["oracle"]["symbol"]=="BTTCUSDT"
+    assert q["oracle"]["exchange_ticker"]=="BTTC"
+    assert q["oracle"]["payment_asset"]=="BTT"
     assert q["oracle"]["endpoint"]=="https://data-api.binance.vision/api/v3/ticker/bookTicker"
     assert q["oracle"]["timestamp_semantics"]=="HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE"
 
