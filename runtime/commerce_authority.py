@@ -23,6 +23,8 @@ BTT_TRON = "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"
 BTT_RECEIVER = "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"
 BTT_DECIMALS = 18
 TRON_NETWORK = "tron-mainnet"
+BTT_EXCHANGE_TICKER = "BTTC"
+BTT_ORACLE_SYMBOL = "BTTCUSDT"
 PAID_SEARCH_MAX_TURNS = 1
 PAID_SEARCH_MAX_MESSAGE_UTF8_BYTES = 4000
 PAID_SEARCH_MAX_ANSWER_UTF8_BYTES = 6000
@@ -133,7 +135,13 @@ def verify_quote(quote: dict[str, Any], request: dict[str, Any], *, now: datetim
         if int(q.get("reference_usdt_micros", -1)) <= 0: raise CommerceInvalid("invalid canonical USDT reference")
         if int(q.get("discount_bps", -1)) != 5000: raise CommerceInvalid("unexpected BTT discount")
         oracle = q.get("oracle") or {}
-        if oracle.get("symbol") != "BTTUSDT" or not oracle.get("price") or not oracle.get("close_time_ms"):
+        if (
+            oracle.get("symbol") != BTT_ORACLE_SYMBOL
+            or oracle.get("exchange_ticker") != BTT_EXCHANGE_TICKER
+            or oracle.get("payment_asset") != "BTT"
+            or not oracle.get("price")
+            or not oracle.get("close_time_ms")
+        ):
             raise CommerceInvalid("BTT oracle binding missing")
         if q.get("rounding") != "CEILING_TO_BTT_ATOMIC_UNIT": raise CommerceInvalid("BTT rounding rule invalid")
     else:
