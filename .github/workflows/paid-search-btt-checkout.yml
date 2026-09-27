@@ -1,0 +1,300 @@
+name: JANUS Paid SEARCH BTT Checkout
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'runtime/btt_paid_search_checkout.py'
+      - 'runtime/btt_paid_search_settlement.py'
+      - 'runtime/tron_btt_observer.py'
+      - 'runtime/commerce_authority.py'
+      - 'runtime/paid_search_packet.py'
+      - 'schemas/btt-payment-receipt.schema.json'
+      - 'schemas/grant.schema.json'
+      - 'BTT_PAYMENT_ROUTE.json'
+      - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'tests/test_btt_paid_search_checkout.py'
+      - 'tests/test_tron_btt_observer.py'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search-btt.md'
+      - '.github/workflows/paid-search-btt-checkout.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'runtime/btt_paid_search_checkout.py'
+      - 'runtime/btt_paid_search_settlement.py'
+      - 'runtime/tron_btt_observer.py'
+      - 'runtime/commerce_authority.py'
+      - 'runtime/paid_search_packet.py'
+      - 'schemas/btt-payment-receipt.schema.json'
+      - 'schemas/grant.schema.json'
+      - 'BTT_PAYMENT_ROUTE.json'
+      - 'PRICING.json'
+      - 'COMMERCE_READINESS.json'
+      - 'products/JANUS.SEARCH.json'
+      - 'tests/test_btt_paid_search_checkout.py'
+      - 'tests/test_tron_btt_observer.py'
+      - '.github/ISSUE_TEMPLATE/janus-paid-search-btt.md'
+      - '.github/workflows/paid-search-btt-checkout.yml'
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PAID_QUEUE_STATUS_URL: https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/janus/market-state/state/commerce/paid-search-queue/QUEUE_STATUS.json
+
+jobs:
+  contract:
+    if: >-
+      (github.event_name != 'issues' && github.event_name != 'issue_comment') ||
+      (github.event_name == 'issues' && startsWith(github.event.issue.title, '[JANUS PAID SEARCH BTT]') && github.event.issue.user.login != github.repository_owner) ||
+      (github.event_name == 'issue_comment' && startsWith(github.event.issue.title, '[JANUS PAID SEARCH BTT]') && github.event.issue.user.login != github.repository_owner && contains(github.event.comment.body, 'JANUS_BTT_PAYMENT_PROOF_JSON'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile BTT checkout runtime
+        run: |
+          python -m py_compile runtime/btt_paid_search_checkout.py runtime/tron_btt_observer.py runtime/btt_paid_search_settlement.py runtime/commerce_authority.py runtime/paid_search_packet.py
+          python -m json.tool schemas/btt-payment-receipt.schema.json >/dev/null
+          python -m json.tool BTT_PAYMENT_ROUTE.json >/dev/null
+      - name: Run BTT pricing and solidified-settlement adversarial tests
+        run: PYTHONPATH=. python -m pytest -q tests/test_btt_paid_search_checkout.py tests/test_tron_btt_observer.py tests/test_btt_payment_route.py
+      - name: Live public BTTUSDT oracle smoke
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from runtime.btt_paid_search_checkout import fetch_bttusdt_oracle
+          o=fetch_bttusdt_oracle(timeout=15)
+          assert o['provider']=='BINANCE_SPOT_PUBLIC' and o['symbol']=='BTTUSDT'
+          assert float(o['price']) > 0
+          print('BTTUSDT_ORACLE_LIVE=TRUE')
+          print('BTTUSDT_PRICE=' + o['price'])
+          print('BTTUSDT_CLOSE_TIME=' + o['close_time'])
+          PY
+      - name: Live TRON solidified endpoint smoke
+        env:
+          TRON_PRO_API_KEY: ${{ secrets.TRON_PRO_API_KEY }}
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from runtime.tron_btt_observer import TronHttp
+          block=TronHttp(timeout=15).post('/walletsolidity/getnowblock',{})
+          raw=(block.get('block_header') or {}).get('raw_data') or {}
+          assert int(raw.get('number') or 0) > 1_000_000
+          print('TRON_SOLIDIFIED_ENDPOINT=PASS')
+          print('TRON_SOLID_BLOCK=' + str(raw['number']))
+          PY
+
+  issue-invoice:
+    if: >-
+      github.event_name == 'issues' &&
+      startsWith(github.event.issue.title, '[JANUS PAID SEARCH BTT]') &&
+      github.event.issue.user.login != github.repository_owner
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mount persistent Market state
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-paid-btt-state"
+          rm -rf "$state"
+          git worktree add -B janus-market-paid-btt-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+      - name: Normalize request, fetch price, reserve queue capacity, freeze BTT invoice
+        id: invoice
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from runtime.btt_paid_search_checkout import issue_btt_invoice, verify_btt_invoice
+          from runtime.commerce_authority import CommerceBlocked
+          from runtime.paid_search_checkout import checkout_gate
+          from runtime.paid_search_packet import normalize_paid_issue_request
+          from runtime.paid_search_queue import QueueInvalid, reserve_invoice_slot
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8')); issue=event['issue']; body=str(issue.get('body') or '')
+          a='<!-- JANUS_PAID_SEARCH_BTT_JSON'; b='JANUS_PAID_SEARCH_BTT_JSON -->'; s=body.find(a); e=body.find(b)
+          if s<0 or e<0 or e<=s: raise SystemExit('JANUS_PAID_SEARCH_BTT_JSON_MARKER_MISSING')
+          raw=json.loads(body[s+len(a):e].strip())
+          if set(raw)-{'schema','message_text','queue_level'}: raise SystemExit('PAID_SEARCH_BTT_REQUEST_UNKNOWN_FIELDS')
+          raw['payment_route']='BTT_TRON'
+          request=normalize_paid_issue_request(issue,raw,owner_login=event['repository']['owner']['login'])
+          readiness=json.load(open('COMMERCE_READINESS.json')); witness=json.load(open('FOREIGN_AGENT_WITNESS.json')); product=json.load(open('products/JANUS.SEARCH.json'))
+          try: checkout_gate(readiness=readiness,witness=witness,product=product)
+          except CommerceBlocked as exc:
+              print('live=false'); print('new=false'); print('reason='+str(exc).replace('\n',' ')); raise SystemExit(0)
+          btt=(readiness.get('alternative_payment_rails') or {}).get('BTT_TRON') or {}
+          if btt.get('live_invoice_allowed') is not True:
+              print('live=false'); print('new=false'); print('reason=BTT_TRON_RAIL_NOT_LIVE'); raise SystemExit(0)
+          state=Path(os.environ['MARKET_STATE']); now=datetime.now(timezone.utc); target=state/'state/commerce/invoices'/f"issue-{issue['id']}.json"; target.parent.mkdir(parents=True,exist_ok=True)
+          if target.exists():
+              record=json.loads(target.read_text());
+              if record.get('request')!=request: raise SystemExit('PAID_SEARCH_BTT_INVOICE_CREATE_ONLY_REQUEST_CONFLICT')
+              verify_btt_invoice(record['invoice'],request); new=False
+          else:
+              inv=issue_btt_invoice(request=request,pricing=json.load(open('PRICING.json')),issued_at=now)
+              record={'schema':'janus.machine_market.paid_search_invoice_record.v1','issue_id':int(issue['id']),'issue_number':int(issue['number']),'issue_url':issue['html_url'],'buyer_login':issue['user']['login'],'request':request,'invoice':inv}; new=True
+          queue_policy=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
+          try: reserved=reserve_invoice_slot(state,request=request,invoice=record['invoice'],policy=queue_policy,now=now)
+          except QueueInvalid as exc:
+              if new: print('live=false'); print('new=false'); print('reason='+str(exc).replace('\n',' ')); raise SystemExit(0)
+              raise
+          if new: target.write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          Path('runtime/paid-btt-invoice-record.json').write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          inv=record['invoice']; cap=reserved['capacity']
+          print('live=true'); print('new='+('true' if new else 'false')); print('invoice_id='+inv['invoice_id']); print('amount_atomic='+str(inv['amount_atomic'])); print('expires_at='+inv['expires_at']); print('receiver='+inv['receiving_address']); print('queue_level='+str(inv['queue_level'])); print('queue_code='+str(inv['queue_code'])); print('reservation='+reserved['reservation']); print('slots_available='+str(cap['slots_available']))
+          PY
+      - name: Commit immutable BTT invoice and queue reservation atomically
+        if: steps.invoice.outputs.live == 'true'
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" config user.name "JANUS Paid Search State"
+          git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$MARKET_STATE" add state/commerce/invoices state/commerce/paid-search-queue/reservations
+          if git -C "$MARKET_STATE" diff --cached --quiet; then echo 'BTT_INVOICE_QUEUE_RESERVATION=IDEMPOTENT_REPLAY'; else git -C "$MARKET_STATE" commit -m "Paid SEARCH BTT invoice reservation ${{ steps.invoice.outputs.invoice_id }}"; git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state; echo 'BTT_INVOICE_QUEUE_RESERVATION=PASS'; fi
+      - name: Explain BTT checkout gate
+        if: steps.invoice.outputs.live != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ steps.invoice.outputs.reason }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS BTT checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send BTT.**"
+      - name: Publish exact live BTT invoice
+        if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY' > "$RUNNER_TEMP/btt-invoice-comment.md"
+          import json
+          from decimal import Decimal
+          r=json.load(open('runtime/paid-btt-invoice-record.json')); i=r['invoice']; q=i['quote']; amount=Decimal(i['amount_atomic'])/(Decimal(10)**18)
+          print('### JANUS.SEARCH live BTT invoice\n')
+          print(f"Invoice: `{i['invoice_id']}`")
+          print(f"Queue: **L{i['queue_level']} · {i['queue_code']}**")
+          print(f"Canonical USDT reference: **{Decimal(i['reference_usdt_micros'])/Decimal(1_000_000):f} USDT**")
+          print('BTT route discount: **50%**')
+          print(f"Frozen BTTUSDT price: **{q['oracle']['price']}** (Binance avgPrice, close `{q['oracle']['close_time']}`)")
+          print(f"Exact amount: **{amount:f} BTT**")
+          print(f"Exact atomic amount: `{i['amount_atomic']}`")
+          print('Network: **TRON Mainnet · TRC-20**')
+          print(f"BTT contract: `{q['token_contract']}`")
+          print(f"Recipient: `{q['receiving_address']}`")
+          print(f"Expires: `{q['expires_at']}` — the exact transfer must be included no later than this time.\n")
+          print('After the transfer is solidified, post:')
+          print('```\n<!-- JANUS_BTT_PAYMENT_PROOF_JSON\n{"txid":"64_HEX_TRON_TXID","event_index":0}\nJANUS_BTT_PAYMENT_PROOF_JSON -->\n```')
+          print('If the transaction contains only one exact matching BTT Transfer, `event_index` may be omitted. Payment is accepted only from the solidified transaction body + solidified successful execution receipt.')
+          PY
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/btt-invoice-comment.md"
+
+  payment-proof:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      startsWith(github.event.issue.title, '[JANUS PAID SEARCH BTT]') &&
+      github.event.comment.user.login == github.event.issue.user.login &&
+      github.event.issue.user.login != github.repository_owner &&
+      contains(github.event.comment.body, 'JANUS_BTT_PAYMENT_PROOF_JSON')
+    needs: contract
+    concurrency:
+      group: janus-machine-market-state-writer
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    env:
+      TRON_PRO_API_KEY: ${{ secrets.TRON_PRO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mount persistent Market state
+        run: |
+          set -euo pipefail
+          git fetch origin janus/market-state:refs/remotes/origin/janus/market-state
+          state="$RUNNER_TEMP/market-paid-btt-state"; rm -rf "$state"; git worktree add -B janus-market-paid-btt-state "$state" origin/janus/market-state
+          echo "MARKET_STATE=$state" >> "$GITHUB_ENV"
+      - name: Extract BTT payment proof and bind exact invoice
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          event=json.load(open(os.environ['GITHUB_EVENT_PATH'],encoding='utf-8')); body=str(event['comment'].get('body') or '')
+          a='<!-- JANUS_BTT_PAYMENT_PROOF_JSON'; b='JANUS_BTT_PAYMENT_PROOF_JSON -->'; s=body.find(a); e=body.find(b)
+          if s<0 or e<0 or e<=s: raise SystemExit('JANUS_BTT_PAYMENT_PROOF_JSON_MARKER_MISSING')
+          proof=json.loads(body[s+len(a):e].strip())
+          if set(proof)-{'txid','event_index'}: raise SystemExit('BTT_PAYMENT_PROOF_UNKNOWN_FIELDS')
+          if not proof.get('txid'): raise SystemExit('BTT_PAYMENT_PROOF_TXID_REQUIRED')
+          if proof.get('event_index') is not None: proof['event_index']=int(proof['event_index'])
+          issue=event['issue']; state=Path(os.environ['MARKET_STATE']); invoice_path=state/'state/commerce/invoices'/f"issue-{issue['id']}.json"
+          if not invoice_path.exists(): raise SystemExit('PAID_SEARCH_BTT_INVOICE_NOT_FOUND')
+          record=json.loads(invoice_path.read_text());
+          if record.get('buyer_login')!=issue['user']['login']: raise SystemExit('PAID_SEARCH_BTT_INVOICE_BUYER_MISMATCH')
+          Path('runtime/paid-btt-invoice-record.json').write_text(json.dumps(record,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          Path('runtime/btt-payment-proof.json').write_text(json.dumps(proof,ensure_ascii=False,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Verify solidified exact BTT transfer, settle purchase, enqueue
+        id: settle
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python runtime/btt_paid_search_settlement.py --invoice-record runtime/paid-btt-invoice-record.json --proof runtime/btt-payment-proof.json --state-root "$MARKET_STATE" --readiness COMMERCE_READINESS.json --witness FOREIGN_AGENT_WITNESS.json --product products/JANUS.SEARCH.json --queue-policy PAID_QUEUE_POLICY.json --result-out runtime/paid-btt-settlement-result.json --packet-out runtime/paid-home-packet.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          r=json.load(open('runtime/paid-btt-settlement-result.json')); o=r.get('observation') or {}; f=(r.get('queue_snapshot') or {}).get('focus') or {}; wait=f.get('estimated_wait_minutes') or {}
+          print('status='+str(o.get('status') or 'ERROR')); print('reason='+str(o.get('reason') or '').replace('\n',' ')); print('settled='+('true' if r.get('settled') is True else 'false')); print('purchase_id='+str(r.get('purchase_id') or '')); print('queue_level='+str(r.get('queue_level') or '')); print('queue_state='+str(f.get('state') or '')); print('position='+str(f.get('position') if f.get('position') is not None else '')); print('wait_min='+str(wait.get('min') or 0)); print('wait_max='+str(wait.get('max') or 0))
+          PY
+      - name: Explain BTT payment not admitted
+        if: steps.settle.outputs.settled != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT payment proof status: **${{ steps.settle.outputs.status }}**. ${{ steps.settle.outputs.reason }} No purchase, queue entry, or execution was admitted."
+      - name: Commit settled BTT purchase and queue entry atomically
+        if: steps.settle.outputs.settled == 'true'
+        run: |
+          set -euo pipefail
+          git -C "$MARKET_STATE" config user.name "JANUS Paid Search State"
+          git -C "$MARKET_STATE" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$MARKET_STATE" add state/commerce
+          if git -C "$MARKET_STATE" diff --cached --quiet; then echo 'BTT_PURCHASE_QUEUE_LEDGER=IDEMPOTENT_REPLAY'; else git -C "$MARKET_STATE" commit -m "Paid SEARCH BTT queued ${{ steps.settle.outputs.purchase_id }}"; git -C "$MARKET_STATE" push origin HEAD:refs/heads/janus/market-state; echo 'BTT_PURCHASE_QUEUE_LEDGER=PASS'; fi
+      - name: Confirm BTT purchase accepted into serialized queue
+        if: steps.settle.outputs.settled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT transfer is **SOLIDIFIED + VERIFIED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min**. Settlement is not execution start; exact retry does not create a second charge or execution."

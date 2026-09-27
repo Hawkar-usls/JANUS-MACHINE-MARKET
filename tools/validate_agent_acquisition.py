@@ -31,6 +31,7 @@ agent = load("AGENT_MARKET.json")
 commerce = load("COMMERCE_READINESS.json")
 witness = load("FOREIGN_AGENT_WITNESS.json")
 ingress = load("MACHINE_INGRESS.json")
+btt_route = load("BTT_PAYMENT_ROUTE.json")
 public_beta = load("PUBLIC_SERVICE_BETA.json")
 commercial = load("COMMERCIAL.json")
 readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -98,10 +99,27 @@ require("JANUS.SEARCH" in ingress_live and "JANUS.PR_REVIEW" in ingress_live, "M
 require(str((ingress_live.get("JANUS.SEARCH") or {}).get("status", "")).startswith("LIVE_FIRST_SEARCH_FREE"), "MACHINE_INGRESS_SEARCH_STATUS_DRIFT")
 require(str((ingress_live.get("JANUS.PR_REVIEW") or {}).get("status", "")).startswith("LIVE_FIRST_REVIEW_FREE"), "MACHINE_INGRESS_PR_REVIEW_STATUS_DRIFT")
 paid = (ingress_live.get("JANUS.SEARCH") or {}).get("paid_checkout") or {}
-require(paid.get("status") == "LIVE_JANUS_SEARCH_ONLY", "PAID_SEARCH_DISCOVERY_NOT_LIVE")
+require(paid.get("status") == "LIVE_JANUS_SEARCH_DUAL_RAIL_ONLY", "PAID_SEARCH_DISCOVERY_NOT_DUAL_RAIL_LIVE")
 require(paid.get("machine_purchase") is True, "PAID_SEARCH_MACHINE_PURCHASE_FALSE")
 require(paid.get("foreign_agent_witness_is_seller_prerequisite") is False, "PAID_SEARCH_PREMATURE_WITNESS_DEPENDENCY")
 require(paid.get("primary_payment_state") == "LIVE_EXACT_INVOICE", "PAID_SEARCH_PRIMARY_PAYMENT_NOT_LIVE")
+require(paid.get("alternative_payment_state") == "LIVE_EXACT_INVOICE", "PAID_SEARCH_BTT_ALTERNATIVE_NOT_LIVE")
+routes = paid.get("payment_routes") or {}
+require(set(routes) == {"USDT_ETHEREUM", "BTT_TRON"}, "PAID_SEARCH_PAYMENT_ROUTE_SET_DRIFT")
+require((routes.get("USDT_ETHEREUM") or {}).get("status") == "LIVE_EXACT_INVOICE", "PAID_SEARCH_USDT_NOT_LIVE")
+btt_ingress = routes.get("BTT_TRON") or {}
+require(btt_ingress.get("status") == "LIVE_EXACT_INVOICE", "PAID_SEARCH_BTT_NOT_LIVE")
+require(btt_ingress.get("asset") == "BTT", "PAID_SEARCH_BTT_ASSET_DRIFT")
+require(btt_ingress.get("exchange_ticker") == "BTTC", "PAID_SEARCH_BTT_EXCHANGE_TICKER_DRIFT")
+require(btt_ingress.get("exchange_market_symbol") == "BTTCUSDT", "PAID_SEARCH_BTT_MARKET_DRIFT")
+require(str(btt_ingress.get("workflow") or "").endswith("paid-search-btt-checkout.yml"), "PAID_SEARCH_BTT_WORKFLOW_DRIFT")
+require(str(btt_ingress.get("issue_template") or "").endswith("janus-paid-search-btt.md"), "PAID_SEARCH_BTT_TEMPLATE_DRIFT")
+
+require(btt_route.get("status") == "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY", "BTT_ROUTE_RECORD_NOT_LIVE")
+require((btt_route.get("pricing") or {}).get("live_quote_allowed") is True, "BTT_ROUTE_QUOTE_NOT_LIVE")
+require(((btt_route.get("pricing") or {}).get("btt_usd_oracle") or {}).get("exchange_market_symbol") == "BTTCUSDT", "BTT_ROUTE_ORACLE_MARKET_DRIFT")
+require((btt_route.get("settlement") or {}).get("observer") == "runtime/tron_btt_observer.py", "BTT_ROUTE_OBSERVER_DRIFT")
+require((btt_route.get("commerce_gate") or {}).get("live_invoice_allowed") is True, "BTT_ROUTE_LIVE_INVOICE_FALSE")
 
 beta_services = public_beta.get("public_services") or {}
 require(set(beta_services) == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "PUBLIC_SERVICE_BETA_SET_DRIFT")
@@ -121,12 +139,15 @@ for token in ("JANUS.SEARCH", "JANUS.PR_REVIEW", "FIRST FREE OFFERS"):
     require(token in llms_text, f"LLMS_PUBLIC_SERVICE_DRIFT:{token}")
 require((ROOT / ".github/workflows/pr-review-public-beta.yml").is_file(), "PR_REVIEW_PUBLIC_WORKFLOW_MISSING")
 require((ROOT / ".github/ISSUE_TEMPLATE/janus-pr-review-free-beta.md").is_file(), "PR_REVIEW_PUBLIC_TEMPLATE_MISSING")
+require((ROOT / ".github/workflows/paid-search-btt-checkout.yml").is_file(), "PAID_SEARCH_BTT_WORKFLOW_MISSING")
+require((ROOT / ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md").is_file(), "PAID_SEARCH_BTT_TEMPLATE_MISSING")
 
 # Acquisition/discovery may coexist with seller commerce. Discovery metadata must
 # not itself grant authority or fabricate independent execution evidence.
 require(commerce.get("seller_commerce_authorized") is True, "SELLER_COMMERCE_AUTHORIZATION_MISSING")
 require(commerce.get("money_enabled") is True, "SELLER_COMMERCE_MONEY_SWITCH_NOT_LIVE")
 require(commerce.get("autonomous_purchase_declared") is True, "SELLER_AUTONOMOUS_PURCHASE_NOT_DECLARED")
+require(((commerce.get("alternative_payment_rails") or {}).get("BTT_TRON") or {}).get("live_invoice_allowed") is True, "SELLER_BTT_LIVE_INVOICE_NOT_DECLARED")
 require(witness.get("foreign_agent_witness") is False, "ACQUISITION_METADATA_MUST_NOT_SELF_PROMOTE_WITNESS")
 require((ingress.get("current_commerce_state") or {}).get("foreign_agent_witness_is_seller_prerequisite") is False, "DISCOVERY_MUST_NOT_REINTRODUCE_WITNESS_SELLER_GATE")
 
@@ -135,7 +156,9 @@ for forbidden in [".well-known/agent-card.json", "server.json", "openapi.json"]:
 
 print("JANUS_AGENT_ACQUISITION_INTEGRITY_PASS")
 print("PUBLIC_LIVE_SKUS=JANUS.SEARCH,JANUS.PR_REVIEW")
-print("JANUS_PAID_SEARCH_SELLER=LIVE_EXACT_INVOICE")
+print("JANUS_PAID_SEARCH_SELLER=LIVE_EXACT_INVOICE_USDT_BTT")
+print("JANUS_BTT_PAYMENT_ASSET=BTT")
+print("JANUS_BTT_EXCHANGE_MARKET=BTTCUSDT")
 print("JANUS_PR_REVIEW_PUBLIC_ROUTE=TRUE")
 print("TELEGRAM_REQUIRED=FALSE")
 print("SELLER_MONEY_ENABLED=TRUE_SEARCH_ONLY")

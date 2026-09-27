@@ -3,6 +3,10 @@
 This module deliberately does not perform network I/O. It binds
 REQUEST -> QUOTE -> PAYMENT_RECEIPT -> PURCHASE_GRANT and separates
 seller-commerce authorization from FOREIGN_AGENT_WITNESS evidence.
+
+Payment evidence is rail-aware: the live seller may accept an exact verified
+Ethereum-USDT receipt or an exact verified TRON-BTT receipt. Both converge on
+one rail-neutral purchase grant and the same one-execution-per-purchase ledger.
 """
 from __future__ import annotations
 
@@ -15,6 +19,12 @@ USDT_ETHEREUM = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
 CHAIN_ID = 1
 USDT_DECIMALS = 6
 MIN_CONFIRMATIONS = 12
+BTT_TRON = "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"
+BTT_RECEIVER = "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"
+BTT_DECIMALS = 18
+TRON_NETWORK = "tron-mainnet"
+BTT_EXCHANGE_TICKER = "BTTC"
+BTT_ORACLE_SYMBOL = "BTTCUSDT"
 PAID_SEARCH_MAX_TURNS = 1
 PAID_SEARCH_MAX_MESSAGE_UTF8_BYTES = 4000
 PAID_SEARCH_MAX_ANSWER_UTF8_BYTES = 6000
@@ -51,7 +61,32 @@ def request_hash(request: dict[str, Any]) -> str: return digest(request)
 def quote_hash(quote_without_hash: dict[str, Any]) -> str: return digest(quote_without_hash)
 
 
+def _hex64(value: str, *, allow_0x: bool) -> str:
+    raw = str(value or "").strip().lower()
+    if allow_0x and raw.startswith("0x"):
+        body = raw[2:]
+    else:
+        body = raw
+    if len(body) != 64:
+        raise CommerceInvalid("invalid transaction hash")
+    try: int(body, 16)
+    except ValueError as exc: raise CommerceInvalid("invalid transaction hash") from exc
+    return body
+
+
 def receipt_payment_reference(receipt: dict[str, Any]) -> str:
+    """Return canonical replay identity for any admitted payment rail."""
+    if receipt.get("schema") == "janus.machine_market.btt_payment_receipt.v1" or receipt.get("asset") == "BTT":
+        txid = _hex64(str(receipt.get("txid") or receipt.get("tx_hash") or ""), allow_0x=False)
+        try: event_index = int(receipt["event_index"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise CommerceInvalid("BTT payment receipt requires TRC20 event_index") from exc
+        if event_index < 0: raise CommerceInvalid("invalid TRC20 event_index")
+        expected = f"tron:{txid}:{event_index}"
+        supplied = str(receipt.get("payment_reference") or "").lower()
+        if supplied != expected: raise CommerceInvalid("payment reference mismatch")
+        return expected
+
     tx_hash = str(receipt.get("tx_hash") or "").lower()
     if not (tx_hash.startswith("0x") and len(tx_hash) == 66): raise CommerceInvalid("invalid transaction hash")
     try: int(tx_hash[2:], 16)
@@ -66,6 +101,7 @@ def receipt_payment_reference(receipt: dict[str, Any]) -> str:
 
 
 def build_quote(*, request: dict[str, Any], sku: str, amount_usdt_micros: int, receiving_address: str, expires_at: str, nonce: str, policy_version: str) -> dict[str, Any]:
+    """Build the canonical Ethereum-USDT quote."""
     if amount_usdt_micros <= 0: raise CommerceInvalid("amount must be positive")
     if not sku or not nonce or not policy_version: raise CommerceInvalid("sku, nonce and policy_version are required")
     parse_time(expires_at)
@@ -83,10 +119,33 @@ def verify_quote(quote: dict[str, Any], request: dict[str, Any], *, now: datetim
     q = dict(quote); supplied_hash = q.pop("quote_hash", None)
     if not supplied_hash or supplied_hash != quote_hash(q): raise CommerceInvalid("quote hash mismatch")
     if q.get("request_hash") != request_hash(request): raise CommerceInvalid("request hash mismatch")
-    if q.get("asset") != "USDT": raise CommerceInvalid("unexpected asset")
-    if q.get("chain_id") != CHAIN_ID: raise CommerceInvalid("unsupported chain")
-    if normalize_address(q.get("token_contract")) != normalize_address(USDT_ETHEREUM): raise CommerceInvalid("unexpected token contract")
-    if int(q.get("amount_usdt_micros", -1)) <= 0: raise CommerceInvalid("invalid amount")
+    asset = str(q.get("asset") or "")
+    if asset == "USDT":
+        if q.get("chain_id") != CHAIN_ID: raise CommerceInvalid("unsupported chain")
+        if normalize_address(q.get("token_contract")) != normalize_address(USDT_ETHEREUM): raise CommerceInvalid("unexpected token contract")
+        if int(q.get("amount_usdt_micros", -1)) <= 0: raise CommerceInvalid("invalid amount")
+    elif asset == "BTT":
+        if q.get("network") != TRON_NETWORK: raise CommerceInvalid("unsupported BTT network")
+        if q.get("token_standard") != "TRC-20": raise CommerceInvalid("unexpected BTT token standard")
+        if str(q.get("token_contract") or "") != BTT_TRON: raise CommerceInvalid("unexpected BTT token contract")
+        if str(q.get("receiving_address") or "") != BTT_RECEIVER: raise CommerceInvalid("unexpected BTT receiver")
+        if int(q.get("decimals", -1)) != BTT_DECIMALS: raise CommerceInvalid("unexpected BTT decimals")
+        if int(q.get("amount_atomic", -1)) <= 0: raise CommerceInvalid("invalid BTT atomic amount")
+        if int(q.get("amount_usdt_micros", -1)) <= 0: raise CommerceInvalid("invalid discounted USDT reference")
+        if int(q.get("reference_usdt_micros", -1)) <= 0: raise CommerceInvalid("invalid canonical USDT reference")
+        if int(q.get("discount_bps", -1)) != 5000: raise CommerceInvalid("unexpected BTT discount")
+        oracle = q.get("oracle") or {}
+        if (
+            oracle.get("symbol") != BTT_ORACLE_SYMBOL
+            or oracle.get("exchange_ticker") != BTT_EXCHANGE_TICKER
+            or oracle.get("payment_asset") != "BTT"
+            or not oracle.get("price")
+            or not oracle.get("close_time_ms")
+        ):
+            raise CommerceInvalid("BTT oracle binding missing")
+        if q.get("rounding") != "CEILING_TO_BTT_ATOMIC_UNIT": raise CommerceInvalid("BTT rounding rule invalid")
+    else:
+        raise CommerceInvalid("unexpected asset")
     expiry = parse_time(q["expires_at"])
     if require_unexpired and expiry <= (now or utc_now()): raise CommerceInvalid("quote expired")
 
@@ -94,6 +153,22 @@ def verify_quote(quote: dict[str, Any], request: dict[str, Any], *, now: datetim
 def verify_payment_receipt(quote: dict[str, Any], receipt: dict[str, Any], *, consumed_payment_refs: Iterable[str] = ()) -> None:
     ref = receipt_payment_reference(receipt)
     if ref in {str(x).lower() for x in consumed_payment_refs}: raise CommerceInvalid("payment reference already consumed")
+
+    if quote.get("asset") == "BTT":
+        if receipt.get("schema") != "janus.machine_market.btt_payment_receipt.v1": raise CommerceInvalid("BTT payment receipt schema invalid")
+        if receipt.get("status") != "CONFIRMED": raise CommerceInvalid("BTT payment is not confirmed")
+        if receipt.get("asset") != "BTT" or receipt.get("network") != TRON_NETWORK: raise CommerceInvalid("BTT payment network mismatch")
+        if receipt.get("token_contract") != quote.get("token_contract"): raise CommerceInvalid("BTT payment token mismatch")
+        if receipt.get("to") != quote.get("receiving_address"): raise CommerceInvalid("BTT payment recipient mismatch")
+        if int(receipt.get("amount_atomic", -1)) != int(quote.get("amount_atomic", -2)): raise CommerceInvalid("BTT payment amount mismatch")
+        if receipt.get("quote_hash") != quote.get("quote_hash"): raise CommerceInvalid("BTT payment receipt quote binding mismatch")
+        if receipt.get("solidified_transaction_body") is not True or receipt.get("solidified_execution_receipt") is not True:
+            raise CommerceInvalid("BTT payment is not solidified")
+        if receipt.get("contract_execution_success") is not True: raise CommerceInvalid("BTT smart-contract execution failed")
+        block_timestamp = parse_time(str(receipt.get("block_timestamp") or ""))
+        if block_timestamp > parse_time(quote["expires_at"]): raise CommerceInvalid("BTT payment was mined after quote expiry")
+        return
+
     if receipt.get("schema") != "janus.machine_market.payment_receipt.v1": raise CommerceInvalid("payment receipt schema invalid")
     if receipt.get("status") != "CONFIRMED": raise CommerceInvalid("payment is not confirmed")
     if int(receipt.get("chain_id", -1)) != int(quote["chain_id"]): raise CommerceInvalid("payment chain mismatch")
@@ -125,12 +200,7 @@ def _paid_search_entitlement(*, purchase_id: str, buyer_actor_id: str) -> dict[s
 
 
 def admit_purchase(*, readiness: dict[str, Any], foreign_witness: dict[str, Any], product: dict[str, Any], request: dict[str, Any], quote: dict[str, Any], payment_receipt: dict[str, Any], consumed_payment_refs: Iterable[str] = (), now: datetime | None = None, buyer_actor_id: str | None = None) -> dict[str, Any]:
-    """Return deterministic canonical PURCHASE_GRANT, never EXECUTION_GRANT.
-
-    Seller activation is controlled by explicit commerce policy. A foreign-agent
-    witness is evidence about an independent roundtrip, not permission to sell.
-    Quote expiry is enforced at payment block time, not grant-admission time.
-    """
+    """Return deterministic rail-neutral PURCHASE_GRANT, never EXECUTION_GRANT."""
     if readiness.get("seller_commerce_authorized") is not True: raise CommerceBlocked("seller commerce is not authorized")
     if readiness.get("money_enabled") is not True: raise CommerceBlocked("money_enabled is false")
     if readiness.get("autonomous_purchase_declared") is not True: raise CommerceBlocked("autonomous purchase is not declared")
@@ -153,17 +223,17 @@ def admit_purchase(*, readiness: dict[str, Any], foreign_witness: dict[str, Any]
         "request_hash": quote["request_hash"],
         "terms_hash": None,
         "payment_reference": payment_ref,
-        "amount_usdt_micros": quote["amount_usdt_micros"],
+        "amount_usdt_micros": int(quote["amount_usdt_micros"]),
+        "payment_asset": str(quote.get("asset") or ""),
+        "payment_network": str(quote.get("network") or ("ethereum-mainnet" if quote.get("asset") == "USDT" else "")),
+        "payment_amount_atomic": int(quote.get("amount_atomic") if quote.get("asset") == "BTT" else quote["amount_usdt_micros"]),
+        "reference_usdt_micros": int(quote.get("reference_usdt_micros") or quote["amount_usdt_micros"]),
         "policy_version": quote["policy_version"],
         "status": "PURCHASE_SETTLED",
         "execution_authority_granted": False,
         "allowed_operation": "REQUEST_BOUNDED_BUYER_QUERY" if entitlement else "REQUEST_BOUNDED_EXECUTION_GRANT",
         "next_gate": "JANUS_HOME_READ_ONLY_BUYER_QUERY" if entitlement else "JANUS_POLICY_SCOPE_TO_EXECUTION_GRANT",
-        "authority_ceiling": {
-            "sku": quote["sku"],
-            "production_activator_authority": False,
-            "external_effect_authority": False
-        },
+        "authority_ceiling": {"sku": quote["sku"], "production_activator_authority": False, "external_effect_authority": False},
         "buyer_query_entitlement": entitlement,
         "foreign_agent_witness_at_purchase": bool(foreign_witness.get("foreign_agent_witness")),
         "foreign_agent_witness_required_for_purchase": False,

@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.pricing.v1",
-  "version": "2026-09-27-search-live-1",
-  "status": "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW",
+  "version": "2026-09-27-search-dual-rail-live-1",
+  "status": "MIXED_JANUS_SEARCH_DUAL_RAIL_LIVE_OTHER_SKUS_PREVIEW",
   "currency": "USDT",
   "decimals": 6,
   "network": "ethereum-mainnet",
@@ -11,7 +11,7 @@
   "quote_ttl_seconds": 900,
   "live_skus": ["JANUS.SEARCH"],
   "preview_only_skus": ["JANUS.DATASET_SCOUT","JANUS.EVIDENCE_PACK","JANUS.ARCHIVE_SCAN","JANUS.REPO_AUDIT","JANUS.RESEARCH_JOB","JANUS.PR_REVIEW","JANUS.AGENT_EVAL","JANUS.FRESCO_FORGE"],
-  "pricing_law": "JANUS.SEARCH is live only through the trusted issue checkout, which reserves queue capacity and freezes an exact Ethereum-mainnet USDT invoice. Browser/catalog totals are informational until that invoice exists. Payment never grants command or execution authority. The BTT/TRON discount rail remains non-payable until its exact price oracle and solidified TRC-20 observer are live.",
+  "pricing_law": "JANUS.SEARCH is live through trusted issue checkout with queue capacity reserved before invoice publication. Buyers may choose exact Ethereum-mainnet USDT or the exact-invoice BTT TRC-20 / TRON route. BTT uses the Binance BTTCUSDT exchange market only as a frozen price observation for the BitTorrent Token payment asset, applies the declared 50% route discount, and requires exact solidified TRC-20 settlement. Browser/catalog totals are informational until an exact invoice exists. Payment never grants command or execution authority.",
   "quantity_discounts": [
     {"min_quantity":1,"discount_bps":0},
     {"min_quantity":5,"discount_bps":500},
@@ -20,7 +20,7 @@
   ],
   "products": {
     "JANUS.SEARCH": {
-      "status": "LIVE_EXACT_INVOICE",
+      "status": "LIVE_EXACT_INVOICE_DUAL_RAIL",
       "billing_unit": "request",
       "base_unit_usdt_micros": 50000,
       "modes": {
@@ -57,17 +57,22 @@
   },
   "alternative_payment_routes": {
     "BTT_TRON": {
-      "status": "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE",
+      "status": "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY",
       "record": "BTT_PAYMENT_ROUTE.json",
       "asset": "BTT",
+      "asset_name": "BitTorrent Token",
+      "exchange_ticker": "BTTC",
+      "exchange_market_symbol": "BTTCUSDT",
       "network": "TRON Mainnet",
       "token_standard": "TRC-20",
       "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
       "receiving_address": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
       "discount_bps": 5000,
       "reference": "USDT_REFERENCE_TOTAL_AFTER_CATALOG_AND_QUEUE_ADJUSTMENTS",
-      "exact_btt_amount": "FROZEN_ONLY_BY_LIVE_INVOICE_WITH_PRICE_SOURCE",
-      "live_quote_allowed": false
+      "oracle": "BINANCE_SPOT_PUBLIC_BOOK_TICKER_BTTCUSDT",
+      "exact_btt_amount": "FROZEN_BY_LIVE_INVOICE_WITH_PRICE_TIMESTAMP_SPREAD_AND_CEILING_ROUNDING",
+      "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md",
+      "live_quote_allowed": true
     }
   },
   "first_free_entitlement": {

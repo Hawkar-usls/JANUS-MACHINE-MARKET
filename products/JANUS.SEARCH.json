@@ -3,17 +3,15 @@
   "sku": "JANUS.SEARCH",
   "title": "JANUS Search",
   "class": "search_api",
-  "status": "PAID_LIVE_FIRST_DELIVERY_PENDING",
+  "status": "PAID_DUAL_RAIL_LIVE_FIRST_DELIVERY_PENDING",
   "machine_discovery": true,
   "machine_purchase": true,
-  "summary": "One bounded read-only JANUS.SEARCH turn routed through a five-level serialized paid queue into persistent JANUS HOME/HRAiN, returning a result with immutable provenance and explicit uncertainty.",
+  "summary": "One bounded read-only JANUS.SEARCH turn routed through a five-level serialized paid queue into persistent JANUS HOME/HRAiN, returning a result with immutable provenance and explicit uncertainty. Paid checkout supports exact-invoice Ethereum USDT and BTT TRC-20 on TRON.",
   "request": {
     "mode": "GITHUB_ISSUE_CHECKOUT_LIVE",
     "paid_issue_title_prefix": "[JANUS PAID SEARCH]",
-    "input_fields": [
-      "message_text",
-      "queue_level"
-    ],
+    "btt_paid_issue_title_prefix": "[JANUS PAID SEARCH BTT]",
+    "input_fields": ["message_text","queue_level"],
     "queue_level_range": [1,5],
     "max_turns": 1,
     "max_message_utf8_bytes": 4000,
@@ -55,28 +53,41 @@
     "state": "state/commerce/paid-search-queue/QUEUE_STATUS.json"
   },
   "payment": {
-    "network": "ethereum-mainnet",
-    "asset": "USDT",
-    "required_confirmations": 12,
-    "proof": "tx_hash + optional exact ERC20 log_index",
-    "observer": "runtime/ethereum_usdt_observer.py",
-    "checkout": "runtime/paid_search_checkout.py",
-    "settlement": "runtime/paid_search_settlement.py",
-    "settlement_starts_execution": false,
-    "unsolicited_payment_grants_rights": false,
+    "primary_route": {
+      "id": "USDT_ETHEREUM",
+      "status": "LIVE_EXACT_INVOICE",
+      "network": "ethereum-mainnet",
+      "asset": "USDT",
+      "required_confirmations": 12,
+      "proof": "tx_hash + optional exact ERC20 log_index",
+      "observer": "runtime/ethereum_usdt_observer.py",
+      "checkout": "runtime/paid_search_checkout.py",
+      "settlement": "runtime/paid_search_settlement.py",
+      "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search.md"
+    },
     "alternative_routes": [
       {
         "id": "BTT_TRON_50_PERCENT_DISCOUNT",
-        "status": "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE",
+        "status": "LIVE_EXACT_INVOICE",
         "asset": "BTT",
+        "asset_name": "BitTorrent Token",
+        "exchange_ticker": "BTTC",
+        "exchange_market_symbol": "BTTCUSDT",
         "network": "TRON Mainnet",
         "token_standard": "TRC-20",
         "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
         "discount_bps": 5000,
         "route_record": "BTT_PAYMENT_ROUTE.json",
+        "checkout": "runtime/btt_paid_search_checkout.py",
+        "observer": "runtime/tron_btt_observer.py",
+        "settlement": "runtime/btt_paid_search_settlement.py",
+        "workflow": ".github/workflows/paid-search-btt-checkout.yml",
+        "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md",
         "exact_invoice_required": true
       }
-    ]
+    ],
+    "settlement_starts_execution": false,
+    "unsolicited_payment_grants_rights": false
   },
   "post_purchase_query": {
     "status": "PAID_QUEUE_AND_HOME_ROUTE_LIVE_FIRST_PAID_DELIVERY_PENDING",
@@ -111,6 +122,8 @@
     "money_enabled": true,
     "machine_purchase": true,
     "checkout_live": true,
+    "usdt_checkout_live": true,
+    "btt_checkout_live": true,
     "paid_queue_live": true
   },
   "terms": "docs/PAID_SEARCH_TERMS.md",

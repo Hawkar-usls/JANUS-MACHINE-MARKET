@@ -56,13 +56,22 @@ def verify_queue_policy(queue_policy: Mapping[str, Any]) -> None:
 def _require_live_seller(readiness: Mapping[str, Any], product: Mapping[str, Any], pricing: Mapping[str, Any]) -> None:
     require(readiness.get("seller_commerce_authorized") is True, "PROMOTION_SELLER_COMMERCE_MUST_ALREADY_BE_AUTHORIZED")
     require(readiness.get("money_enabled") is True and readiness.get("autonomous_purchase_declared") is True, "PROMOTION_SELLER_COMMERCE_MUST_ALREADY_BE_LIVE")
-    require(readiness.get("status") == "PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING", "PROMOTION_SELLER_STATUS_INVALID")
+    require(readiness.get("status") == "PAID_SEARCH_DUAL_RAIL_LIVE_FIRST_PAID_DELIVERY_PENDING", "PROMOTION_SELLER_STATUS_INVALID")
+    btt_ready = (readiness.get("alternative_payment_rails") or {}).get("BTT_TRON") or {}
+    require(btt_ready.get("status") == "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY" and btt_ready.get("live_invoice_allowed") is True, "PROMOTION_BTT_RAIL_MUST_ALREADY_BE_LIVE")
+    require(btt_ready.get("asset") == "BTT" and btt_ready.get("exchange_market_symbol") == "BTTCUSDT", "PROMOTION_BTT_IDENTITY_DRIFT")
+
     require(product.get("sku") == "JANUS.SEARCH" and product.get("machine_purchase") is True, "PROMOTION_SEARCH_PRODUCT_MUST_ALREADY_BE_LIVE")
     gate = product.get("live_gate") or {}
     require(gate.get("checkout_live") is True and gate.get("paid_queue_live") is True, "PROMOTION_SEARCH_CHECKOUT_MUST_ALREADY_BE_LIVE")
+    require(gate.get("usdt_checkout_live") is True and gate.get("btt_checkout_live") is True, "PROMOTION_DUAL_RAIL_PRODUCT_GATE_INVALID")
     require(gate.get("foreign_agent_witness_is_seller_prerequisite") is False, "PROMOTION_WITNESS_MUST_NOT_BECOME_SELLER_GATE")
-    require(pricing.get("status") == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW", "PROMOTION_PRICING_MUST_ALREADY_BE_SEARCH_LIVE")
+
+    require(pricing.get("status") == "MIXED_JANUS_SEARCH_DUAL_RAIL_LIVE_OTHER_SKUS_PREVIEW", "PROMOTION_PRICING_MUST_ALREADY_BE_DUAL_RAIL_SEARCH_LIVE")
     require(pricing.get("live_skus") == ["JANUS.SEARCH"], "PROMOTION_ONLY_SEARCH_MAY_BE_LIVE")
+    btt_price = (pricing.get("alternative_payment_routes") or {}).get("BTT_TRON") or {}
+    require(btt_price.get("status") == "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY" and btt_price.get("live_quote_allowed") is True, "PROMOTION_PRICING_BTT_MUST_REMAIN_LIVE")
+    require(btt_price.get("asset") == "BTT" and btt_price.get("exchange_market_symbol") == "BTTCUSDT", "PROMOTION_PRICING_BTT_IDENTITY_DRIFT")
     _closed_products(readiness)
 
 
@@ -72,7 +81,7 @@ def build_live_documents(
     queue_policy: Mapping[str, Any], buyer_plane: Mapping[str, Any], machine_ingress: Mapping[str, Any],
     market_state_commit: str,
 ) -> dict[str, dict[str, Any]]:
-    """Promote only independent witness evidence; seller commerce is already live."""
+    """Promote only independent witness evidence; dual-rail seller commerce is already live."""
     verify_first_witness(first, receipt)
     verify_queue_policy(queue_policy)
     _require_live_seller(readiness, product, pricing)
@@ -106,6 +115,7 @@ def build_live_documents(
         "source": "state/r1-foreign-home/FIRST.json",
         "queue_policy": "PAID_QUEUE_POLICY.json",
         "seller_authority_changed": False,
+        "payment_rails_changed": False,
     }
     r["required_live_gates"]["foreign_agent_witness"] = True
     r["required_live_gates"]["foreign_agent_witness_is_seller_prerequisite"] = False
@@ -117,6 +127,7 @@ def build_live_documents(
     p["live_gate"]["witness_receipt_hash"] = rh
     p["live_gate"]["foreign_agent_witness_is_seller_prerequisite"] = False
 
+    # Pricing and both payment rails are evidence-independent and must remain bit-identical.
     price = copy.deepcopy(dict(pricing))
 
     plane = copy.deepcopy(dict(buyer_plane))
@@ -183,6 +194,7 @@ def write_live_promotion(*, root: str | Path, state_root: str | Path, market_sta
         "receipt_hash": receipt["receipt_hash"],
         "market_state_commit": market_state_commit,
         "seller_authority_changed": False,
+        "payment_rails_changed": False,
         "money_enabled_by_witness": False,
     }
 

@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.machine_ingress.v1",
-  "status": "LIVE_BOUNDED_GITHUB_API_SEARCH_PR_REVIEW_AND_PAID_SEARCH_INGRESS",
-  "purpose": "Machine-native and GitHub-authenticated human task submission for bounded JANUS.SEARCH and JANUS.PR_REVIEW, including exact-invoice paid JANUS.SEARCH, without granting payment, command, merge, repository-write or target-code-execution authority.",
+  "status": "LIVE_BOUNDED_GITHUB_API_SEARCH_PR_REVIEW_AND_DUAL_RAIL_PAID_SEARCH_INGRESS",
+  "purpose": "Machine-native and GitHub-authenticated human task submission for bounded JANUS.SEARCH and JANUS.PR_REVIEW, including exact-invoice paid JANUS.SEARCH via Ethereum USDT or BTT TRC-20 on TRON, without granting payment, command, merge, repository-write or target-code-execution authority.",
   "transport": {
     "type": "github_issues_rest",
     "method": "POST",
@@ -26,7 +26,7 @@
       "marker": "JANUS_BUYER_QUERY_SHADOW_JSON",
       "request_schema": "janus.machine_market.buyer_query_shadow_request.v1",
       "lane": "PERSISTENT_JANUS_CONVERSATION",
-      "status": "LIVE_FIRST_SEARCH_FREE_PLUS_PAID_ISSUE_CHECKOUT",
+      "status": "LIVE_FIRST_SEARCH_FREE_PLUS_DUAL_RAIL_PAID_ISSUE_CHECKOUT",
       "external_public_beta": {
         "request_origin": "FOREIGN_PUBLIC_ZERO_PRICE_BETA",
         "accepted_event": "issues.opened",
@@ -48,10 +48,7 @@
         "exact_retry_consumes_second_free_order": false
       },
       "paid_checkout": {
-        "status": "LIVE_JANUS_SEARCH_ONLY",
-        "title_prefix": "[JANUS PAID SEARCH]",
-        "workflow": ".github/workflows/paid-search-checkout.yml",
-        "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search.md",
+        "status": "LIVE_JANUS_SEARCH_DUAL_RAIL_ONLY",
         "queue_dispatch_workflow": ".github/workflows/paid-search-queue-dispatch.yml",
         "queue_policy": "PAID_QUEUE_POLICY.json",
         "queue_levels": 5,
@@ -59,10 +56,28 @@
         "preemption": false,
         "machine_purchase": true,
         "payment_required": true,
+        "payment_routes": {
+          "USDT_ETHEREUM": {
+            "status": "LIVE_EXACT_INVOICE",
+            "title_prefix": "[JANUS PAID SEARCH]",
+            "workflow": ".github/workflows/paid-search-checkout.yml",
+            "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search.md"
+          },
+          "BTT_TRON": {
+            "status": "LIVE_EXACT_INVOICE",
+            "title_prefix": "[JANUS PAID SEARCH BTT]",
+            "asset": "BTT",
+            "exchange_ticker": "BTTC",
+            "exchange_market_symbol": "BTTCUSDT",
+            "workflow": ".github/workflows/paid-search-btt-checkout.yml",
+            "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md",
+            "route_record": "BTT_PAYMENT_ROUTE.json"
+          }
+        },
         "primary_payment_route": "USDT_ETHEREUM",
         "primary_payment_state": "LIVE_EXACT_INVOICE",
         "alternative_payment_route": "BTT_TRON",
-        "alternative_payment_state": "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE",
+        "alternative_payment_state": "LIVE_EXACT_INVOICE",
         "payment_is_command": false,
         "payment_settled_is_execution_started": false,
         "foreign_agent_witness_is_seller_prerequisite": false
@@ -82,11 +97,12 @@
     }
   },
   "current_commerce_state": {
-    "price_mode": "FIRST_FREE_PUBLIC_SEARCH_PLUS_LIVE_EXACT_INVOICE_PAID_SEARCH",
+    "price_mode": "FIRST_FREE_PUBLIC_SEARCH_PLUS_LIVE_DUAL_RAIL_EXACT_INVOICE_PAID_SEARCH",
     "seller_commerce_authorized": true,
     "money_enabled": true,
     "autonomous_purchase_declared": true,
     "payment_required": "ONLY_FOR_PAID_JANUS_SEARCH_ISSUES",
+    "live_payment_routes": ["USDT_ETHEREUM","BTT_TRON"],
     "foreign_agent_witness": false,
     "foreign_agent_witness_is_seller_prerequisite": false,
     "payment_is_evidence_not_authority": true,
@@ -95,14 +111,15 @@
     "compute": "CLOSED"
   },
   "browser_ingress": {
-    "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_PR_REVIEW_AND_PAID_SEARCH_NO_EMBEDDED_CREDENTIALS",
+    "status": "GITHUB_AUTHENTICATED_PUBLIC_SEARCH_PR_REVIEW_AND_DUAL_RAIL_PAID_SEARCH_NO_EMBEDDED_CREDENTIALS",
     "public_now": [
       "JANUS.SEARCH one first free order per external GitHub principal via direct issue template or GitHub Issues API",
       "JANUS.PR_REVIEW one first free bounded review of a public GitHub pull request per external GitHub principal",
-      "JANUS.SEARCH paid exact-invoice checkout via [JANUS PAID SEARCH] GitHub issue"
+      "JANUS.SEARCH paid exact-invoice checkout via [JANUS PAID SEARCH] issue using Ethereum USDT",
+      "JANUS.SEARCH paid exact-invoice checkout via [JANUS PAID SEARCH BTT] issue using BTT TRC-20 on TRON"
     ],
     "owner_shadow_only": ["JANUS.REPO_AUDIT","JANUS.DATASET_SCOUT"],
-    "reason": "Static GitHub Pages must not embed repository-write credentials. GitHub-authenticated issue creation is the trusted browser bridge. Paid JANUS.SEARCH issues receive an exact invoice only after queue admission; payment is verified separately before queue dispatch.",
+    "reason": "Static GitHub Pages must not embed repository-write credentials. GitHub-authenticated issue creation is the trusted browser bridge. Paid JANUS.SEARCH issues receive an exact rail-specific invoice only after queue admission; payment is verified separately before queue dispatch.",
     "forbidden": ["embedding PAT or GitHub token in Pages JavaScript","treating unauthenticated browser POST as authority","turning payment into execution authority","executing target repository code during JANUS.PR_REVIEW","promoting owner/self/synthetic traffic to FOREIGN_AGENT_WITNESS"],
     "specialist_router_prepared": ["JANUS.TOPA_HUNT","JANUS.DEMIURGE_SCOUT","JANUS.COUSTEAU_SCAN","JANUS.META_REGISTRY_SEARCH","JANUS.FUNDAMENTUM_AUDIT","JANUS.SWARM_RESEARCH","JANUS.AGENT_EVAL","JANUS.FRESCO_FORGE"]
   },
@@ -110,7 +127,7 @@
     "direct_machine_ingress": {"issue":36,"transport":"GitHub API create issue action, no Issue composer UI","outbox_publish_observed":true,"query_id":"bq-aa9e962ab7532bce02cf5aff5965cb5f08c79994dacac4fd486721977b0c8b71","packet_hash":"2c4f4d60b40923a7bf9d8934ea9a7089caaf3a920073d456379e718a3637203b","final_janus_response_observed_at_manifest_update":false},
     "full_market_to_janus_response_witness": {"issue":32,"query_id":"bq-52e97ae914eec3aa7905ec249af493723c8857f7aaa6aea8b3d994b6e88e1d52","resident_uuid":"75e514ab-be76-42c8-bcb3-fc9670164f96","execution_identity":"tr-1118dc74ad9bb639369e26bcae7c86d7e71b3d3c19d9bf60ab77c32abbdd85fd","response_hash":"4ee9bed06845e0139a5669e4670888fb2e1da0d649ec0921981b6f2360613b2d","home_response_hash":"e417960fe313d136c3aa75f0a8fe416d820740bb89bc4ad1bc1fdc6ffe6c6b9a","final_janus_response_observed":true,"foreign_buyer_witness":false},
     "public_search_beta": {"admission_contract_prepared":true,"external_roundtrip_observed":false,"foreign_agent_witness":false},
-    "paid_search": {"seller_commerce_authorized":true,"invoice_route_live":true,"first_real_paid_delivery":"PENDING","foreign_agent_witness":false},
+    "paid_search": {"seller_commerce_authorized":true,"invoice_route_live":true,"live_payment_routes":["USDT_ETHEREUM","BTT_TRON"],"first_real_paid_delivery":"PENDING","foreign_agent_witness":false},
     "public_pr_review_beta": {"owner_shadow_roundtrip_observed":true,"owner_shadow_source_issue":70,"owner_shadow_target_pull_request":69,"owner_shadow_result_sha256":"71beea06edf7733a998053ff9c42d05fae6532c0410d314264a0149cd318acfe","owner_shadow_receipt_hash":"07c7a468cde26112f695e7f72afa064ef21ccd54573929365fe57a9af6c9b5bf","owner_shadow_market_state_commit":"f4d1233d41b5ded8069781bdb4902c0a89474c3a","external_roundtrip_observed":false,"foreign_agent_witness":false}
   },
   "truth_boundary": ["PUBLIC_INTAKE != COMPLETED_SERVICE","EXTERNAL_CUSTOMER != FOREIGN_AGENT_WITNESS_UNLESS_SEPARATE_GATE_PASSES","DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"],

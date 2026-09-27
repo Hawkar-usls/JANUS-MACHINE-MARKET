@@ -14,6 +14,10 @@
     "terms_hash": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
     "payment_reference": {"type": ["string", "null"]},
     "amount_usdt_micros": {"type": ["integer", "null"], "minimum": 0},
+    "payment_asset": {"type": ["string", "null"], "enum": ["USDT", "BTT", null]},
+    "payment_network": {"type": ["string", "null"]},
+    "payment_amount_atomic": {"type": ["integer", "null"], "minimum": 0},
+    "reference_usdt_micros": {"type": ["integer", "null"], "minimum": 0},
     "policy_version": {"type": ["string", "null"]},
     "status": {"enum": ["PURCHASE_ELIGIBLE", "PURCHASE_SETTLED", "PURCHASE_BLOCKED", "PURCHASE_EXPIRED", "PURCHASE_ALREADY_RECONCILED"]},
     "execution_authority_granted": {"const": false},
@@ -37,6 +41,8 @@
       },
       "additionalProperties": false
     },
+    "foreign_agent_witness_at_purchase": {"type": "boolean"},
+    "foreign_agent_witness_required_for_purchase": {"const": false},
     "expires_at": {"type": ["string", "null"]},
     "reasons": {"type": "array", "items": {"type": "string"}}
   },

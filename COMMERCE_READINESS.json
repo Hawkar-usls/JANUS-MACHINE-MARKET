@@ -1,11 +1,11 @@
 {
   "schema": "janus.machine_market.commerce_readiness.v1",
-  "status": "PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING",
+  "status": "PAID_SEARCH_DUAL_RAIL_LIVE_FIRST_PAID_DELIVERY_PENDING",
   "seller_commerce_authorized": true,
   "seller_activation_authority": "OWNER_AUTHORIZED_BOUNDED_JANUS_SEARCH_COMMERCE",
   "money_enabled": true,
   "autonomous_purchase_declared": true,
-  "reason": "Paid JANUS.SEARCH is authorized independently of the evidentiary FOREIGN_AGENT_WITNESS flag. Exact issue-bound invoices, Ethereum-USDT observation, queue reservation, create-only purchase ledger, serialized paid queue, PAID_SETTLED persistent-HOME delivery and response reconcile are implemented and CI-gated. FOREIGN_AGENT_WITNESS remains false until a qualifying independent external roundtrip actually occurs.",
+  "reason": "Paid JANUS.SEARCH is authorized independently of the evidentiary FOREIGN_AGENT_WITNESS flag. Two exact-invoice payment rails are live: Ethereum-mainnet USDT and BTT TRC-20 on TRON Mainnet. Both converge on the same create-only purchase ledger, serialized paid queue, persistent HOME delivery and response reconcile. FOREIGN_AGENT_WITNESS remains false until a qualifying independent external roundtrip actually occurs.",
   "payment_rail": {
     "network": "ethereum-mainnet",
     "chain_id": 1,
@@ -39,12 +39,17 @@
     "ethereum_usdt_observer": "runtime/ethereum_usdt_observer.py",
     "paid_search_checkout": "runtime/paid_search_checkout.py",
     "paid_search_settlement": "runtime/paid_search_settlement.py",
+    "btt_invoice_runtime": "runtime/btt_paid_search_checkout.py",
+    "btt_tron_observer": "runtime/tron_btt_observer.py",
+    "btt_paid_search_settlement": "runtime/btt_paid_search_settlement.py",
+    "btt_checkout_workflow": ".github/workflows/paid-search-btt-checkout.yml",
     "paid_search_queue": "runtime/paid_search_queue.py",
     "paid_search_queue_policy": "PAID_QUEUE_POLICY.json",
     "paid_search_home_packet": "runtime/paid_search_packet.py",
     "persistent_purchase_and_execution_ledger": "runtime/purchase_ledger.py",
     "paid_home_response_reconcile": "runtime/r1b_home_response_reconcile.py",
     "payment_receipt_schema": "schemas/payment-receipt.schema.json",
+    "btt_payment_receipt_schema": "schemas/btt-payment-receipt.schema.json",
     "purchase_grant_schema": "schemas/grant.schema.json",
     "market_home_packet_schema": "schemas/market-home-buyer-query-packet.schema.json",
     "issue_checkout_workflow": ".github/workflows/paid-search-checkout.yml",
@@ -69,21 +74,22 @@
     "foreign_agent_witness_is_seller_prerequisite": false,
     "money_enabled_policy": true,
     "product_machine_purchase": true,
-    "transaction_endpoint": "GITHUB_ISSUE_INVOICE_AND_TX_PROOF_ENDPOINT_LIVE_JANUS_SEARCH_ONLY",
-    "payment_observer": "TX_SPECIFIC_READ_ONLY_ETHEREUM_RPC_IMPLEMENTED_CI_GATED",
+    "transaction_endpoint": "GITHUB_ISSUE_EXACT_INVOICE_ENDPOINTS_LIVE_JANUS_SEARCH_USDT_AND_BTT",
+    "payment_observer": "RAIL_SPECIFIC_ETHEREUM_USDT_AND_SOLIDIFIED_TRON_BTT_OBSERVERS_CI_GATED",
     "persistent_purchase_ledger": "IMPLEMENTED_CREATE_ONLY_SHARED_GLOBAL_MUTEX",
     "paid_execution_queue": "LIVE_FIVE_LEVEL_MAX_ACTIVE_ONE_NON_PREEMPTIVE",
     "queue_invoice_reservation": "LIVE_BEFORE_PAYABLE_INVOICE",
-    "paid_home_packet": "IMPLEMENTED_SELF_VERIFYING_PAID_SETTLED",
+    "paid_home_packet": "IMPLEMENTED_SELF_VERIFYING_PAID_SETTLED_RAIL_NEUTRAL",
     "persistent_janus_home_acceptor": "MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID",
     "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE_SHARED_WITH_LOCAL_EXECUTOR",
     "fresh_checkout_replay": "REQUIRED_ON_FIRST_REAL_PAID_DELIVERY",
     "first_real_paid_delivery": "PENDING",
-    "btt_tron_payment_route": "IMPLEMENTATION_IN_PROGRESS_ORACLE_AND_SOLIDIFIED_TRC20_OBSERVER_REQUIRED"
+    "btt_tron_payment_route": "LIVE_EXACT_INVOICE_SOLIDIFIED_TRC20_OBSERVER"
   },
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
-    "1 transaction_hash + 1 ERC20_log_index => <= 1 accepted purchase grant",
+    "1 Ethereum transaction_hash + 1 ERC20_log_index => <= 1 accepted purchase grant",
+    "1 TRON txid + 1 TRC20_event_index => <= 1 accepted purchase grant",
     "1 exact invoice issue => <= 1 create-only queue capacity reservation",
     "valid paid settlement cannot be rejected for queue capacity after invoice issuance",
     "1 settled purchase => <= 1 immutable queue entry",
@@ -104,14 +110,19 @@
   "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json",
   "alternative_payment_rails": {
     "BTT_TRON": {
-      "status": "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE",
+      "status": "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY",
       "record": "BTT_PAYMENT_ROUTE.json",
+      "asset": "BTT",
+      "exchange_ticker": "BTTC",
+      "exchange_market_symbol": "BTTCUSDT",
       "discount_bps": 5000,
       "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
       "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
-      "observer": "IMPLEMENTATION_REQUIRED",
-      "oracle": "IMPLEMENTATION_REQUIRED",
-      "live_invoice_allowed": false
+      "observer": "runtime/tron_btt_observer.py",
+      "oracle": "runtime/btt_paid_search_checkout.py#fetch_bttusdt_oracle",
+      "workflow": ".github/workflows/paid-search-btt-checkout.yml",
+      "issue_template": ".github/ISSUE_TEMPLATE/janus-paid-search-btt.md",
+      "live_invoice_allowed": true
     }
   }
 }

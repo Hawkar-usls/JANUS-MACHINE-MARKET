@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/schemas/btt-payment-receipt.schema.json",
+  "title": "JANUS Machine Market solidified TRON BTT payment receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "status", "quote_hash", "asset", "network", "token_standard",
+    "token_contract", "to", "amount_atomic", "decimals", "txid", "event_index", "log_index",
+    "payment_reference", "block_number", "block_timestamp",
+    "solidified_transaction_body", "solidified_execution_receipt", "contract_execution_success"
+  ],
+  "properties": {
+    "schema": {"const": "janus.machine_market.btt_payment_receipt.v1"},
+    "status": {"const": "CONFIRMED"},
+    "quote_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "asset": {"const": "BTT"},
+    "network": {"const": "tron-mainnet"},
+    "token_standard": {"const": "TRC-20"},
+    "token_contract": {"const": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"},
+    "to": {"const": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"},
+    "amount_atomic": {"type": "integer", "minimum": 1},
+    "decimals": {"const": 18},
+    "txid": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "event_index": {"type": "integer", "minimum": 0},
+    "log_index": {"type": "integer", "minimum": 0, "description": "Rail-neutral queue-ordering alias equal to event_index."},
+    "payment_reference": {"type": "string", "pattern": "^tron:[0-9a-fA-F]{64}:[0-9]+$"},
+    "block_number": {"type": "integer", "minimum": 1},
+    "block_timestamp": {"type": "string", "format": "date-time"},
+    "solidified_transaction_body": {"const": true},
+    "solidified_execution_receipt": {"const": true},
+    "contract_execution_success": {"const": true},
+    "observed_at": {"type": "string", "format": "date-time"}
+  }
+}

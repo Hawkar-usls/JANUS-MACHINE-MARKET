@@ -69,8 +69,12 @@ def test_canonical_seller_is_live_independently_of_witness():
     assert readiness["seller_commerce_authorized"] is True
     assert readiness["money_enabled"] is True
     assert readiness["autonomous_purchase_declared"] is True
+    assert readiness["status"] == "PAID_SEARCH_DUAL_RAIL_LIVE_FIRST_PAID_DELIVERY_PENDING"
+    assert readiness["alternative_payment_rails"]["BTT_TRON"]["live_invoice_allowed"] is True
     assert product["machine_purchase"] is True
     assert product["live_gate"]["checkout_live"] is True
+    assert product["live_gate"]["usdt_checkout_live"] is True
+    assert product["live_gate"]["btt_checkout_live"] is True
     assert product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"] is False
     checkout_gate(readiness=readiness, witness=witness, product=product)
 
@@ -90,8 +94,12 @@ def test_valid_persistent_home_witness_promotes_evidence_not_seller_authority():
     assert r["money_enabled"] is before_r["money_enabled"] is True
     assert r["autonomous_purchase_declared"] is before_r["autonomous_purchase_declared"] is True
     assert r["promotion_evidence"]["seller_authority_changed"] is False
+    assert r["promotion_evidence"]["payment_rails_changed"] is False
+    assert r["alternative_payment_rails"] == before_r["alternative_payment_rails"]
     assert p["machine_purchase"] is before_p["machine_purchase"] is True
     assert p["live_gate"]["checkout_live"] is True
+    assert p["live_gate"]["usdt_checkout_live"] is True
+    assert p["live_gate"]["btt_checkout_live"] is True
     assert p["live_gate"]["foreign_agent_witness"] is True
     assert p["live_gate"]["foreign_agent_witness_is_seller_prerequisite"] is False
     assert r["closed_skus"]["JANUS.INFERENCE"].startswith("CLOSED_")
@@ -108,10 +116,17 @@ def test_promotion_binds_exact_witness_id_hash_and_market_state():
 
 def test_pricing_is_identical_before_and_after_witness_promotion():
     docs = promoted()
-    assert docs["PRICING.json"] == load("PRICING.json")
-    assert docs["PRICING.json"]["status"] == "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW"
-    assert docs["PRICING.json"]["live_skus"] == ["JANUS.SEARCH"]
-    assert docs["PRICING.json"]["alternative_payment_routes"]["BTT_TRON"]["live_quote_allowed"] is False
+    before = load("PRICING.json")
+    after = docs["PRICING.json"]
+    assert after == before
+    assert after["status"] == "MIXED_JANUS_SEARCH_DUAL_RAIL_LIVE_OTHER_SKUS_PREVIEW"
+    assert after["live_skus"] == ["JANUS.SEARCH"]
+    btt = after["alternative_payment_routes"]["BTT_TRON"]
+    assert btt["status"] == "LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY"
+    assert btt["live_quote_allowed"] is True
+    assert btt["asset"] == "BTT"
+    assert btt["exchange_ticker"] == "BTTC"
+    assert btt["exchange_market_symbol"] == "BTTCUSDT"
 
 
 def test_buyer_plane_and_machine_ingress_gain_witness_evidence_only():
@@ -120,7 +135,11 @@ def test_buyer_plane_and_machine_ingress_gain_witness_evidence_only():
     assert plane["current_gates"]["live_publication_allowed"] is True
     assert plane["current_gates"]["foreign_buyer_query_witness"] == "PASS_PERSISTENT_HOME_EXTERNAL_MACHINE"
     paid = ingress["live_services"]["JANUS.SEARCH"]["paid_checkout"]
-    assert paid["status"] == "LIVE_JANUS_SEARCH_ONLY"
+    assert paid["status"] == "LIVE_JANUS_SEARCH_DUAL_RAIL_ONLY"
+    assert paid["payment_routes"]["USDT_ETHEREUM"]["status"] == "LIVE_EXACT_INVOICE"
+    assert paid["payment_routes"]["BTT_TRON"]["status"] == "LIVE_EXACT_INVOICE"
+    assert paid["payment_routes"]["BTT_TRON"]["asset"] == "BTT"
+    assert paid["payment_routes"]["BTT_TRON"]["exchange_market_symbol"] == "BTTCUSDT"
     assert paid["foreign_agent_witness_is_seller_prerequisite"] is False
     assert ingress["proof"]["public_search_beta"]["external_roundtrip_observed"] is True
     assert ingress["proof"]["public_search_beta"]["foreign_agent_witness"] is True
