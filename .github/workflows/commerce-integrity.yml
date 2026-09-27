@@ -153,16 +153,21 @@ jobs:
           print('ETHEREUM_RPC_SEND_TRANSACTION_USED=FALSE')
           PY
 
-      - name: Live Binance BTTUSDT oracle smoke
+      - name: Live Binance BTTUSDT order-book oracle smoke
         run: |
           PYTHONPATH=. python - <<'PY'
           from runtime.btt_paid_search_checkout import fetch_bttusdt_oracle
           o=fetch_bttusdt_oracle(timeout=15)
-          assert o['provider']=='BINANCE_SPOT_PUBLIC'
+          assert o['provider']=='BINANCE_SPOT_PUBLIC_BOOK_TICKER'
           assert o['symbol']=='BTTUSDT'
+          assert float(o['bid_price']) > 0
+          assert float(o['ask_price']) >= float(o['bid_price'])
           assert float(o['price']) > 0
-          print('BTTUSDT_ORACLE=PASS')
-          print('BTTUSDT_CLOSE_TIME=' + o['close_time'])
+          assert float(o['spread_bps']) <= float(o['max_spread_bps'])
+          assert o['timestamp_semantics']=='HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE'
+          print('BTTUSDT_ORDERBOOK_ORACLE=PASS')
+          print('BTTUSDT_OBSERVED_AT=' + o['observed_at'])
+          print('BTTUSDT_SPREAD_BPS=' + o['spread_bps'])
           PY
 
       - name: Live TRON solidified endpoint smoke
