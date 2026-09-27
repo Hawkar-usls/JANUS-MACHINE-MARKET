@@ -9,7 +9,7 @@
 
   function money(micros) {
     const n = Math.max(0, Number(micros || 0)) / 1_000_000;
-    return `${n.toLocaleString('en-US', {minimumFractionDigits: n < 1 ? 2 : 2, maximumFractionDigits: 6})} USDT`;
+    return `${n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})} USDT`;
   }
 
   function discountBps(qty) {
@@ -62,8 +62,18 @@
       Array.isArray(pricing?.live_skus) && pricing.live_skus.includes('JANUS.SEARCH');
   }
 
+  function bttSearchLive() {
+    const route = pricing?.alternative_payment_routes?.BTT_TRON;
+    const ready = readiness?.alternative_payment_rails?.BTT_TRON;
+    return sellerSearchLive() && route?.live_quote_allowed === true &&
+      route?.status === 'LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY' &&
+      ready?.live_invoice_allowed === true &&
+      ready?.status === 'LIVE_EXACT_INVOICE_JANUS_SEARCH_ONLY';
+  }
+
   function currentGateLabel() {
-    return sellerSearchLive() ? 'LIVE EXACT-INVOICE CHECKOUT' : 'PAYMENT GATE LOCKED';
+    if (!sellerSearchLive()) return 'PAYMENT GATE LOCKED';
+    return bttSearchLive() ? 'LIVE EXACT-INVOICE · USDT + BTT' : 'LIVE EXACT-INVOICE · USDT';
   }
 
   function bttRouteLabel(usdtMicros) {
@@ -73,13 +83,25 @@
     return { discounted_reference_micros: discounted, discount_bps: Number(route.discount_bps || 0), live: route.live_quote_allowed === true };
   }
 
+  function ensureBttCheckoutLink() {
+    if (!bttSearchLive()) return;
+    const usdtLink = document.querySelector('a[href*="template=janus-paid-search.md"]');
+    if (!usdtLink || document.querySelector('a[href*="template=janus-paid-search-btt.md"]')) return;
+    const btt = document.createElement('a');
+    btt.className = usdtLink.className;
+    btt.href = 'https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search-btt.md';
+    btt.textContent = 'BUY JANUS.SEARCH · BTT −50% ↗';
+    btt.setAttribute('aria-label', 'Buy JANUS.SEARCH with an exact BTT TRC-20 invoice on TRON');
+    usdtLink.insertAdjacentElement('afterend', btt);
+  }
+
   function refreshSellerLiveSurface() {
     if (!sellerSearchLive()) return;
 
     document.querySelectorAll('#truthbar .truth').forEach(el => {
       if ((el.textContent || '').includes('PAID SEARCH')) {
         el.className = 'truth live';
-        el.innerHTML = 'PAID SEARCH <b>LIVE · USDT</b>';
+        el.innerHTML = bttSearchLive() ? 'PAID SEARCH <b>LIVE · USDT + BTT</b>' : 'PAID SEARCH <b>LIVE · USDT</b>';
       }
     });
 
@@ -89,20 +111,27 @@
       if (!value) return;
       if (label === 'Paid checkout') {
         value.className = '';
-        value.textContent = 'LIVE · EXACT INVOICE';
+        value.textContent = bttSearchLive() ? 'LIVE · USDT + BTT' : 'LIVE · EXACT INVOICE';
+      }
+      if (label === 'BTT / TRON route' && bttSearchLive()) {
+        value.className = '';
+        value.textContent = '50% OFF · LIVE EXACT INVOICE';
       }
       if (label === 'Autonomous purchase') value.textContent = 'ON · JANUS.SEARCH ONLY';
     });
 
     const paidLink = document.querySelector('a[href*="template=janus-paid-search.md"]');
     if (paidLink) {
-      paidLink.textContent = 'BUY JANUS.SEARCH · LIVE CHECKOUT ↗';
+      paidLink.textContent = 'BUY JANUS.SEARCH · USDT ↗';
       paidLink.setAttribute('aria-label', 'Buy JANUS.SEARCH through live exact USDT invoice checkout');
     }
+    ensureBttCheckoutLink();
 
     const loadoutMicro = document.querySelector('.loadout .micro');
     if (loadoutMicro) {
-      loadoutMicro.innerHTML = 'Paid <b>JANUS.SEARCH is LIVE</b> through exact issue-bound USDT invoices on Ethereum mainnet. Queue capacity is reserved before invoice publication; payment is verified before persistent HOME dispatch. BTT / TRON remains unavailable until its separate exact-invoice observer is live. <b>Never send funds without the invoice posted for your exact request.</b>';
+      loadoutMicro.innerHTML = bttSearchLive()
+        ? 'Paid <b>JANUS.SEARCH is LIVE</b> through exact issue-bound invoices. Choose <b>USDT on Ethereum mainnet</b> or <b>BTT / BitTorrent Token TRC-20 on TRON</b> at the declared 50% BTT-route discount. The Binance <code>BTTCUSDT</code> market is used only to freeze the BTT invoice amount. Queue capacity is reserved before invoice publication and settlement is verified before persistent HOME dispatch. <b>Never send funds without the invoice posted for your exact request.</b>'
+        : 'Paid <b>JANUS.SEARCH is LIVE</b> through exact issue-bound USDT invoices on Ethereum mainnet. Queue capacity is reserved before invoice publication; payment is verified before persistent HOME dispatch. <b>Never send funds without the invoice posted for your exact request.</b>';
     }
 
     document.querySelectorAll('#status .panel').forEach(card => {
@@ -110,10 +139,12 @@
       if (h2?.textContent?.trim() !== 'Paid JANUS.SEARCH') return;
       const p = card.querySelector('p:not(.eyebrow)');
       const badge = card.querySelector('.status-big');
-      if (p) p.textContent = 'Live issue checkout publishes exact Ethereum-mainnet USDT invoices after queue admission, verifies settlement, dispatches through the serialized paid queue to persistent HOME, and returns the result to the source issue.';
+      if (p) p.textContent = bttSearchLive()
+        ? 'Live issue checkout publishes exact USDT or BTT invoices after queue admission, verifies rail-specific settlement, dispatches through the serialized paid queue to persistent HOME, and returns the result to the source issue.'
+        : 'Live issue checkout publishes exact Ethereum-mainnet USDT invoices after queue admission, verifies settlement, dispatches through the serialized paid queue to persistent HOME, and returns the result to the source issue.';
       if (badge) {
         badge.className = 'status-big cyan';
-        badge.textContent = 'LIVE · SEARCH ONLY';
+        badge.textContent = bttSearchLive() ? 'LIVE · USDT + BTT' : 'LIVE · SEARCH ONLY';
       }
     });
   }
@@ -185,6 +216,7 @@
       ${unpriced ? `<div><span>Unpriced items</span><b class="amber">${unpriced}</b></div>` : ''}
       <div><span>Quote validity</span><b>${Math.round(Number(pricing.quote_ttl_seconds || 900)/60)} MIN</b></div>
       <div><span>Payments</span><b class="${sellerSearchLive() ? '' : 'amber'}">${currentGateLabel()}</b></div>`;
+    refreshSellerLiveSurface();
   }
 
   function snapshotLoadout() {
@@ -225,18 +257,20 @@
     const ttl = Number(pricing.quote_ttl_seconds || 900);
     const expires = new Date(Date.now() + ttl*1000);
     frozenPreview = {snapshot:snapshotLoadout(), created_at:new Date().toISOString(), expires_at:expires.toISOString(), preview_id:`preview-${Date.now()}`};
+    const bttLive = bttSearchLive();
     box.innerHTML = `
       <div class="pricing-quote-head"><span>FROZEN QUOTE PREVIEW</span><b>${pricing.version}</b></div>
       <div class="pricing-quote-total"><span>TOTAL</span><strong>${money(calc.total_micros)}</strong></div>
       ${bttRouteLabel(calc.total_micros) ? `<div class="pricing-quote-total"><span>BTT / TRON −50% reference</span><strong>${money(bttRouteLabel(calc.total_micros).discounted_reference_micros)} equivalent</strong></div>` : ''}
       <div class="pricing-quote-grid">
-        <span>Asset <b>${pricing.currency}</b></span>
-        <span>Network <b>Ethereum Mainnet</b></span>
+        <span>USDT asset <b>${pricing.currency}</b></span>
+        <span>USDT network <b>Ethereum Mainnet</b></span>
+        <span>BTT route <b>${bttLive ? 'LIVE · TRON TRC-20' : 'GATED'}</b></span>
         <span>Expires <b>${expires.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</b></span>
-        <span>Receiver <b>${String(pricing.declared_receiving_address || '').slice(0,8)}…${String(pricing.declared_receiving_address || '').slice(-6)}</b></span>
       </div>
       <div class="pricing-gate ${sellerSearchLive() ? 'ready' : 'locked'}">${currentGateLabel()} · browser preview is not a payable invoice</div>
-      ${sellerSearchLive() ? '<a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">BUY JANUS.SEARCH · GET EXACT INVOICE ↗</a>' : ''}`;
+      ${sellerSearchLive() ? '<a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">BUY JANUS.SEARCH · USDT EXACT INVOICE ↗</a>' : ''}
+      ${bttLive ? '<a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search-btt.md">BUY JANUS.SEARCH · BTT EXACT INVOICE · −50% ↗</a>' : ''}`;
     sha256(frozenPreview.snapshot).then(hash => {
       frozenPreview.preview_hash = hash;
       const head = q('#pricingQuotePreview .pricing-quote-head b');
@@ -249,7 +283,7 @@
     if (!grid || grid.querySelector('a[href="PRICING.json"]')) return;
     const a = document.createElement('a');
     a.className = 'surface'; a.href = 'PRICING.json';
-    a.innerHTML = '<b>PRICING.json</b><small>Public deterministic ratecard · JANUS.SEARCH exact-invoice seller live</small>';
+    a.innerHTML = '<b>PRICING.json</b><small>Public deterministic ratecard · JANUS.SEARCH exact-invoice USDT + BTT seller live</small>';
     grid.prepend(a);
   }
 
