@@ -16,21 +16,20 @@ class PricingUiContractTests(unittest.TestCase):
         self.js = (ROOT / "assets/pricing-v1.js").read_text(encoding="utf-8")
         self.html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-    def test_ratecard_is_machine_readable_and_state_matches_commerce_gate(self):
+    def test_ratecard_is_machine_readable_and_state_matches_seller_authority(self):
         self.assertEqual(self.pricing["schema"], "janus.machine_market.pricing.v1")
         self.assertEqual(self.pricing["currency"], "USDT")
         self.assertEqual(self.pricing["chain_id"], 1)
         self.assertGreater(self.pricing["quote_ttl_seconds"], 0)
-        live = self.witness["foreign_agent_witness"] is True
-        if live:
-            self.assertEqual(self.pricing["status"], "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW")
-            self.assertEqual(self.pricing["live_skus"], ["JANUS.SEARCH"])
-            self.assertTrue(self.readiness["money_enabled"])
-            self.assertTrue(self.product["machine_purchase"])
-        else:
-            self.assertEqual(self.pricing["status"], "PREVIEW_RATECARD_NOT_LIVE")
-            self.assertFalse(self.readiness["money_enabled"])
-            self.assertFalse(self.product["machine_purchase"])
+        self.assertTrue(self.readiness["seller_commerce_authorized"])
+        self.assertTrue(self.readiness["money_enabled"])
+        self.assertTrue(self.readiness["autonomous_purchase_declared"])
+        self.assertEqual(self.pricing["status"], "MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW")
+        self.assertEqual(self.pricing["live_skus"], ["JANUS.SEARCH"])
+        self.assertTrue(self.product["machine_purchase"])
+        self.assertTrue(self.product["live_gate"]["checkout_live"])
+        self.assertFalse(self.product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"])
+        self.assertFalse(self.witness["foreign_agent_witness"])
 
     def test_declared_receiver_matches_canonical_payment_policy(self):
         address = self.pricing["declared_receiving_address"]
@@ -89,16 +88,22 @@ class PricingUiContractTests(unittest.TestCase):
         self.assertIn("JANUS_BUYER_QUERY_SHADOW_JSON", template)
         self.assertIn("Price: 0", template)
 
-    def test_browser_quote_remains_non_authoritative_in_both_commerce_states(self):
+    def test_browser_quote_remains_preview_but_live_checkout_is_explicit(self):
         for token in (
             "browser preview is not a payable invoice",
             "COMMERCE_READINESS.json",
             "FROZEN QUOTE PREVIEW",
             "total_usdt_micros",
+            "LIVE EXACT-INVOICE CHECKOUT",
+            "BUY JANUS.SEARCH · GET EXACT INVOICE",
+            "PAID SEARCH <b>LIVE · USDT</b>",
         ):
             self.assertIn(token, self.js)
         self.assertIn("PAYMENT != COMMAND", self.payment_policy)
         self.assertIn("UNSOLICITED PAYMENT GRANTS NOTHING", self.payment_policy)
+        paid_template = (ROOT / ".github/ISSUE_TEMPLATE/janus-paid-search.md").read_text(encoding="utf-8")
+        self.assertIn("LIVE PAID JANUS.SEARCH", paid_template)
+        self.assertIn("USDT on Ethereum mainnet", paid_template)
 
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ def request():
 
 
 def quote():
-    return build_quote(request=request(),sku="JANUS.SEARCH",amount_usdt_micros=50_000,receiving_address=RECEIVER,expires_at="2026-09-04T12:15:00+00:00",nonce="q-9001",policy_version="commerce-paid-search-v1")
+    return build_quote(request=request(),sku="JANUS.SEARCH",amount_usdt_micros=50_000,receiving_address=RECEIVER,expires_at="2026-09-04T12:15:00+00:00",nonce="q-9001",policy_version="commerce-paid-search-v3-seller-live")
 
 
 def payment(q=None):
@@ -52,8 +52,8 @@ def payment(q=None):
 def settled():
     q=quote(); p=payment(q)
     g=admit_purchase(
-        readiness={"money_enabled":True,"autonomous_purchase_declared":True},
-        foreign_witness={"foreign_agent_witness":True},
+        readiness={"seller_commerce_authorized":True,"money_enabled":True,"autonomous_purchase_declared":True},
+        foreign_witness={"foreign_agent_witness":False},
         product={"sku":"JANUS.SEARCH","machine_purchase":True},
         request=request(),quote=q,payment_receipt=p,
         now=datetime(2026,9,4,13,0,tzinfo=timezone.utc),

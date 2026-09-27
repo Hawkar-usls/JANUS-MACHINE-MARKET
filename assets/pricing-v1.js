@@ -54,9 +54,16 @@
     };
   }
 
+  function sellerSearchLive() {
+    return readiness?.seller_commerce_authorized === true &&
+      readiness?.money_enabled === true &&
+      readiness?.autonomous_purchase_declared === true &&
+      readiness?.payment_rail?.state === 'LIVE_INVOICE_TX_PROOF_JANUS_SEARCH_ONLY' &&
+      Array.isArray(pricing?.live_skus) && pricing.live_skus.includes('JANUS.SEARCH');
+  }
+
   function currentGateLabel() {
-    if (readiness?.money_enabled === true && readiness?.autonomous_purchase_declared === true) return 'PAYMENT ROUTE READY';
-    return 'PAYMENT GATE LOCKED';
+    return sellerSearchLive() ? 'LIVE EXACT-INVOICE CHECKOUT' : 'PAYMENT GATE LOCKED';
   }
 
   function bttRouteLabel(usdtMicros) {
@@ -64,6 +71,51 @@
     if (!route) return null;
     const discounted = Math.round(Number(usdtMicros || 0) * (10000 - Number(route.discount_bps || 0)) / 10000);
     return { discounted_reference_micros: discounted, discount_bps: Number(route.discount_bps || 0), live: route.live_quote_allowed === true };
+  }
+
+  function refreshSellerLiveSurface() {
+    if (!sellerSearchLive()) return;
+
+    document.querySelectorAll('#truthbar .truth').forEach(el => {
+      if ((el.textContent || '').includes('PAID SEARCH')) {
+        el.className = 'truth live';
+        el.innerHTML = 'PAID SEARCH <b>LIVE · USDT</b>';
+      }
+    });
+
+    document.querySelectorAll('.loadout .quote-lines > div').forEach(row => {
+      const label = row.querySelector('span')?.textContent?.trim();
+      const value = row.querySelector('b');
+      if (!value) return;
+      if (label === 'Paid checkout') {
+        value.className = '';
+        value.textContent = 'LIVE · EXACT INVOICE';
+      }
+      if (label === 'Autonomous purchase') value.textContent = 'ON · JANUS.SEARCH ONLY';
+    });
+
+    const paidLink = document.querySelector('a[href*="template=janus-paid-search.md"]');
+    if (paidLink) {
+      paidLink.textContent = 'BUY JANUS.SEARCH · LIVE CHECKOUT ↗';
+      paidLink.setAttribute('aria-label', 'Buy JANUS.SEARCH through live exact USDT invoice checkout');
+    }
+
+    const loadoutMicro = document.querySelector('.loadout .micro');
+    if (loadoutMicro) {
+      loadoutMicro.innerHTML = 'Paid <b>JANUS.SEARCH is LIVE</b> through exact issue-bound USDT invoices on Ethereum mainnet. Queue capacity is reserved before invoice publication; payment is verified before persistent HOME dispatch. BTT / TRON remains unavailable until its separate exact-invoice observer is live. <b>Never send funds without the invoice posted for your exact request.</b>';
+    }
+
+    document.querySelectorAll('#status .panel').forEach(card => {
+      const h2 = card.querySelector('h2');
+      if (h2?.textContent?.trim() !== 'Paid JANUS.SEARCH') return;
+      const p = card.querySelector('p:not(.eyebrow)');
+      const badge = card.querySelector('.status-big');
+      if (p) p.textContent = 'Live issue checkout publishes exact Ethereum-mainnet USDT invoices after queue admission, verifies settlement, dispatches through the serialized paid queue to persistent HOME, and returns the result to the source issue.';
+      if (badge) {
+        badge.className = 'status-big cyan';
+        badge.textContent = 'LIVE · SEARCH ONLY';
+      }
+    });
   }
 
   function refreshCatalogPrices() {
@@ -92,7 +144,7 @@
         const discount = result.discount_bps ? `<small> · volume −${(result.discount_bps/100).toFixed(0)}%</small>` : '';
         const free = firstFreeLabel(sku);
         line.innerHTML = free
-          ? `<span><strong>${free}</strong> · reference ${money(result.unit_micros)} / ${result.billing_unit}</span><b>PUBLIC BETA</b>`
+          ? `<span><strong>${free}</strong> · paid reference ${money(result.unit_micros)} / ${result.billing_unit}</span><b>${sku === 'JANUS.SEARCH' && sellerSearchLive() ? 'FREE FIRST · PAID LIVE' : 'PUBLIC BETA'}</b>`
           : `<span>${money(result.unit_micros)} / ${result.billing_unit}</span><b>${money(result.subtotal_micros)}${discount}</b>`;
       };
       input?.addEventListener('input', update);
@@ -129,10 +181,10 @@
       <div><span>Gross</span><b>${money(calc.gross_micros)}</b></div>
       <div><span>Volume savings</span><b>${calc.discount_micros ? '−' + money(calc.discount_micros) : money(0)}</b></div>
       <div class="quote-total"><span>Estimated total</span><b>${money(calc.total_micros)}</b></div>
-      ${bttRouteLabel(calc.total_micros) ? `<div><span>BTT route reference</span><b>${money(bttRouteLabel(calc.total_micros).discounted_reference_micros)} equivalent · −${bttRouteLabel(calc.total_micros).discount_bps/100}% · GATED</b></div>` : ''}
+      ${bttRouteLabel(calc.total_micros) ? `<div><span>BTT route reference</span><b>${money(bttRouteLabel(calc.total_micros).discounted_reference_micros)} equivalent · −${bttRouteLabel(calc.total_micros).discount_bps/100}% · ${bttRouteLabel(calc.total_micros).live ? 'LIVE INVOICE' : 'GATED'}</b></div>` : ''}
       ${unpriced ? `<div><span>Unpriced items</span><b class="amber">${unpriced}</b></div>` : ''}
       <div><span>Quote validity</span><b>${Math.round(Number(pricing.quote_ttl_seconds || 900)/60)} MIN</b></div>
-      <div><span>Payments</span><b class="amber">${currentGateLabel()}</b></div>`;
+      <div><span>Payments</span><b class="${sellerSearchLive() ? '' : 'amber'}">${currentGateLabel()}</b></div>`;
   }
 
   function snapshotLoadout() {
@@ -183,7 +235,8 @@
         <span>Expires <b>${expires.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</b></span>
         <span>Receiver <b>${String(pricing.declared_receiving_address || '').slice(0,8)}…${String(pricing.declared_receiving_address || '').slice(-6)}</b></span>
       </div>
-      <div class="pricing-gate ${readiness?.money_enabled ? 'ready' : 'locked'}">${currentGateLabel()} · browser preview is not a payable invoice</div>`;
+      <div class="pricing-gate ${sellerSearchLive() ? 'ready' : 'locked'}">${currentGateLabel()} · browser preview is not a payable invoice</div>
+      ${sellerSearchLive() ? '<a class="gold-btn wide" href="https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-paid-search.md">BUY JANUS.SEARCH · GET EXACT INVOICE ↗</a>' : ''}`;
     sha256(frozenPreview.snapshot).then(hash => {
       frozenPreview.preview_hash = hash;
       const head = q('#pricingQuotePreview .pricing-quote-head b');
@@ -196,7 +249,7 @@
     if (!grid || grid.querySelector('a[href="PRICING.json"]')) return;
     const a = document.createElement('a');
     a.className = 'surface'; a.href = 'PRICING.json';
-    a.innerHTML = '<b>PRICING.json</b><small>Public deterministic preview ratecard</small>';
+    a.innerHTML = '<b>PRICING.json</b><small>Public deterministic ratecard · JANUS.SEARCH exact-invoice seller live</small>';
     grid.prepend(a);
   }
 
@@ -208,7 +261,7 @@
     }
     if (typeof renderLoadout === 'function' && !renderLoadout.__pricingPatched) {
       const base = renderLoadout;
-      renderLoadout = function(){ base(); refreshLoadoutPrices(); };
+      renderLoadout = function(){ base(); refreshLoadoutPrices(); refreshSellerLiveSurface(); };
       renderLoadout.__pricingPatched = true;
     }
     if (typeof openTrade === 'function' && !openTrade.__pricingPatched) {
@@ -229,6 +282,7 @@
       window.JANUS_PRICING = pricing;
       window.JANUS_COMMERCE_READINESS = readiness;
       patch();
+      refreshSellerLiveSurface();
       if (typeof renderCatalog === 'function') renderCatalog();
       if (typeof renderLoadout === 'function') renderLoadout();
       appendPricingSurface();

@@ -6,7 +6,7 @@
 
 A blockchain transfer, card charge, x402 response, invoice settlement, or other payment proof is never by itself an execution command, a license grant, a claim of ownership, or a right to access JANUS internals.
 
-The intended authority chain for paid `JANUS.SEARCH` is:
+The live authority chain for paid `JANUS.SEARCH` is:
 
 ```text
 OFFER
@@ -23,7 +23,7 @@ OFFER
 → RESULT RECEIPT
 ```
 
-For any future machine-purchase path, the purchase authority must bind at minimum:
+The purchase authority binds at minimum:
 
 ```text
 offer_hash
@@ -35,6 +35,34 @@ offer_hash
 + policy version
 + payment reference
 ```
+
+## Seller activation and witness evidence
+
+Paid `JANUS.SEARCH` seller commerce is explicitly authorized by `COMMERCE_READINESS.json` and the product contract. `FOREIGN_AGENT_WITNESS` is an evidentiary state describing whether a qualifying independent external principal has already completed the frozen persistent-HOME roundtrip. It is **not** seller permission and is not required merely to issue a legitimate paid invoice.
+
+```text
+SELLER_COMMERCE_AUTHORIZED != FOREIGN_AGENT_WITNESS
+CUSTOMER_CAN_BUY != WITNESS_ALREADY_OBSERVED
+```
+
+A real qualifying customer delivery may later provide the evidence needed to promote `FOREIGN_AGENT_WITNESS`, but the flag must never be fabricated from owner/self/synthetic traffic.
+
+## Live USDT / Ethereum route
+
+`JANUS.SEARCH` now has a live issue-based exact-invoice checkout route.
+
+```text
+Network: Ethereum Mainnet
+Chain ID: 1
+Asset: USDT
+Token contract: 0xdAC17F958D2ee523a2206206994597C13D831ec7
+Declared receiving address: 0x7149081aea54fbef57effeb52a5a966b81cc03a0
+Required confirmations: 12
+```
+
+The receiving address alone is **not** a universal checkout endpoint. The buyer first opens a `[JANUS PAID SEARCH]` issue. JANUS reserves queue capacity and posts an exact invoice bound to that request. Only the exact invoice amount, token, receiver and validity window are accepted for that purchase.
+
+> **UNSOLICITED PAYMENT GRANTS NOTHING.**
 
 ## Alternative BTT / TRON route
 
@@ -51,9 +79,9 @@ canonical USDT reference total
 
 The declared receiver is `TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1`.
 
-This is the new BTT TRC-20 token, not BTTOLD. The route is currently **declared but not live**: there is no trusted BTT price oracle or TRON settlement observer wired into JANUS yet, and the global money gate remains closed.
+This is the new BTT TRC-20 token, not BTTOLD. The rail is being upgraded to a real exact-invoice route; until its oracle and solidified TRC-20 observer are merged and pass CI, **do not send BTT**.
 
-> **DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS INVOICE.**
+> **DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS BTT INVOICE.**
 
 A published receiving address does not create an order, settlement, purchase grant, execution grant, refund obligation, or delivery obligation.
 
@@ -88,7 +116,7 @@ After settlement, execution starts only when the serialized queue dispatcher sel
 
 ## Post-purchase buyer queries
 
-A product may explicitly include a bounded conversational entitlement after an admitted purchase. The governing contract is `BUYER_QUERY_PLANE.json`.
+The live paid `JANUS.SEARCH` product includes one bounded read-only buyer-query entitlement after an admitted purchase. The governing contract is `BUYER_QUERY_PLANE.json`.
 
 The entitlement must be inside the accepted `PURCHASE_GRANT`; payment alone never creates it. At minimum it binds:
 
@@ -103,7 +131,7 @@ purchase_id
 + expiry
 ```
 
-Each question then receives its own deterministic query identity. The commercial invariant is:
+Each question receives its own deterministic query identity:
 
 ```text
 1 query_id + 1 query_hash => <= 1 execution identity
@@ -122,26 +150,6 @@ JANUS_RESPONSE != WORLD_TRUTH
 MODEL_OUTPUT != EVIDENCE
 ```
 
-The current implementation is **prepared, not live**. A paid buyer-query route must not be published until a paid purchase witness, Activator binding, Physarius Market→HOME vessel, persistent response receipt, replay proof, and foreign-buyer witness are all established.
-
-## Current payment state
-
-The market publishes a declared USDT / Ethereum receiving route for machine-readable policy work, but **no general JANUS MACHINE MARKET purchase endpoint is currently active**.
-
-```text
-Network: Ethereum Mainnet
-Chain ID: 1
-Asset: USDT
-Token contract: 0xdAC17F958D2ee523a2206206994597C13D831ec7
-Declared receiving address: 0x7149081aea54fbef57effeb52a5a966b81cc03a0
-```
-
-This address is **not** a universal checkout endpoint.
-
-> **UNSOLICITED PAYMENT GRANTS NOTHING.**
-
-Do not send funds unless an exact product-specific active purchase route or invoice has been issued under the governing product policy.
-
 ## HELIOS delegation
 
 `HELIOS.PILOT` is listed for discovery only. Its invoice, payment-observation, confirmation, grant and licensing authority remain in `Hawkar-usls/Janus-HELIOS` and are not replaced by this market.
@@ -152,20 +160,17 @@ x402 has two independent authority directions and they MUST NOT share a gate imp
 
 ### JANUS as x402 seller
 
-Selling JANUS services through x402 remains **not active** until a live JANUS HTTP endpoint, policy-bound pricing, replay protection, purchase ledger, settlement verification and execution-grant bridge are established and the governing seller-side promotion gates pass.
+Native HTTP x402 selling remains separate from the live GitHub-issue/USDT seller path. JANUS must not advertise an x402 seller endpoint until a real HTTP resource, policy-bound pricing, replay protection, settlement verification and HOME delivery binding are actually deployed.
 
 ```text
 JANUS_X402_SELLER
+!= JANUS_GITHUB_ISSUE_USDT_SELLER
 != JANUS_X402_BUYER
 ```
 
-The seller-side state remains controlled by `COMMERCE_READINESS.json`, `FOREIGN_AGENT_WITNESS.json`, product `machine_purchase`, and the canonical JANUS purchase/execution authority chain.
-
 ### JANUS as x402 buyer
 
-A tightly bounded external x402 purchase MAY be enabled independently under `X402_BUYER_POLICY.json`.
-
-The buyer-side pilot does not sell a JANUS service, does not accept customer money, does not grant a buyer command authority, and therefore does not require the seller-side `foreign_agent_witness` gate merely to spend a pre-authorized micro-budget on an external resource.
+A tightly bounded external x402 purchase may run independently under `X402_BUYER_POLICY.json`.
 
 Current pilot authority is intentionally narrow:
 
@@ -180,19 +185,6 @@ max rolling 24h spend = 5000 atomic USDC
 ```
 
 The runtime is `runtime/x402_buyer_call.mjs`; the explicit operator-triggered workflow is `.github/workflows/x402-buyer-mach-live.yml`.
-
-Required buyer-side invariants:
-
-```text
-EXTERNAL_BUYER_SPEND_ENABLED != SELLER_MONEY_ENABLED
-BUYER_PAYMENT != FOREIGN_AGENT_WITNESS
-BUYER_PAYMENT != JANUS.SEARCH PURCHASE AUTHORITY
-BUYER_PAYMENT != COMMAND AUTHORITY
-BUYER_PAYMENT != EXECUTION AUTHORITY
-ONE AMBIGUOUS POST-SIGNATURE OUTCOME => NO AUTOMATIC PAID RETRY
-```
-
-The first pilot uses a managed signer and hard spend controls. No private key is committed to the repository. A live run additionally requires the configured signer credentials and a funded Base-USDC payer wallet.
 
 ## Prohibited inference
 
@@ -209,4 +201,4 @@ PAYMENT != PRODUCTION ACCESS
 PAYMENT != SECRET ACCESS
 ```
 
-A future purchase flow may satisfy one required gate. All remaining product, policy, legal, safety and execution gates still apply.
+A purchase flow may satisfy one required gate. All remaining product, policy, legal, safety and execution gates still apply.

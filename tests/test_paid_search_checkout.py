@@ -41,8 +41,8 @@ def receipt(inv=None):
     }
 
 
-def live_readiness(): return {"money_enabled":True,"autonomous_purchase_declared":True}
-def live_witness(): return {"foreign_agent_witness":True}
+def live_readiness(): return {"seller_commerce_authorized":True,"money_enabled":True,"autonomous_purchase_declared":True}
+def witness(value=False): return {"foreign_agent_witness":value}
 def live_product(): return {"sku":"JANUS.SEARCH","machine_purchase":True}
 
 
@@ -59,14 +59,22 @@ def test_invoice_is_deterministic_for_same_immutable_issue_time():
     assert a["unsolicited_payment_grants_nothing"] is True
 
 
-def test_canonical_closed_gate_cannot_settle_even_with_valid_payment_shape():
+def test_closed_seller_authority_cannot_settle_even_with_valid_payment_shape():
     inv=invoice()
-    with pytest.raises(CommerceBlocked,match="money_enabled"):
-        settle_invoice(invoice=inv,request=request(),payment_receipt=receipt(inv),readiness={"money_enabled":False,"autonomous_purchase_declared":False},witness={"foreign_agent_witness":False},product={"sku":"JANUS.SEARCH","machine_purchase":False})
+    with pytest.raises(CommerceBlocked,match="seller commerce"):
+        settle_invoice(invoice=inv,request=request(),payment_receipt=receipt(inv),readiness={"seller_commerce_authorized":False,"money_enabled":False,"autonomous_purchase_declared":False},witness=witness(False),product={"sku":"JANUS.SEARCH","machine_purchase":False})
+
+
+def test_authorized_seller_checkout_is_live_even_before_foreign_witness():
+    inv=invoice(); grant,packet=settle_invoice(invoice=inv,request=request(),payment_receipt=receipt(inv),readiness=live_readiness(),witness=witness(False),product=live_product())
+    assert grant["status"]=="PURCHASE_SETTLED"
+    assert grant["foreign_agent_witness_at_purchase"] is False
+    assert grant["foreign_agent_witness_required_for_purchase"] is False
+    assert packet["mode"]=="PAID_SETTLED"
 
 
 def test_settled_invoice_yields_paid_home_packet_not_execution_authority():
-    inv=invoice(); grant,packet=settle_invoice(invoice=inv,request=request(),payment_receipt=receipt(inv),readiness=live_readiness(),witness=live_witness(),product=live_product())
+    inv=invoice(); grant,packet=settle_invoice(invoice=inv,request=request(),payment_receipt=receipt(inv),readiness=live_readiness(),witness=witness(False),product=live_product())
     assert grant["status"]=="PURCHASE_SETTLED"
     assert grant["execution_authority_granted"] is False
     assert grant["buyer_query_entitlement"]["buyer_actor_id"]=="github:external-buyer"
@@ -79,4 +87,4 @@ def test_settled_invoice_yields_paid_home_packet_not_execution_authority():
 def test_used_payment_reference_is_rejected_on_second_purchase():
     inv=invoice(); p=receipt(inv)
     with pytest.raises(ValueError,match="already consumed"):
-        settle_invoice(invoice=inv,request=request(),payment_receipt=p,readiness=live_readiness(),witness=live_witness(),product=live_product(),consumed_payment_refs=[p["payment_reference"]])
+        settle_invoice(invoice=inv,request=request(),payment_receipt=p,readiness=live_readiness(),witness=witness(False),product=live_product(),consumed_payment_refs=[p["payment_reference"]])

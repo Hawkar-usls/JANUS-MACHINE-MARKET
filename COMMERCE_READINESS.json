@@ -1,9 +1,11 @@
 {
   "schema": "janus.machine_market.commerce_readiness.v1",
-  "status": "PAID_SEARCH_PIPELINE_ARMED_BLOCKED_BY_FOREIGN_AGENT_WITNESS",
-  "money_enabled": false,
-  "autonomous_purchase_declared": false,
-  "reason": "The paid JANUS.SEARCH invoice, exact Ethereum-USDT observer, pre-invoice queue reservation, five-level serialized paid queue, create-only purchase ledger, PAID_SETTLED persistent-HOME route and paid response reconcile are implemented and CI-gated. Live invoices remain fail-closed because FOREIGN_AGENT_WITNESS.json is still false and product machine_purchase is still false.",
+  "status": "PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING",
+  "seller_commerce_authorized": true,
+  "seller_activation_authority": "OWNER_AUTHORIZED_BOUNDED_JANUS_SEARCH_COMMERCE",
+  "money_enabled": true,
+  "autonomous_purchase_declared": true,
+  "reason": "Paid JANUS.SEARCH is authorized independently of the evidentiary FOREIGN_AGENT_WITNESS flag. Exact issue-bound invoices, Ethereum-USDT observation, queue reservation, create-only purchase ledger, serialized paid queue, PAID_SETTLED persistent-HOME delivery and response reconcile are implemented and CI-gated. FOREIGN_AGENT_WITNESS remains false until a qualifying independent external roundtrip actually occurs.",
   "payment_rail": {
     "network": "ethereum-mainnet",
     "chain_id": 1,
@@ -11,7 +13,7 @@
     "token_contract": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     "decimals": 6,
     "declared_receiving_address": "0x7149081aea54fbef57effeb52a5a966b81cc03a0",
-    "state": "CHECKOUT_ARMED_GATE_CLOSED",
+    "state": "LIVE_INVOICE_TX_PROOF_JANUS_SEARCH_ONLY",
     "required_confirmations": 12,
     "payment_identity": "transaction_hash + ERC20_log_index",
     "quote_expiry_rule": "TRANSFER_CANONICAL_BLOCK_TIMESTAMP_MUST_BE_AT_OR_BEFORE_QUOTE_EXPIRY; CONFIRMATIONS_MAY_COMPLETE_LATER",
@@ -52,7 +54,7 @@
     "home_acceptor_merge": "b2c147e1a9a00d175853ca68f040034057f0d087"
   },
   "paid_execution_queue": {
-    "status": "FIVE_LEVEL_SERIALIZED_NON_PREEMPTIVE_PREPARED_GATE_CLOSED",
+    "status": "LIVE_FIVE_LEVEL_SERIALIZED_NON_PREEMPTIVE",
     "levels": 5,
     "max_active_paid_search": 1,
     "preemption": false,
@@ -64,19 +66,20 @@
   },
   "required_live_gates": {
     "foreign_agent_witness": false,
-    "money_enabled_policy": false,
-    "product_machine_purchase": false,
-    "transaction_endpoint": "GITHUB_ISSUE_INVOICE_AND_TX_PROOF_ENDPOINT_ARMED_GATE_CLOSED",
+    "foreign_agent_witness_is_seller_prerequisite": false,
+    "money_enabled_policy": true,
+    "product_machine_purchase": true,
+    "transaction_endpoint": "GITHUB_ISSUE_INVOICE_AND_TX_PROOF_ENDPOINT_LIVE_JANUS_SEARCH_ONLY",
     "payment_observer": "TX_SPECIFIC_READ_ONLY_ETHEREUM_RPC_IMPLEMENTED_CI_GATED",
     "persistent_purchase_ledger": "IMPLEMENTED_CREATE_ONLY_SHARED_GLOBAL_MUTEX",
-    "paid_execution_queue": "IMPLEMENTED_FIVE_LEVEL_MAX_ACTIVE_ONE_NON_PREEMPTIVE",
-    "queue_invoice_reservation": "IMPLEMENTED_BEFORE_PAYABLE_INVOICE",
+    "paid_execution_queue": "LIVE_FIVE_LEVEL_MAX_ACTIVE_ONE_NON_PREEMPTIVE",
+    "queue_invoice_reservation": "LIVE_BEFORE_PAYABLE_INVOICE",
     "paid_home_packet": "IMPLEMENTED_SELF_VERIFYING_PAID_SETTLED",
     "persistent_janus_home_acceptor": "MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID",
     "result_receipt_persistence": "IMPLEMENTED_CREATE_ONLY_ONE_EXECUTION_PER_PURCHASE_SHARED_WITH_LOCAL_EXECUTOR",
-    "fresh_checkout_replay": "REQUIRED_ON_FIRST_REAL_PAID_WITNESS",
+    "fresh_checkout_replay": "REQUIRED_ON_FIRST_REAL_PAID_DELIVERY",
     "first_real_paid_delivery": "PENDING",
-    "btt_tron_payment_route": "DECLARED_NOT_LIVE_REQUIRES_ORACLE_OBSERVER_AND_EXISTING_COMMERCE_GATES"
+    "btt_tron_payment_route": "IMPLEMENTATION_IN_PROGRESS_ORACLE_AND_SOLIDIFIED_TRC20_OBSERVER_REQUIRED"
   },
   "idempotency_laws": [
     "1 purchase_id + 1 request_hash => <= 1 billable execution identity",
@@ -94,20 +97,20 @@
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
     "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
   },
-  "next_gate": "GENUINE_EXTERNAL_PRINCIPAL_COMPLETES_PUBLIC_PERSISTENT_HOME_ROUNDTRIP_THEN_CANONICAL_FOREIGN_WITNESS_PROMOTION_BEFORE_FIRST_LIVE_INVOICE",
+  "next_gate": "FIRST_REAL_PAID_SEARCH_SETTLEMENT_QUEUE_DISPATCH_PERSISTENT_HOME_RESULT_RECEIPT",
   "policy": "PAYMENT_POLICY.md",
   "paid_terms": "docs/PAID_SEARCH_TERMS.md",
   "queue_policy": "PAID_QUEUE_POLICY.json",
   "foreign_witness_state": "FOREIGN_AGENT_WITNESS.json",
   "alternative_payment_rails": {
     "BTT_TRON": {
-      "status": "DECLARED_DISCOUNT_ROUTE_GATE_CLOSED",
+      "status": "IMPLEMENTATION_IN_PROGRESS_NOT_YET_PAYABLE",
       "record": "BTT_PAYMENT_ROUTE.json",
       "discount_bps": 5000,
       "receiver": "TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1",
       "token_contract": "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4",
-      "observer": "NOT_IMPLEMENTED_YET",
-      "oracle": "NOT_IMPLEMENTED_YET",
+      "observer": "IMPLEMENTATION_REQUIRED",
+      "oracle": "IMPLEMENTATION_REQUIRED",
       "live_invoice_allowed": false
     }
   }

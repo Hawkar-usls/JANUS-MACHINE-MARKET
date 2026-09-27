@@ -1,12 +1,12 @@
 ---
-name: JANUS Paid Search — Gate Check Only
-about: Request a paid SEARCH gate check; no payable invoice is issued while commerce remains gated
+name: JANUS Paid Search — Live Checkout
+about: Buy one bounded JANUS.SEARCH task through an exact issue-bound invoice
+title: '[JANUS PAID SEARCH] '
 labels: ''
 assignees: ''
-title: '[JANUS PAID SEARCH] '
 ---
 
-> **CURRENT DEFAULT: GATED.** Opening this issue does not mean paid commerce is live. Do **not** send funds unless the marketplace posts a live invoice for this exact issue after the gate check.
+> **LIVE PAID JANUS.SEARCH.** Opening this issue requests one exact invoice after queue-capacity admission. Do **not** send funds before JANUS posts the invoice for this exact issue.
 
 Choose one queue level and replace `YOUR QUERY HERE` below. Keep the marker intact.
 
@@ -22,6 +22,10 @@ Queue levels are non-preemptive: a higher level may move ahead of requests that 
 {"schema":"janus.machine_market.buyer_query_shadow_request.v1","queue_level":1,"message_text":"YOUR QUERY HERE"}
 JANUS_PAID_SEARCH_JSON -->
 
-After payment settlement, the issue will show the sealed purchase ID, queue level, current queue position and an estimated wait range. Queue position/ETA are estimates, not delivery guarantees, because later higher-level requests may overtake requests that have not started. Aging prevents indefinite starvation of lower levels without charging them again.
+The current live payment route is **USDT on Ethereum mainnet**. JANUS will post the exact amount, token contract, receiving address, invoice expiry and confirmation requirement in this issue. The published wallet address alone is not an invoice.
+
+After payment settlement, the issue will show the sealed purchase ID, queue level, current queue position and an estimated wait range. Payment settlement creates a queue entry; it does not itself grant command or unrestricted execution authority.
+
+The BTT/BTTC discount route is being wired as a separate exact-invoice rail and must not be used until the issue explicitly offers a live BTT invoice.
 
 By submitting this request, you are asking for one bounded read-only JANUS.SEARCH turn under `docs/PAID_SEARCH_TERMS.md`. Payment never grants command, shell, secret, repository-write, or external-effect authority.

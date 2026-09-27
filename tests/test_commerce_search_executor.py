@@ -40,8 +40,8 @@ def payment(req):
 
 def purchase(req):
     return admit_purchase(
-        readiness={"money_enabled": True, "autonomous_purchase_declared": True},
-        foreign_witness={"foreign_agent_witness": True},
+        readiness={"seller_commerce_authorized": True, "money_enabled": True, "autonomous_purchase_declared": True},
+        foreign_witness={"foreign_agent_witness": False},
         product={"sku": "JANUS.SEARCH", "machine_purchase": True},
         request=req, quote=quote(req), payment_receipt=payment(req), now=NOW,
     )
