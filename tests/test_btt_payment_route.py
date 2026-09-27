@@ -79,9 +79,14 @@ class BttPaymentRouteTests(unittest.TestCase):
         self.assertFalse(self.product["live_gate"]["foreign_agent_witness_is_seller_prerequisite"])
 
     def test_public_manifests_and_policy_match(self):
-        match = [x for x in self.agent["payment_routes"] if x["id"] == "BTT_TRON_DECLARED_DISCOUNT_RECEIVER"]
+        match = [x for x in self.agent["payment_routes"] if x["id"] == "BTT_TRON_EXACT_INVOICE_50_PERCENT_DISCOUNT"]
         self.assertEqual(len(match), 1)
+        self.assertEqual(match[0]["status"], "LIVE_JANUS_SEARCH_ONLY")
         self.assertEqual(match[0]["discount_bps"], 5000)
+        self.assertEqual(match[0]["asset"], "BTT")
+        self.assertEqual(match[0]["exchange_ticker"], "BTTC")
+        self.assertEqual(match[0]["exchange_market_symbol"], "BTTCUSDT")
+        self.assertTrue(match[0]["live_invoice_allowed"])
         self.assertEqual(match[0]["receiving_address"], self.route["asset"]["receiver"])
         self.assertIn(self.route["asset"]["receiver"], self.policy)
         self.assertIn("DO NOT SEND BTT WITHOUT AN EXACT LIVE JANUS BTT INVOICE", self.policy)
