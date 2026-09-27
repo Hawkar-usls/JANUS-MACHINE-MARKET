@@ -24,7 +24,9 @@ from runtime.paid_search_checkout import MODE, SKU, search_price_usdt_micros
 INVOICE_SCHEMA = "janus.machine_market.btt_paid_search_invoice.v1"
 POLICY_VERSION = "commerce-paid-search-btt-tron-v1"
 ORACLE_PROVIDER = "BINANCE_SPOT_PUBLIC_BOOK_TICKER"
-ORACLE_SYMBOL = "BTTUSDT"
+# Binance renamed the post-redenomination BitTorrent token ticker to BTTC.
+# The payment asset remains the new BitTorrent Token on TRON (contract TAFj...).
+ORACLE_SYMBOL = "BTTCUSDT"
 ORACLE_ENDPOINT = "https://data-api.binance.vision/api/v3/ticker/bookTicker"
 MAX_ORACLE_AGE_SECONDS = 120
 MAX_SPREAD_BPS = 500
@@ -43,10 +45,12 @@ def _iso(dt: datetime) -> str:
 
 
 def fetch_bttusdt_oracle(*, now: datetime | None = None, timeout: int = 10) -> dict[str, Any]:
-    """Freeze the current Binance best bid/ask and midpoint from the market-data-only host.
+    """Freeze the current Binance BTTC/USDT best bid/ask and midpoint.
 
-    The timestamp is the HTTPS observation time, not the last-trade time. This avoids
-    treating an inactive last trade as current while still bounding invoice exposure.
+    Binance uses BTTC as the exchange ticker for the post-redenomination
+    BitTorrent token. The timestamp is the HTTPS observation time, not the
+    last-trade time, while the spread gate prevents a zero/empty book from
+    becoming a payable quote.
     """
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     url = ORACLE_ENDPOINT + "?" + urlencode({"symbol": ORACLE_SYMBOL})
@@ -71,6 +75,8 @@ def fetch_bttusdt_oracle(*, now: datetime | None = None, timeout: int = 10) -> d
         "provider": ORACLE_PROVIDER,
         "endpoint": ORACLE_ENDPOINT,
         "symbol": ORACLE_SYMBOL,
+        "exchange_ticker": "BTTC",
+        "payment_asset": "BTT",
         "bid_price": format(bid, "f"),
         "ask_price": format(ask, "f"),
         "price": format(midpoint, "f"),
