@@ -15,8 +15,7 @@ TRANSFER_TOPIC = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3
 B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
 
-class TronRpcError(RuntimeError):
-    pass
+class TronRpcError(RuntimeError): pass
 
 
 def _b58decode_check(value: str) -> bytes:
@@ -35,8 +34,7 @@ def _b58decode_check(value: str) -> bytes:
     return payload
 
 
-def tron_hex20(address: str) -> str:
-    return _b58decode_check(address)[1:].hex()
+def tron_hex20(address: str) -> str: return _b58decode_check(address)[1:].hex()
 
 
 def _norm_hex(value: Any) -> str:
@@ -48,8 +46,7 @@ def _norm_hex(value: Any) -> str:
 
 def _log_hex20(value: Any) -> str:
     text = _norm_hex(value)
-    if len(text) == 42 and text.startswith("41"):
-        text = text[2:]
+    if len(text) == 42 and text.startswith("41"): text = text[2:]
     if len(text) != 40: raise CommerceInvalid("unexpected TRON event address length")
     return text
 
@@ -65,9 +62,8 @@ class TronHttp:
         self.timeout = timeout
 
     def post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
-        headers = {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "JANUS-MACHINE-MARKET/1.0"}
-        if self.api_key:
-            headers["TRON-PRO-API-KEY"] = self.api_key
+        headers = {"Content-Type":"application/json","Accept":"application/json","User-Agent":"JANUS-MACHINE-MARKET/1.0"}
+        if self.api_key: headers["TRON-PRO-API-KEY"] = self.api_key
         req = Request(self.base_url + path, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST")
         try:
             with urlopen(req, timeout=self.timeout) as response:
@@ -100,14 +96,11 @@ def _success_receipt(info: dict[str, Any], txid: str) -> None:
     got = str(info.get("id") or "").lower().removeprefix("0x")
     if got != txid: raise CommerceInvalid("solidified TRON execution receipt mismatch")
     if str(info.get("result") or "").upper() == "FAILED": raise CommerceInvalid("TRON top-level execution result FAILED")
-    receipt_result = str((info.get("receipt") or {}).get("result") or "")
-    if receipt_result != "SUCCESS": raise CommerceInvalid("TRON receipt.result is not SUCCESS")
+    if str((info.get("receipt") or {}).get("result") or "") != "SUCCESS": raise CommerceInvalid("TRON receipt.result is not SUCCESS")
 
 
 def _matching_transfer_logs(info: dict[str, Any], quote: dict[str, Any]) -> list[tuple[int, int]]:
-    contract20 = tron_hex20(str(quote["token_contract"]))
-    receiver20 = tron_hex20(str(quote["receiving_address"]))
-    expected_amount = int(quote["amount_atomic"])
+    contract20 = tron_hex20(str(quote["token_contract"])); receiver20 = tron_hex20(str(quote["receiving_address"])); expected_amount = int(quote["amount_atomic"])
     matches: list[tuple[int, int]] = []
     for index, log in enumerate(info.get("log") or []):
         if not isinstance(log, dict): continue
@@ -118,20 +111,12 @@ def _matching_transfer_logs(info: dict[str, Any], quote: dict[str, Any]) -> list
             if topics[2][-40:] != receiver20: continue
             amount = int(_norm_hex(log.get("data")) or "0", 16)
             if amount != expected_amount: continue
-        except (CommerceInvalid, ValueError):
-            continue
+        except (CommerceInvalid, ValueError): continue
         matches.append((index, amount))
     return matches
 
 
-def observe_btt_transfer(
-    client: TronHttp,
-    quote: dict[str, Any],
-    *,
-    txid: str,
-    expected_event_index: int | None = None,
-    observed_at: datetime | None = None,
-) -> dict[str, Any]:
+def observe_btt_transfer(client: TronHttp, quote: dict[str, Any], *, txid: str, expected_event_index: int | None = None, observed_at: datetime | None = None) -> dict[str, Any]:
     txid = _txid(txid)
     if quote.get("asset") != "BTT" or quote.get("token_contract") != BTT_TRON or quote.get("receiving_address") != BTT_RECEIVER:
         raise CommerceInvalid("observer received non-canonical BTT quote")
@@ -141,42 +126,23 @@ def observe_btt_transfer(
         return {"schema":"janus.machine_market.btt_payment_observation.v1","status":"NOT_FOUND","quote_hash":quote.get("quote_hash"),"txid":txid,"reason":"SOLIDIFIED_TRANSACTION_BODY_NOT_FOUND"}
     if not info:
         return {"schema":"janus.machine_market.btt_payment_observation.v1","status":"OBSERVED","quote_hash":quote.get("quote_hash"),"txid":txid,"reason":"SOLIDIFIED_EXECUTION_RECEIPT_NOT_FOUND"}
-    _success_body(body, txid)
-    _success_receipt(info, txid)
+    _success_body(body, txid); _success_receipt(info, txid)
     matches = _matching_transfer_logs(info, quote)
-    if expected_event_index is not None:
-        matches = [row for row in matches if row[0] == int(expected_event_index)]
+    if expected_event_index is not None: matches = [row for row in matches if row[0] == int(expected_event_index)]
     if not matches:
         return {"schema":"janus.machine_market.btt_payment_observation.v1","status":"NOT_FOUND","quote_hash":quote.get("quote_hash"),"txid":txid,"reason":"EXACT_TRC20_TRANSFER_NOT_FOUND"}
     if len(matches) != 1:
         return {"schema":"janus.machine_market.btt_payment_observation.v1","status":"QUARANTINED","quote_hash":quote.get("quote_hash"),"txid":txid,"candidate_event_indexes":[x[0] for x in matches],"reason":"MULTIPLE_EXACT_TRC20_TRANSFERS_REQUIRE_EVENT_INDEX"}
     event_index, amount = matches[0]
-    block_number = int(info.get("blockNumber") or 0)
-    block_ms = int(info.get("blockTimeStamp") or 0)
+    block_number = int(info.get("blockNumber") or 0); block_ms = int(info.get("blockTimeStamp") or 0)
     if block_number <= 0 or block_ms <= 0: raise CommerceInvalid("solidified BTT receipt missing block identity")
-    now = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    payment_reference = f"tron:{txid}:{event_index}"
+    now = (observed_at or datetime.now(timezone.utc)).astimezone(timezone.utc); payment_reference = f"tron:{txid}:{event_index}"
     return {
-        "schema": "janus.machine_market.btt_payment_receipt.v1",
-        "status": "CONFIRMED",
-        "quote_hash": quote["quote_hash"],
-        "asset": "BTT",
-        "network": "tron-mainnet",
-        "token_standard": "TRC-20",
-        "token_contract": quote["token_contract"],
-        "to": quote["receiving_address"],
-        "amount_atomic": amount,
-        "decimals": int(quote["decimals"]),
-        "txid": txid,
-        "event_index": event_index,
-        "payment_reference": payment_reference,
-        "block_number": block_number,
-        "block_timestamp": _iso_ms(block_ms),
-        "solidified_transaction_body": True,
-        "solidified_execution_receipt": True,
-        "contract_execution_success": True,
-        "observed_at": now.isoformat().replace("+00:00", "Z"),
+        "schema":"janus.machine_market.btt_payment_receipt.v1","status":"CONFIRMED","quote_hash":quote["quote_hash"],"asset":"BTT","network":"tron-mainnet","token_standard":"TRC-20",
+        "token_contract":quote["token_contract"],"to":quote["receiving_address"],"amount_atomic":amount,"decimals":int(quote["decimals"]),
+        "txid":txid,"event_index":event_index,"log_index":event_index,"payment_reference":payment_reference,"block_number":block_number,"block_timestamp":_iso_ms(block_ms),
+        "solidified_transaction_body":True,"solidified_execution_receipt":True,"contract_execution_success":True,"observed_at":now.isoformat().replace("+00:00","Z"),
     }
 
 
-__all__ = ["TRONGRID_BASE", "TRANSFER_TOPIC", "TronHttp", "TronRpcError", "observe_btt_transfer", "tron_hex20"]
+__all__ = ["TRONGRID_BASE","TRANSFER_TOPIC","TronHttp","TronRpcError","observe_btt_transfer","tron_hex20"]
