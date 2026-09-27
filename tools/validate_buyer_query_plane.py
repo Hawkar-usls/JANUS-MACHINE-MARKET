@@ -26,35 +26,29 @@ def main() -> int:
     readiness = load("COMMERCE_READINESS.json")
 
     gates = plane.get("current_gates") or {}
-    live = witness.get("foreign_agent_witness") is True
-    if live:
-        require(plane.get("status") == "ZERO_PRICE_AND_PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING", "BUYER_QUERY_LIVE_STATUS_INVALID")
-        require(gates.get("payment_endpoint") == "LIVE_JANUS_SEARCH_ONLY", "BUYER_QUERY_LIVE_PAYMENT_ENDPOINT_INVALID")
-        require(gates.get("foreign_buyer_query_witness") == "PASS_PERSISTENT_HOME_EXTERNAL_MACHINE", "BUYER_QUERY_LIVE_FOREIGN_WITNESS_INVALID")
-        require(gates.get("live_publication_allowed") is True, "BUYER_QUERY_LIVE_PUBLICATION_NOT_ALLOWED")
-        require(bool(gates.get("foreign_witness_id")), "BUYER_QUERY_LIVE_WITNESS_ID_MISSING")
-        require(readiness.get("money_enabled") is True and readiness.get("autonomous_purchase_declared") is True, "BUYER_QUERY_LIVE_COMMERCE_SWITCH_INVALID")
-        require(search.get("machine_purchase") is True, "BUYER_QUERY_LIVE_SEARCH_MACHINE_PURCHASE_FALSE")
-        require((search.get("live_gate") or {}).get("checkout_live") is True, "BUYER_QUERY_LIVE_CHECKOUT_FALSE")
-        require((search.get("live_gate") or {}).get("paid_queue_live") is True, "BUYER_QUERY_LIVE_PAID_QUEUE_FALSE")
-        require((search.get("live_gate") or {}).get("witness_id") == gates.get("foreign_witness_id"), "BUYER_QUERY_LIVE_WITNESS_BINDING_MISMATCH")
-        require(search.get("post_purchase_query",{}).get("status") == "PAID_QUEUE_AND_HOME_ROUTE_LIVE_FIRST_PAID_DELIVERY_PENDING", "BUYER_QUERY_LIVE_HOME_STATUS_INVALID")
-        require(plane.get("next_gate") == "FIRST_REAL_PAID_SEARCH_SETTLEMENT_QUEUE_DISPATCH_PERSISTENT_HOME_RESULT_RECEIPT", "BUYER_QUERY_LIVE_NEXT_GATE_INVALID")
-    else:
-        require(plane.get("status") == "ZERO_PRICE_LIVE_PAID_HOME_ROUTE_ARMED_WITNESS_PENDING", "BUYER_QUERY_BLOCKED_STATUS_INVALID")
-        require(gates.get("payment_endpoint") == "ARMED_GATE_CLOSED", "BUYER_QUERY_BLOCKED_PAYMENT_ENDPOINT_INVALID")
-        require(gates.get("foreign_buyer_query_witness") == "PENDING", "BUYER_QUERY_BLOCKED_FOREIGN_WITNESS_INVALID")
-        require(gates.get("live_publication_allowed") is False, "BUYER_QUERY_BLOCKED_PUBLICATION_MUST_BE_FALSE")
-        require(readiness.get("money_enabled") is False and readiness.get("autonomous_purchase_declared") is False, "BUYER_QUERY_BLOCKED_COMMERCE_SWITCH_INVALID")
-        require(search.get("machine_purchase") is False, "BUYER_QUERY_BLOCKED_MACHINE_PURCHASE_TRUE")
-        require((search.get("live_gate") or {}).get("checkout_live") is False, "BUYER_QUERY_BLOCKED_CHECKOUT_TRUE")
-        require((search.get("live_gate") or {}).get("paid_queue_live") is False, "BUYER_QUERY_BLOCKED_PAID_QUEUE_TRUE")
-        require(search.get("post_purchase_query",{}).get("status") == "PAID_QUEUE_AND_HOME_ROUTE_IMPLEMENTED_HOME_ACCEPTOR_MERGED_LIVE_PAYMENT_WITNESS_PENDING", "BUYER_QUERY_BLOCKED_HOME_STATUS_INVALID")
-        require(plane.get("next_gate") == "FIRST_REAL_EXTERNAL_MACHINE_WITNESS_THEN_LIVE_PAID_INVOICE", "BUYER_QUERY_BLOCKED_NEXT_GATE_INVALID")
-
-    require(gates.get("purchase_grant_paid_witness") == "PENDING_REAL_PAID_SETTLEMENT", "PAID_DELIVERY_WITNESS_STATE_INVALID")
+    seller_live = readiness.get("seller_commerce_authorized") is True and readiness.get("money_enabled") is True
+    require(seller_live, "BUYER_QUERY_SELLER_COMMERCE_NOT_LIVE")
+    require(plane.get("status") == "ZERO_PRICE_AND_PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING", "BUYER_QUERY_LIVE_STATUS_INVALID")
+    require(gates.get("seller_commerce_authorized") is True, "BUYER_QUERY_SELLER_AUTHORITY_MISSING")
+    require(gates.get("payment_endpoint") == "LIVE_JANUS_SEARCH_ONLY", "BUYER_QUERY_LIVE_PAYMENT_ENDPOINT_INVALID")
+    require(gates.get("foreign_buyer_query_witness") in ("PENDING", "PASS_PERSISTENT_HOME_EXTERNAL_MACHINE"), "BUYER_QUERY_FOREIGN_WITNESS_STATE_INVALID")
+    require(gates.get("foreign_buyer_query_witness_is_seller_prerequisite") is False, "BUYER_QUERY_WITNESS_MUST_NOT_GATE_SELLER")
+    require(gates.get("live_publication_allowed") is True, "BUYER_QUERY_LIVE_PUBLICATION_NOT_ALLOWED")
+    require(readiness.get("autonomous_purchase_declared") is True, "BUYER_QUERY_LIVE_COMMERCE_SWITCH_INVALID")
+    require(search.get("machine_purchase") is True, "BUYER_QUERY_LIVE_SEARCH_MACHINE_PURCHASE_FALSE")
+    require((search.get("live_gate") or {}).get("checkout_live") is True, "BUYER_QUERY_LIVE_CHECKOUT_FALSE")
+    require((search.get("live_gate") or {}).get("paid_queue_live") is True, "BUYER_QUERY_LIVE_PAID_QUEUE_FALSE")
+    require((search.get("live_gate") or {}).get("foreign_agent_witness_is_seller_prerequisite") is False, "BUYER_QUERY_PRODUCT_WITNESS_GATE_INVALID")
+    require(search.get("post_purchase_query",{}).get("status") == "PAID_QUEUE_AND_HOME_ROUTE_LIVE_FIRST_PAID_DELIVERY_PENDING", "BUYER_QUERY_LIVE_HOME_STATUS_INVALID")
+    require(plane.get("next_gate") == "FIRST_REAL_PAID_SEARCH_SETTLEMENT_QUEUE_DISPATCH_PERSISTENT_HOME_RESULT_RECEIPT", "BUYER_QUERY_LIVE_NEXT_GATE_INVALID")
+    require(gates.get("purchase_grant_paid_witness") == "PENDING_FIRST_REAL_PAID_SETTLEMENT", "PAID_DELIVERY_WITNESS_STATE_INVALID")
     require(gates.get("activator_buyer_query_binding") == "PASS_DUAL_MODE_ZERO_AND_PAID", "ACTIVATOR_PAID_BINDING_NOT_PROVEN")
     require(gates.get("physarius_market_to_home_vessel") == "PASS_DUAL_MODE_PACKET_CONTRACT", "PHYSARIUS_PAID_VESSEL_NOT_PROVEN")
+
+    if witness.get("foreign_agent_witness") is True:
+        require(witness.get("promotion_authority") == "PERSISTENT_HOME_RECEIPT_VERIFIED", "BUYER_QUERY_WITNESS_PROMOTION_AUTHORITY_INVALID")
+    else:
+        require(witness.get("status") == "PENDING_REAL_EXTERNAL_PERSISTENT_HOME_REQUEST", "BUYER_QUERY_PENDING_WITNESS_STATUS_INVALID")
 
     laws = set(plane.get("laws") or [])
     required_laws = {
@@ -94,7 +88,8 @@ def main() -> int:
     print("PURCHASE_GRANT_QUERY_ENTITLEMENT_BOUNDARY=PASS")
     print("BUYER_QUERY_COMMAND_AUTHORITY=FALSE")
     print("BUYER_QUERY_EXTERNAL_EFFECT_AUTHORITY=FALSE")
-    print("LIVE_PAID_CHECKOUT=" + ("TRUE_WITNESS_BOUND" if live else "FALSE_PENDING_FOREIGN_WITNESS"))
+    print("LIVE_PAID_CHECKOUT=TRUE_SELLER_AUTHORIZED")
+    print("FOREIGN_AGENT_WITNESS=" + ("TRUE" if witness.get("foreign_agent_witness") else "FALSE_PENDING_REAL_EVIDENCE"))
     return 0
 
 
