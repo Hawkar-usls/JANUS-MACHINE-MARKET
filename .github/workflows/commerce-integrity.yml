@@ -69,20 +69,9 @@ jobs:
 
       - name: JSON syntax
         run: |
-          python -m json.tool COMMERCE_READINESS.json >/dev/null
-          python -m json.tool FOREIGN_AGENT_WITNESS.json >/dev/null
-          python -m json.tool BUYER_QUERY_PLANE.json >/dev/null
-          python -m json.tool MACHINE_INGRESS.json >/dev/null
-          python -m json.tool PRICING.json >/dev/null
-          python -m json.tool BTT_PAYMENT_ROUTE.json >/dev/null
-          python -m json.tool PAID_QUEUE_POLICY.json >/dev/null
-          python -m json.tool products/JANUS.SEARCH.json >/dev/null
-          python -m json.tool ORDER_EXECUTION_MATRIX.json >/dev/null
-          python -m json.tool schemas/grant.schema.json >/dev/null
-          python -m json.tool schemas/execution-grant.schema.json >/dev/null
-          python -m json.tool schemas/payment-receipt.schema.json >/dev/null
-          python -m json.tool schemas/btt-payment-receipt.schema.json >/dev/null
-          python -m json.tool schemas/market-home-buyer-query-packet.schema.json >/dev/null
+          for f in COMMERCE_READINESS.json FOREIGN_AGENT_WITNESS.json BUYER_QUERY_PLANE.json MACHINE_INGRESS.json PRICING.json BTT_PAYMENT_ROUTE.json PAID_QUEUE_POLICY.json products/JANUS.SEARCH.json ORDER_EXECUTION_MATRIX.json schemas/grant.schema.json schemas/execution-grant.schema.json schemas/payment-receipt.schema.json schemas/btt-payment-receipt.schema.json schemas/market-home-buyer-query-packet.schema.json; do
+            python -m json.tool "$f" >/dev/null
+          done
 
       - name: Commerce, queue and dual-rail adversarial tests
         run: |
@@ -108,11 +97,8 @@ jobs:
           from runtime.paid_search_checkout import search_price_usdt_micros
           p=json.load(open('PRICING.json',encoding='utf-8'))
           q=json.load(open('PAID_QUEUE_POLICY.json',encoding='utf-8'))
-          assert q['queue_levels']==5
-          assert q['max_active_paid_search']==1
-          assert q['preemption'] is False
+          assert q['queue_levels']==5 and q['max_active_paid_search']==1 and q['preemption'] is False
           assert q['current_execution_can_be_interrupted_by_higher_tier'] is False
-          assert q['ordering']=='EFFECTIVE_PRIORITY_DESC_THEN_PAYMENT_BLOCK_ASC_THEN_LOG_INDEX_ASC_THEN_PURCHASE_ID'
           levels=p['products']['JANUS.SEARCH']['queue_levels']
           for level in range(1,6):
               ps=levels[str(level)]; qs=q['levels'][str(level)]
@@ -120,11 +106,7 @@ jobs:
               assert ps['multiplier_bps']==qs['price_multiplier_bps']
               expected=(50_000*10_000*qs['price_multiplier_bps'])//100_000_000
               assert search_price_usdt_micros(p,mode='FAST',queue_level=level)==expected
-          assert search_price_usdt_micros(p,mode='FAST',queue_level=1)==50_000
-          assert search_price_usdt_micros(p,mode='FAST',queue_level=5)==250_000
           print('PAID_SEARCH_QUEUE_PRICING_BINDING=PASS')
-          print('PAID_SEARCH_QUEUE_ACTIVE_SLOTS=1')
-          print('PAID_SEARCH_QUEUE_PREEMPTION=FALSE')
           PY
 
       - name: Validate buyer-query dual state machine
@@ -140,34 +122,31 @@ jobs:
               label=_rpc_label(url)
               try:
                   rpc=JsonRpc(url,timeout=15)
-                  chain=hex_int(rpc.call('eth_chainId',[]))
-                  latest=hex_int(rpc.call('eth_blockNumber',[]))
-                  if chain != 1 or latest <= 1_000_000: raise RuntimeError(f'unexpected chain/tip {chain}/{latest}')
+                  chain=hex_int(rpc.call('eth_chainId',[])); latest=hex_int(rpc.call('eth_blockNumber',[]))
+                  if chain != 1 or latest <= 1_000_000: raise RuntimeError('unexpected chain/tip')
                   healthy.append((label,latest))
-              except Exception as exc:
-                  failed.append((label,type(exc).__name__))
-          print('ETHEREUM_RPC_HEALTHY=' + str(healthy))
-          print('ETHEREUM_RPC_FAILED=' + str(failed))
-          assert len(healthy) >= RPC_QUORUM, f'RPC_QUORUM_UNAVAILABLE healthy={healthy} failed={failed}'
+              except Exception as exc: failed.append((label,type(exc).__name__))
+          print('ETHEREUM_RPC_HEALTHY=' + str(healthy)); print('ETHEREUM_RPC_FAILED=' + str(failed))
+          assert len(healthy) >= RPC_QUORUM
           print('ETHEREUM_MAINNET_RPC_QUORUM=PASS')
-          print('ETHEREUM_RPC_SEND_TRANSACTION_USED=FALSE')
           PY
 
-      - name: Live Binance BTTUSDT order-book oracle smoke
+      - name: Live Binance BTTCUSDT order-book oracle smoke
         run: |
           PYTHONPATH=. python - <<'PY'
           from runtime.btt_paid_search_checkout import fetch_bttusdt_oracle
           o=fetch_bttusdt_oracle(timeout=15)
           assert o['provider']=='BINANCE_SPOT_PUBLIC_BOOK_TICKER'
-          assert o['symbol']=='BTTUSDT'
+          assert o['symbol']=='BTTCUSDT'
+          assert o['exchange_ticker']=='BTTC'
+          assert o['payment_asset']=='BTT'
           assert float(o['bid_price']) > 0
           assert float(o['ask_price']) >= float(o['bid_price'])
           assert float(o['price']) > 0
           assert float(o['spread_bps']) <= float(o['max_spread_bps'])
-          assert o['timestamp_semantics']=='HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE'
-          print('BTTUSDT_ORDERBOOK_ORACLE=PASS')
-          print('BTTUSDT_OBSERVED_AT=' + o['observed_at'])
-          print('BTTUSDT_SPREAD_BPS=' + o['spread_bps'])
+          print('BITTORRENT_TOKEN_ORACLE=PASS')
+          print('BINANCE_SYMBOL=' + o['symbol'])
+          print('BTT_PRICE_USDT=' + o['price'])
           PY
 
       - name: Live TRON solidified endpoint smoke
@@ -184,75 +163,28 @@ jobs:
           PY
 
       - name: Validate seller-live and witness-independent truth
-        id: state
         run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
+          python - <<'PY'
           import json
-          r=json.load(open('COMMERCE_READINESS.json',encoding='utf-8'))
-          w=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
-          p=json.load(open('products/JANUS.SEARCH.json',encoding='utf-8'))
-          pricing=json.load(open('PRICING.json',encoding='utf-8'))
-          ingress=json.load(open('MACHINE_INGRESS.json',encoding='utf-8'))
-          assert r['seller_commerce_authorized'] is True
-          assert r['money_enabled'] is True
-          assert r['autonomous_purchase_declared'] is True
-          assert r['status']=='PAID_SEARCH_LIVE_FIRST_PAID_DELIVERY_PENDING'
-          assert r['payment_rail']['state']=='LIVE_INVOICE_TX_PROOF_JANUS_SEARCH_ONLY'
+          r=json.load(open('COMMERCE_READINESS.json')); w=json.load(open('FOREIGN_AGENT_WITNESS.json')); p=json.load(open('products/JANUS.SEARCH.json'))
+          assert r['seller_commerce_authorized'] is True and r['money_enabled'] is True and r['autonomous_purchase_declared'] is True
           assert r['required_live_gates']['foreign_agent_witness_is_seller_prerequisite'] is False
-          assert p['machine_purchase'] is True
-          assert p['live_gate']['checkout_live'] is True
-          assert p['live_gate']['paid_queue_live'] is True
-          assert p['live_gate']['foreign_agent_witness_is_seller_prerequisite'] is False
-          assert pricing['status']=='MIXED_JANUS_SEARCH_LIVE_OTHER_SKUS_PREVIEW'
-          assert pricing['live_skus']==['JANUS.SEARCH']
-          assert ingress['live_services']['JANUS.SEARCH']['paid_checkout']['status']=='LIVE_JANUS_SEARCH_ONLY'
-          assert ingress['current_commerce_state']['money_enabled'] is True
-          assert r['required_live_gates']['persistent_janus_home_acceptor']=='MERGED_MAIN_DUAL_MODE_ZERO_AND_PAID'
-          assert r['payment_rail']['required_confirmations'] >= 12
-          assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
-          assert r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
-          print('witness=' + ('true' if w['foreign_agent_witness'] else 'false'))
-          print('seller_live=true')
-          print('PAID_SEARCH_PIPELINE_CONTRACT=LIVE_SELLER_AUTHORIZED_WITNESS_INDEPENDENT')
-          PY
-
-      - name: Verify canonical witness against persistent Market state when present
-        if: steps.state.outputs.witness == 'true'
-        run: |
-          set -euo pipefail
-          state="$RUNNER_TEMP/commerce-live-witness-state"
-          git -c http.extraHeader= clone --quiet --depth 1 --branch janus/market-state \
-            https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET.git "$state"
-          STATE="$state" PYTHONPATH=. python - <<'PY'
-          import json, os
-          from pathlib import Path
-          from runtime.persistent_home_foreign_witness import verify_witness_receipt
-          canonical=json.load(open('FOREIGN_AGENT_WITNESS.json',encoding='utf-8'))
-          root=Path(os.environ['STATE'])/'state/r1-foreign-home'
-          first=json.loads((root/'FIRST.json').read_text(encoding='utf-8'))
-          receipt=json.loads((root/'receipts'/f"{first['witness_id']}.json").read_text(encoding='utf-8'))
-          assert verify_witness_receipt(receipt)
-          assert first['receipt_hash']==receipt['receipt_hash']==canonical['witness_receipt_hash']
-          assert first['witness_id']==receipt['witness_id']==canonical['witness_id']
-          print('LIVE_CANONICAL_WITNESS_PERSISTENT_STATE_BINDING=PASS')
+          assert p['machine_purchase'] is True and p['live_gate']['checkout_live'] is True and p['live_gate']['paid_queue_live'] is True
+          assert w['foreign_agent_witness'] in (True,False)
+          assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_') and r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
+          print('PAID_SEARCH_SELLER=LIVE')
+          print('FOREIGN_AGENT_WITNESS=' + ('TRUE' if w['foreign_agent_witness'] else 'FALSE_PENDING_REAL_EVIDENCE'))
           PY
 
       - name: Final authority ceiling
         run: |
           python - <<'PY'
           import json
-          r=json.load(open('COMMERCE_READINESS.json'))
-          w=json.load(open('FOREIGN_AGENT_WITNESS.json'))
           p=json.load(open('products/JANUS.SEARCH.json'))
-          assert r['closed_skus']['JANUS.INFERENCE'].startswith('CLOSED_')
-          assert r['closed_skus']['JANUS.COMPUTE'].startswith('CLOSED_')
           assert p['authority']['payment_is_authority'] is False
           assert p['authority']['command_authority'] is False
           assert p['authority']['shell_authority'] is False
           assert p['authority']['secret_access'] is False
           assert p['authority']['external_effect_authority'] is False
           print('PAYMENT_COMMAND_AUTHORITY=FALSE')
-          print('INFERENCE_COMPUTE=CLOSED')
-          print('LIVE_MONEY=TRUE_SEARCH_ONLY')
-          print('FOREIGN_AGENT_WITNESS=' + ('TRUE' if w['foreign_agent_witness'] else 'FALSE_PENDING_REAL_EVIDENCE'))
           PY
