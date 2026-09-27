@@ -79,11 +79,11 @@ jobs:
           from pathlib import Path
           text=Path('.github/workflows/paid-search-btt-checkout.yml').read_text(encoding='utf-8')
           stale=(
-              'Live public BTTUSDT oracle smoke',
-              "o['provider']=='BINANCE_SPOT_PUBLIC'",
-              "o['symbol']=='BTTUSDT'",
-              'Frozen BTTUSDT price',
-              'Binance avgPrice',
+              'Live public BTT' + 'USDT oracle smoke',
+              "o['provider']=='BINANCE_SPOT_" + "PUBLIC'",
+              "o['symbol']=='BTT" + "USDT'",
+              'Frozen BTT' + 'USDT price',
+              'Binance avg' + 'Price',
           )
           found=[token for token in stale if token in text]
           if found:
