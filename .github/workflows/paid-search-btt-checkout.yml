@@ -212,7 +212,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REASON: ${{ steps.invoice.outputs.reason }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS BTT checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send BTT.**"
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "JANUS BTT checkout did **not** issue a payable invoice. Reason: \`$REASON\`. **Do not send BTT.**"
       - name: Publish exact live BTT invoice
         if: steps.invoice.outputs.live == 'true' && steps.invoice.outputs.new == 'true'
         env:
@@ -308,7 +309,8 @@ jobs:
         if: steps.settle.outputs.settled != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT payment proof status: **${{ steps.settle.outputs.status }}**. ${{ steps.settle.outputs.reason }} No purchase, queue entry, or execution was admitted."
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT payment proof status: **${{ steps.settle.outputs.status }}**. ${{ steps.settle.outputs.reason }} No purchase, queue entry, or execution was admitted."
       - name: Commit settled BTT purchase and queue entry atomically
         if: steps.settle.outputs.settled == 'true'
         run: |
@@ -321,4 +323,5 @@ jobs:
         if: steps.settle.outputs.settled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT transfer is **SOLIDIFIED + VERIFIED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min**. Settlement is not execution start; exact retry does not create a second charge or execution."
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body "BTT transfer is **SOLIDIFIED + VERIFIED** and purchase \`${{ steps.settle.outputs.purchase_id }}\` is sealed in paid queue **L${{ steps.settle.outputs.queue_level }}**. Current state: **${{ steps.settle.outputs.queue_state }}**; queue position: **${{ steps.settle.outputs.position }}**; estimated wait: **${{ steps.settle.outputs.wait_min }}–${{ steps.settle.outputs.wait_max }} min**. Settlement is not execution start; exact retry does not create a second charge or execution."
