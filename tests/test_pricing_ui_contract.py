@@ -94,7 +94,9 @@ class PricingUiContractTests(unittest.TestCase):
             "COMMERCE_READINESS.json",
             "FROZEN QUOTE PREVIEW",
             "total_usdt_micros",
-            "PAYMENT ROUTE READY",
+            "LIVE EXACT-INVOICE CHECKOUT",
+            "BUY JANUS.SEARCH · GET EXACT INVOICE",
+            "PAID SEARCH <b>LIVE · USDT</b>",
         ):
             self.assertIn(token, self.js)
         self.assertIn("PAYMENT != COMMAND", self.payment_policy)
