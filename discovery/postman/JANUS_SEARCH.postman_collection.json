@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "JANUS.SEARCH — GitHub Issues Ingress",
+    "description": "Live first-free bounded JANUS.SEARCH over the GitHub Issues REST API. The caller supplies its own GitHub credential. This collection describes the deployed GitHub Issues transport only; it is not a general JANUS transaction API and does not claim live MCP, A2A, or x402 seller runtimes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "github_token",
+      "value": "",
+      "type": "secret"
+    },
+    {
+      "key": "issue_number",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{github_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Create first-free JANUS.SEARCH order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/vnd.github+json"
+          },
+          {
+            "key": "X-GitHub-Api-Version",
+            "value": "2022-11-28"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"[JANUS R1B BUYER QUERY SHADOW] Public beta request\",\n  \"body\": \"<!-- JANUS_BUYER_QUERY_SHADOW_JSON\\n{\\\"schema\\\":\\\"janus.machine_market.buyer_query_shadow_request.v1\\\",\\\"message_text\\\":\\\"Find recent primary sources about a bounded research topic and return provenance.\\\"}\\nJANUS_BUYER_QUERY_SHADOW_JSON -->\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues",
+          "protocol": "https",
+          "host": ["api", "github", "com"],
+          "path": ["repos", "Hawkar-usls", "JANUS-MACHINE-MARKET", "issues"]
+        },
+        "description": "Creates one bounded public JANUS.SEARCH request. Exactly one first new SEARCH order is free per external GitHub principal. The external caller must use its own GitHub credential. Owner/self traffic does not qualify as a foreign-agent witness."
+      }
+    },
+    {
+      "name": "Read reconciled JANUS result comments",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/vnd.github+json"
+          },
+          {
+            "key": "X-GitHub-Api-Version",
+            "value": "2022-11-28"
+          }
+        ],
+        "url": {
+          "raw": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{{issue_number}}/comments",
+          "protocol": "https",
+          "host": ["api", "github", "com"],
+          "path": ["repos", "Hawkar-usls", "JANUS-MACHINE-MARKET", "issues", "{{issue_number}}", "comments"]
+        },
+        "description": "Reads issue comments for the request. The reconciled JANUS result is returned on this public issue surface."
+      }
+    }
+  ]
+}
