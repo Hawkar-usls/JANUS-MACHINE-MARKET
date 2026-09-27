@@ -15,17 +15,7 @@ on:
       - 'products/JANUS.SEARCH.json'
       - 'runtime/**'
       - 'schemas/**'
-      - 'tests/test_commerce_authority.py'
-      - 'tests/test_ethereum_usdt_observer.py'
-      - 'tests/test_ethereum_usdt_transaction_observer.py'
-      - 'tests/test_purchase_ledger.py'
-      - 'tests/test_commerce_search_executor.py'
-      - 'tests/test_paid_search_packet.py'
-      - 'tests/test_paid_search_checkout.py'
-      - 'tests/test_paid_search_settlement.py'
-      - 'tests/test_paid_search_queue.py'
-      - 'tests/test_persistent_home_foreign_witness.py'
-      - 'tests/test_btt_payment_route.py'
+      - 'tests/**'
       - '.github/workflows/commerce-integrity.yml'
   push:
     branches: [main]
@@ -51,16 +41,12 @@ permissions:
 jobs:
   integrity:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Install test dependency
-        run: python -m pip install --disable-pip-check pytest
-        continue-on-error: true
 
       - name: Ensure pytest is available
         run: python -m pip install --disable-pip-version-check pytest
@@ -76,7 +62,10 @@ jobs:
             runtime/paid_search_checkout.py \
             runtime/paid_search_settlement.py \
             runtime/paid_search_queue.py \
-            runtime/persistent_home_foreign_witness.py
+            runtime/persistent_home_foreign_witness.py \
+            runtime/btt_paid_search_checkout.py \
+            runtime/tron_btt_observer.py \
+            runtime/btt_paid_search_settlement.py
 
       - name: JSON syntax
         run: |
@@ -92,9 +81,10 @@ jobs:
           python -m json.tool schemas/grant.schema.json >/dev/null
           python -m json.tool schemas/execution-grant.schema.json >/dev/null
           python -m json.tool schemas/payment-receipt.schema.json >/dev/null
+          python -m json.tool schemas/btt-payment-receipt.schema.json >/dev/null
           python -m json.tool schemas/market-home-buyer-query-packet.schema.json >/dev/null
 
-      - name: Commerce and queue adversarial tests
+      - name: Commerce, queue and dual-rail adversarial tests
         run: |
           PYTHONPATH=. python -m pytest -q \
             tests/test_commerce_authority.py \
@@ -107,7 +97,9 @@ jobs:
             tests/test_paid_search_settlement.py \
             tests/test_paid_search_queue.py \
             tests/test_persistent_home_foreign_witness.py \
-            tests/test_btt_payment_route.py
+            tests/test_btt_payment_route.py \
+            tests/test_btt_paid_search_checkout.py \
+            tests/test_tron_btt_observer.py
 
       - name: Validate queue pricing and scheduling contract
         run: |
@@ -159,6 +151,31 @@ jobs:
           assert len(healthy) >= RPC_QUORUM, f'RPC_QUORUM_UNAVAILABLE healthy={healthy} failed={failed}'
           print('ETHEREUM_MAINNET_RPC_QUORUM=PASS')
           print('ETHEREUM_RPC_SEND_TRANSACTION_USED=FALSE')
+          PY
+
+      - name: Live Binance BTTUSDT oracle smoke
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from runtime.btt_paid_search_checkout import fetch_bttusdt_oracle
+          o=fetch_bttusdt_oracle(timeout=15)
+          assert o['provider']=='BINANCE_SPOT_PUBLIC'
+          assert o['symbol']=='BTTUSDT'
+          assert float(o['price']) > 0
+          print('BTTUSDT_ORACLE=PASS')
+          print('BTTUSDT_CLOSE_TIME=' + o['close_time'])
+          PY
+
+      - name: Live TRON solidified endpoint smoke
+        env:
+          TRON_PRO_API_KEY: ${{ secrets.TRON_PRO_API_KEY }}
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from runtime.tron_btt_observer import TronHttp
+          block=TronHttp(timeout=15).post('/walletsolidity/getnowblock',{})
+          raw=(block.get('block_header') or {}).get('raw_data') or {}
+          assert int(raw.get('number') or 0) > 1_000_000
+          print('TRON_SOLIDIFIED_ENDPOINT=PASS')
+          print('TRON_SOLID_BLOCK=' + str(raw['number']))
           PY
 
       - name: Validate seller-live and witness-independent truth
