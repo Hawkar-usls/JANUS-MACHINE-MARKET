@@ -23,10 +23,11 @@ from runtime.paid_search_checkout import MODE, SKU, search_price_usdt_micros
 
 INVOICE_SCHEMA = "janus.machine_market.btt_paid_search_invoice.v1"
 POLICY_VERSION = "commerce-paid-search-btt-tron-v1"
-ORACLE_PROVIDER = "BINANCE_SPOT_PUBLIC_MARKET_DATA"
+ORACLE_PROVIDER = "BINANCE_SPOT_PUBLIC_BOOK_TICKER"
 ORACLE_SYMBOL = "BTTUSDT"
-ORACLE_ENDPOINT = "https://data-api.binance.vision/api/v3/avgPrice"
-MAX_ORACLE_AGE_SECONDS = 600
+ORACLE_ENDPOINT = "https://data-api.binance.vision/api/v3/ticker/bookTicker"
+MAX_ORACLE_AGE_SECONDS = 120
+MAX_SPREAD_BPS = 500
 DISCOUNT_BPS = 5000
 
 
@@ -42,34 +43,44 @@ def _iso(dt: datetime) -> str:
 
 
 def fetch_bttusdt_oracle(*, now: datetime | None = None, timeout: int = 10) -> dict[str, Any]:
-    """Fetch Binance public 5-minute average price from the market-data-only host."""
+    """Freeze the current Binance best bid/ask and midpoint from the market-data-only host.
+
+    The timestamp is the HTTPS observation time, not the last-trade time. This avoids
+    treating an inactive last trade as current while still bounding invoice exposure.
+    """
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     url = ORACLE_ENDPOINT + "?" + urlencode({"symbol": ORACLE_SYMBOL})
-    req = Request(url, headers={"User-Agent": "JANUS-MACHINE-MARKET/1.0", "Accept": "application/json"})
+    req = Request(url, headers={"User-Agent":"JANUS-MACHINE-MARKET/1.0","Accept":"application/json"})
     with urlopen(req, timeout=timeout) as response:
-        if int(getattr(response, "status", 200)) != 200:
+        if int(getattr(response,"status",200)) != 200:
             raise CommerceInvalid("BTT oracle HTTP failure")
         payload = json.loads(response.read().decode("utf-8"))
     try:
-        price = Decimal(str(payload["price"]))
-        close_ms = int(payload["closeTime"])
-        mins = int(payload.get("mins", 5))
-    except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
-        raise CommerceInvalid("BTT oracle response invalid") from exc
-    _require(price > 0, "BTT oracle price must be positive")
-    close = datetime.fromtimestamp(close_ms / 1000, tz=timezone.utc)
-    age = (now - close).total_seconds()
-    _require(age >= -60, "BTT oracle close time is unexpectedly in the future")
-    _require(age <= MAX_ORACLE_AGE_SECONDS, "BTT oracle observation is stale")
+        bid = Decimal(str(payload["bidPrice"]))
+        ask = Decimal(str(payload["askPrice"]))
+    except (KeyError, TypeError, InvalidOperation) as exc:
+        raise CommerceInvalid("BTT order-book oracle response invalid") from exc
+    _require(bid > 0 and ask > 0, "BTT order-book bid/ask must be positive")
+    _require(ask >= bid, "BTT order-book is crossed")
+    midpoint = (bid + ask) / Decimal(2)
+    spread_bps = ((ask - bid) / midpoint * Decimal(10_000)) if midpoint else Decimal("Infinity")
+    _require(spread_bps <= Decimal(MAX_SPREAD_BPS), "BTT order-book spread exceeds invoice ceiling")
+    observed = _iso(now)
+    observed_ms = int(now.timestamp() * 1000)
     return {
         "provider": ORACLE_PROVIDER,
         "endpoint": ORACLE_ENDPOINT,
         "symbol": ORACLE_SYMBOL,
-        "price": format(price, "f"),
-        "interval_minutes": mins,
-        "close_time_ms": close_ms,
-        "close_time": _iso(close),
-        "fetched_at": _iso(now),
+        "bid_price": format(bid, "f"),
+        "ask_price": format(ask, "f"),
+        "price": format(midpoint, "f"),
+        "spread_bps": format(spread_bps, "f"),
+        "max_spread_bps": MAX_SPREAD_BPS,
+        "observed_at": observed,
+        "fetched_at": observed,
+        "close_time_ms": observed_ms,
+        "close_time": observed,
+        "timestamp_semantics": "HTTPS_FETCH_OBSERVATION_TIME_NOT_LAST_TRADE",
         "max_age_seconds": MAX_ORACLE_AGE_SECONDS,
     }
 
@@ -111,9 +122,14 @@ def issue_btt_invoice(*, request: dict[str, Any], pricing: dict[str, Any], issue
     reference = search_price_usdt_micros(pricing, mode=mode, queue_level=queue_level)
     oracle = dict(oracle or fetch_bttusdt_oracle(now=issued_at))
     _require(oracle.get("provider") == ORACLE_PROVIDER and oracle.get("symbol") == ORACLE_SYMBOL, "BTT oracle identity invalid")
-    close = parse_time(str(oracle.get("close_time") or ""))
-    age = (issued_at - close).total_seconds()
+    observed = parse_time(str(oracle.get("observed_at") or oracle.get("close_time") or ""))
+    age = (issued_at - observed).total_seconds()
     _require(-60 <= age <= MAX_ORACLE_AGE_SECONDS, "BTT invoice oracle outside freshness window")
+    if oracle.get("bid_price") is not None and oracle.get("ask_price") is not None:
+        bid=Decimal(str(oracle["bid_price"])); ask=Decimal(str(oracle["ask_price"])); midpoint=(bid+ask)/Decimal(2)
+        _require(bid>0 and ask>=bid and str(midpoint)==str(Decimal(str(oracle["price"]))), "BTT oracle midpoint binding invalid")
+        spread=((ask-bid)/midpoint*Decimal(10_000)) if midpoint else Decimal("Infinity")
+        _require(spread <= Decimal(int(oracle.get("max_spread_bps",MAX_SPREAD_BPS))), "BTT order-book spread exceeds invoice ceiling")
     discounted, amount_atomic = btt_atomic_from_reference(reference_usdt_micros=reference, price_bttusdt=str(oracle["price"]))
     issued_text = _iso(issued_at)
     expires = _iso(issued_at + timedelta(seconds=ttl))
@@ -151,4 +167,4 @@ def verify_btt_invoice(invoice: dict[str, Any], request: dict[str, Any]) -> None
     verify_quote(invoice["quote"], request, now=parse_time(invoice["issued_at"]), require_unexpired=True)
 
 
-__all__ = ["DISCOUNT_BPS","INVOICE_SCHEMA","MAX_ORACLE_AGE_SECONDS","ORACLE_ENDPOINT","ORACLE_PROVIDER","ORACLE_SYMBOL","POLICY_VERSION","btt_atomic_from_reference","discounted_reference_micros","fetch_bttusdt_oracle","issue_btt_invoice","verify_btt_invoice"]
+__all__ = ["DISCOUNT_BPS","INVOICE_SCHEMA","MAX_ORACLE_AGE_SECONDS","MAX_SPREAD_BPS","ORACLE_ENDPOINT","ORACLE_PROVIDER","ORACLE_SYMBOL","POLICY_VERSION","btt_atomic_from_reference","discounted_reference_micros","fetch_bttusdt_oracle","issue_btt_invoice","verify_btt_invoice"]
