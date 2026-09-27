@@ -22,8 +22,9 @@
   "receipt_schema": "schemas/receipt.schema.json",
   "grant_schema": "schemas/grant.schema.json",
   "transaction_api": {
-    "status": "NO_GENERAL_HTTP_TRANSACTION_API_GITHUB_ISSUE_CHECKOUT_LIVE",
-    "endpoint": null
+    "status": "NOT_ESTABLISHED",
+    "endpoint": null,
+    "note": "Live paid SEARCH uses bounded GitHub issue exact-invoice checkout; no general HTTP transaction API is claimed."
   },
   "task_execution": {
     "status": "PUBLIC_FIRST_FREE_SEARCH_AND_PR_REVIEW_PLUS_PAID_SEARCH_DUAL_RAIL_PLUS_OWNER_SHADOWS",
@@ -58,8 +59,8 @@
       "live_runtime_exists":false,
       "registry_listing_verified":false
     },
-    "x402_bazaar": {"status":"PREPARED_NOT_REGISTERED_NO_LIVE_X402_SELLER_RESOURCE","publication_record":"discovery/X402_BAZAAR_PUBLICATION.json"},
-    "openapi": {"status":"PREPARED_NOT_PUBLISHED_NO_GENERAL_TRANSACTION_API","publication_record":"discovery/OPENAPI_PUBLICATION.json"}
+    "x402_bazaar": {"status":"PREPARED_NOT_REGISTERED_NO_LIVE_X402_RESOURCE","publication_record":"discovery/X402_BAZAAR_PUBLICATION.json"},
+    "openapi": {"status":"PREPARED_NOT_PUBLISHED_NO_LIVE_TRANSACTION_API","publication_record":"discovery/OPENAPI_PUBLICATION.json"}
   },
   "external_discovery": {
     "global_a2a_registry": {
@@ -70,7 +71,10 @@
       "proves_execution":false
     }
   },
-  "x402": {"status":"BUYER_PILOT_SEPARATE_SELLER_NOT_ACTIVE"},
+  "x402": {
+    "status": "PLANNED_NOT_ACTIVE",
+    "note": "Native x402 seller resource remains inactive; separate bounded JANUS-as-buyer pilot does not promote seller x402."
+  },
   "payment_routes": [
     {
       "id": "USDT_ETHEREUM_EXACT_INVOICE",
@@ -129,6 +133,8 @@
   "truth_boundary": [
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS",
     "PAYMENT != COMMAND",
-    "SELLER_COMMERCE_AUTHORIZED != FOREIGN_AGENT_WITNESS"
+    "SELLER_COMMERCE_AUTHORIZED != FOREIGN_AGENT_WITNESS",
+    "GITHUB_ISSUE_CHECKOUT != GENERAL_TRANSACTION_API",
+    "X402_BUYER_PILOT != X402_SELLER_RUNTIME"
   ]
 }
