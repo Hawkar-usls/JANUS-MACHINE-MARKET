@@ -16,6 +16,9 @@ sitemap_text = (ROOT / "sitemap.xml").read_text(encoding="utf-8")
 robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
 paid = (ROOT / ".github/ISSUE_TEMPLATE/janus-paid-search.md").read_text(encoding="utf-8")
 chooser = (ROOT / ".github/ISSUE_TEMPLATE/config.yml").read_text(encoding="utf-8")
+readiness = json.loads((ROOT / "COMMERCE_READINESS.json").read_text(encoding="utf-8"))
+ingress = json.loads((ROOT / "MACHINE_INGRESS.json").read_text(encoding="utf-8"))
+witness = json.loads((ROOT / "FOREIGN_AGENT_WITNESS.json").read_text(encoding="utf-8"))
 
 require("\\n" not in sitemap_text, "SITEMAP_LITERAL_BACKSLASH_N")
 try:
@@ -65,17 +68,23 @@ try:
 except json.JSONDecodeError as exc:
     raise SystemExit(f"AGENT_LANDING_JSONLD_INVALID:{exc}") from exc
 require(data.get("@type") == "ItemList", "AGENT_LANDING_JSONLD_TYPE_DRIFT")
-names = {
-    (((row or {}).get("item") or {}).get("name"))
-    for row in (data.get("itemListElement") or [])
-}
+names = {(((row or {}).get("item") or {}).get("name")) for row in (data.get("itemListElement") or [])}
 require(names == {"JANUS.SEARCH", "JANUS.PR_REVIEW"}, "AGENT_LANDING_JSONLD_SERVICE_SET_DRIFT")
 
 require("Content-Signal: search=yes, ai-input=yes" in robots, "ROBOTS_AI_SEARCH_SIGNAL_DRIFT")
 require("Sitemap: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/sitemap.xml" in robots, "ROBOTS_SITEMAP_DRIFT")
 
-require("Gate Check Only" in paid, "PAID_TEMPLATE_GATE_LABEL_DRIFT")
-require("CURRENT DEFAULT: GATED" in paid, "PAID_TEMPLATE_GATE_WARNING_DRIFT")
+require("JANUS Paid Search — Live Checkout" in paid, "PAID_TEMPLATE_LIVE_LABEL_DRIFT")
+require("LIVE PAID JANUS.SEARCH" in paid, "PAID_TEMPLATE_LIVE_WARNING_DRIFT")
+require("JANUS_PAID_SEARCH_JSON" in paid, "PAID_TEMPLATE_REQUEST_MARKER_MISSING")
+require("USDT on Ethereum mainnet" in paid, "PAID_TEMPLATE_USDT_ROUTE_MISSING")
+require(readiness.get("seller_commerce_authorized") is True, "WEB_SELLER_AUTHORIZATION_FALSE")
+require(readiness.get("money_enabled") is True, "WEB_PAID_SEARCH_MONEY_DISABLED")
+paid_ingress = ((ingress.get("live_services") or {}).get("JANUS.SEARCH") or {}).get("paid_checkout") or {}
+require(paid_ingress.get("status") == "LIVE_JANUS_SEARCH_ONLY", "WEB_PAID_SEARCH_INGRESS_NOT_LIVE")
+require(paid_ingress.get("primary_payment_state") == "LIVE_EXACT_INVOICE", "WEB_USDT_EXACT_INVOICE_NOT_LIVE")
+require(paid_ingress.get("foreign_agent_witness_is_seller_prerequisite") is False, "WEB_WITNESS_REINTRODUCED_AS_SELLER_GATE")
+require(witness.get("foreign_agent_witness") is False, "WEB_DISCOVERY_MUST_NOT_FABRICATE_WITNESS")
 require("JANUS for Autonomous Agents" in chooser, "ISSUE_CHOOSER_AGENT_LINK_MISSING")
 require("Machine-readable API index" in chooser, "ISSUE_CHOOSER_API_LINK_MISSING")
 
@@ -83,4 +92,5 @@ print("JANUS_WEB_DISCOVERY_INTEGRITY_PASS")
 print("PUBLIC_WEB_SERVICES=JANUS.SEARCH,JANUS.PR_REVIEW")
 print("SITEMAP_XML_VALID=TRUE")
 print("AGENT_JSONLD_VALID=TRUE")
-print("PAID_TEMPLATE_DEFAULT_GATED=TRUE")
+print("PAID_SEARCH_USDT_EXACT_INVOICE_LIVE=TRUE")
+print("FOREIGN_AGENT_WITNESS=FALSE_PENDING_REAL_EVIDENCE")
