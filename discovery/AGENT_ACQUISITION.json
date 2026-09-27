@@ -1,12 +1,13 @@
 {
-  "schema": "janus.machine_market.agent_acquisition.v1",
-  "recorded_at": "2026-09-25",
-  "status": "ACTIVE_GITHUB_AGENT_ACQUISITION_TWO_FIRST_FREE_SERVICES",
-  "goal": "Let an external autonomous agent discover JANUS without prior context, understand the live offers in one read, and submit either a bounded first-free SEARCH or an exact-SHA-bound first-free public PR review through GitHub.",
-  "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SERVICE_DURABLE_RECEIPT",
+  "schema": "janus.machine_market.agent_acquisition.v2",
+  "recorded_at": "2026-09-28",
+  "status": "ACTIVE_EXTERNAL_DISCOVERY_GITHUB_OPENAPI_APIS_IO_PAID_SEARCH_LIVE",
+  "goal": "Let an independent external principal or autonomous agent discover JANUS without prior context, understand the truthful live offers in one read, and submit a bounded JANUS.SEARCH through the caller's own GitHub identity.",
+  "primary_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
   "fastest_live_path": {
     "sku": "JANUS.SEARCH",
-    "price": 0,
+    "first_order_price": 0,
+    "subsequent_paid_orders_live": true,
     "telegram_required": false,
     "github_auth_required": true,
     "transport": "github_issues_rest",
@@ -15,19 +16,20 @@
     "title": "[JANUS R1B BUYER QUERY SHADOW] Public beta request",
     "body_template": "<!-- JANUS_BUYER_QUERY_SHADOW_JSON\\n{\"schema\":\"janus.machine_market.buyer_query_shadow_request.v1\",\"message_text\":\"YOUR BOUNDED RESEARCH QUESTION\"}\\nJANUS_BUYER_QUERY_SHADOW_JSON -->",
     "tracking": "https://api.github.com/repos/Hawkar-usls/JANUS-MACHINE-MARKET/issues/{issue_number}/comments",
-    "exact_first_free_rule": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL"
+    "exact_first_free_rule": "ONE_FIRST_FREE_ORDER_PER_EXTERNAL_GITHUB_PRINCIPAL",
+    "paid_routes": ["USDT_ETHEREUM_EXACT_INVOICE", "BTT_TRON_EXACT_INVOICE_50_PERCENT_DISCOUNT"]
   },
   "channels": [
     {
       "id": "GITHUB_ISSUES_API",
       "status": "LIVE",
-      "purpose": "Direct machine ingress for first-free JANUS.SEARCH and JANUS.PR_REVIEW",
+      "purpose": "Direct machine ingress for first-free JANUS.SEARCH and JANUS.PR_REVIEW plus bounded paid JANUS.SEARCH checkout",
       "callable": true
     },
     {
       "id": "GITHUB_ISSUE_TEMPLATE",
       "status": "LIVE",
-      "purpose": "Browser-assisted first-free SEARCH or public PR review",
+      "purpose": "Browser-assisted first-free or exact-invoice bounded requests",
       "callable": true
     },
     {
@@ -43,9 +45,47 @@
       "callable": false
     },
     {
+      "id": "APIS_IO",
+      "status": "LISTED_REPROFILE_REQUESTED_2026_09_28",
+      "purpose": "Neutral external API and agent discovery",
+      "source": "apis.json",
+      "proves_execution": false
+    },
+    {
+      "id": "OPENAPI_GITHUB_ISSUES_INGRESS",
+      "status": "LIVE",
+      "purpose": "Machine-readable contract for deployed GitHub Issues transport",
+      "descriptor": "discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+      "general_transaction_api": false,
+      "callable": true
+    },
+    {
+      "id": "APIS_GURU",
+      "status": "SUBMISSION_READY_EXTERNAL_WRITE_REQUIRED",
+      "purpose": "Independent OpenAPI directory discovery",
+      "descriptor": "discovery/GITHUB_ISSUES_INGRESS.openapi.json",
+      "callable": false,
+      "note": "Owner GitHub App lacks write permission to the external APIs-guru repository; submission must originate through an authorized external write surface."
+    },
+    {
+      "id": "POSTMAN_API_NETWORK",
+      "status": "PUBLICATION_READY_ACCOUNT_REQUIRED",
+      "purpose": "Public collection/workspace discovery and one-click machine request setup",
+      "collection": "discovery/postman/JANUS_SEARCH.postman_collection.json",
+      "callable": false,
+      "note": "Publishing requires a Postman account/public workspace. The repository collection contains no credentials."
+    },
+    {
+      "id": "RAPIDAPI_HUB",
+      "status": "EVALUATE_PROVIDER_ACCOUNT_PATH",
+      "purpose": "Potential API marketplace discovery",
+      "callable": false,
+      "note": "Do not advertise a direct JANUS HTTP transaction endpoint that does not exist; only the deployed GitHub Issues transport may be represented."
+    },
+    {
       "id": "GLOBAL_A2A_REGISTRY",
-      "status": "SUBMISSION_READY_NOT_VERIFIED_LISTED",
-      "purpose": "Neutral external agent-directory discovery",
+      "status": "BLOCKED_UNTIL_REAL_A2A_RUNTIME_AND_AGENT_CARD",
+      "purpose": "Future A2A-native external agent directory discovery",
       "callable": false
     },
     {
@@ -68,19 +108,19 @@
     },
     {
       "id": "X402_BAZAAR",
-      "status": "BLOCKED_UNTIL_LIVE_X402_RESOURCE",
+      "status": "BLOCKED_UNTIL_LIVE_X402_SELLER_RESOURCE",
       "purpose": "Future paid-agent semantic discovery and invocation",
       "callable": false
     },
     {
-      "id": "OPENAPI",
+      "id": "GENERAL_TRANSACTION_OPENAPI",
       "status": "BLOCKED_UNTIL_LIVE_HTTPS_TRANSACTION_API",
-      "purpose": "Future generic API-agent discovery",
+      "purpose": "Future generic direct JANUS transaction API discovery",
       "callable": false
     }
   ],
   "discovery_copy": {
-    "short": "Bounded research/search and exact-SHA-bound public GitHub PR review for AI agents, with provenance/receipt lineage. First JANUS.SEARCH and first JANUS.PR_REVIEW are free through GitHub Issues.",
+    "short": "Bounded provenance-aware research/search and exact-SHA-bound public GitHub PR review for AI agents. First JANUS.SEARCH and first JANUS.PR_REVIEW are free through GitHub Issues; subsequent JANUS.SEARCH has live exact-invoice USDT/Ethereum and BTT/TRON checkout.",
     "capability_keywords": [
       "research api",
       "ai agent research",
@@ -95,9 +135,9 @@
       "pull request review api",
       "ai code review",
       "agent generated code review",
-      "github pr guard"
+      "paid agent search"
     ],
-    "first_action": "Read AGENTS.md or MACHINE_INGRESS.json. Use JANUS.SEARCH for bounded research, or JANUS.PR_REVIEW for a public GitHub pull request with a frozen head SHA."
+    "first_action": "Read AGENTS.md or MACHINE_INGRESS.json. Use JANUS.SEARCH for bounded research with your own GitHub identity, or JANUS.PR_REVIEW for a public GitHub pull request with a frozen head SHA."
   },
   "metrics_to_record": [
     "external_principal_discovery_source",
@@ -108,14 +148,17 @@
     "duplicate_or_invalid_request_rate",
     "valid_first_free_pr_review_admission",
     "pr_review_durable_receipt_returned",
-    "pr_review_external_principal_roundtrip"
+    "paid_search_external_principal_admission",
+    "paid_search_settlement_observed"
   ],
   "truth_boundary": [
-    "DISCOVERABLE_DOES_NOT_MEAN_PURCHASABLE",
+    "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS",
     "GITHUB_ISSUES_INGRESS_IS_NOT_A2A",
     "GITHUB_ISSUES_INGRESS_IS_NOT_MCP",
-    "REGISTRY_LISTING_DOES_NOT_PROVE_EXECUTION",
-    "FIRST_FREE_SEARCH_DOES_NOT_ENABLE_PAID_COMMERCE",
+    "GITHUB_ISSUES_OPENAPI_IS_NOT_A_GENERAL_TRANSACTION_API",
+    "APIS_IO_OR_APIS_GURU_LISTING_DOES_NOT_PROVE_EXECUTION",
+    "POSTMAN_PUBLICATION_DOES_NOT_PROVE_EXECUTION",
+    "SELLER_COMMERCE_AUTHORIZED_DOES_NOT_EQUAL_FOREIGN_AGENT_WITNESS",
     "PUBLIC_PR_REVIEW_ROUNDTRIP_DOES_NOT_SELF_PROMOTE_SEARCH_HOME_FOREIGN_AGENT_WITNESS"
   ],
   "foreign_witness_conversion_event": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
