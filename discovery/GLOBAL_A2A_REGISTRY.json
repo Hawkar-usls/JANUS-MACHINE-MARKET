@@ -1,8 +1,8 @@
 {
-  "schema": "janus.machine_market.global_a2a_registry.v1",
-  "version": "1.0",
-  "recorded_at": "2026-09-04",
-  "status": "SUBMISSION_READY_NOT_YET_INDEPENDENTLY_VERIFIED_AS_LISTED",
+  "schema": "janus.machine_market.global_a2a_registry.v2",
+  "version": "2.0",
+  "recorded_at": "2026-09-28",
+  "status": "BLOCKED_UNTIL_REAL_A2A_RUNTIME_AND_AGENT_CARD",
   "registry": {
     "name": "Global A2A Registry",
     "portal": "https://www.a2a-registry.org/",
@@ -12,57 +12,45 @@
     "source_repository": "https://github.com/A2ARegistry/GlobalA2ARegistry"
   },
   "janus_submission": {
-    "input_kind": "GITHUB_REPOSITORY_URL",
+    "input_kind": "GITHUB_REPOSITORY_URL_OR_A2A_AGENT_URL",
     "input": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+    "submission_allowed_now": false,
     "listing_verified": false,
     "verification_or_claim_completed": false,
     "submission_receipt_present": false,
-    "reason": "The repository is ready for registry discovery, but no independently observed registry listing or submission receipt exists yet."
+    "reason": "JANUS has a live GitHub Issues machine ingress but no live A2A protocol runtime or canonical A2A Agent Card. The registry is treated as A2A-native discovery, so publication remains fail-closed until those semantics are true."
   },
-  "discovery_goal": "Allow an external machine that does not already know the JANUS GitHub URL to discover JANUS through a neutral agent directory, inspect its bounded capabilities and follow a truthful current ingress path.",
+  "discovery_goal": "After a real A2A runtime exists, allow an external machine that does not already know JANUS to discover it through a neutral A2A directory and invoke only capabilities actually exposed by that runtime.",
   "current_truth": {
-    "registry_listing_allowed_now": true,
+    "registry_listing_allowed_now": false,
     "a2a_runtime_live": false,
     "canonical_a2a_agent_card_published": false,
     "a2a_protocol_version_target": "1.0",
     "standard_agent_card_path_after_runtime": "/.well-known/agent-card.json",
-    "current_callable_service": "JANUS.SEARCH_ZERO_PRICE_PUBLIC_BETA_VIA_GITHUB_ISSUE_INGRESS",
+    "current_callable_service": "JANUS.SEARCH_VIA_GITHUB_ISSUES_NOT_A2A",
     "current_callable_service_is_a2a": false,
     "current_machine_ingress_contract": "MACHINE_INGRESS.json",
-    "money_enabled": false
+    "janus_search_paid_checkout_live": true,
+    "a2a_payment_or_execution_live": false
   },
-  "registry_facing_capabilities": [
+  "registry_facing_capabilities_after_gate": [
     {
       "id": "janus-search",
       "sku": "JANUS.SEARCH",
-      "status": "PUBLIC_ZERO_PRICE_BETA_VIA_GITHUB_ISSUE_INGRESS",
+      "current_status": "LIVE_VIA_GITHUB_ISSUES_NOT_A2A",
       "a2a_executable": false,
       "tags": ["research", "search", "evidence", "provenance"]
-    },
-    {
-      "id": "janus-dataset-scout",
-      "sku": "JANUS.DATASET_SCOUT",
-      "status": "OWNER_SHADOW_ONLY",
-      "a2a_executable": false,
-      "tags": ["datasets", "discovery", "research"]
-    },
-    {
-      "id": "janus-repo-audit",
-      "sku": "JANUS.REPO_AUDIT",
-      "status": "OWNER_SHADOW_ONLY",
-      "a2a_executable": false,
-      "tags": ["github", "repository", "audit"]
     }
   ],
   "foreign_discovery_witness": {
     "claim_surface": "GLOBAL_A2A_REGISTRY",
-    "allowed_as_independent_discovery_source": true,
+    "allowed_as_independent_discovery_source_after_truthful_listing": true,
     "registry_listing_alone_is_foreign_agent_witness": false,
     "registry_listing_alone_is_a2a_runtime_witness": false,
-    "qualifying_path": "GLOBAL_A2A_REGISTRY_DISCOVERY -> FROZEN_EXTERNAL_MACHINE_DISCOVERY_CLAIM -> PUBLIC_ZERO_PRICE_SEARCH -> PERSISTENT_HOME_RESULT -> IMMUTABLE_R1E_RECEIPT"
+    "qualifying_path_after_runtime": "GLOBAL_A2A_REGISTRY_DISCOVERY -> INDEPENDENT_EXTERNAL_PRINCIPAL -> REAL_PUBLIC_JANUS.SEARCH -> PERSISTENT_HOME_RESULT -> MARKET_RECONCILE -> IMMUTABLE_R1E_RECEIPT"
   },
-  "a2a_runtime_future_gate": {
-    "required_before_agent_card_publication": true,
+  "a2a_runtime_gate": {
+    "required_before_agent_card_publication_or_registry_submission": true,
     "required": [
       "LIVE_HTTPS_A2A_ENDPOINT",
       "A2A_1_0_PROTOCOL_TEST_PASS",
@@ -71,7 +59,7 @@
       "NO_CLOSED_SKU_ADVERTISED_AS_EXECUTABLE",
       "NO_SECRETS_IN_AGENT_CARD"
     ],
-    "after_green": "Publish the canonical A2A v1.0 Agent Card on the live A2A origin and update the Global A2A Registry listing to point to that runtime."
+    "after_green": "Publish the canonical A2A v1.0 Agent Card on the live A2A origin, verify direct invocation, then submit that truthful runtime to the Global A2A Registry."
   },
   "laws": [
     "GLOBAL_A2A_REGISTRY_LISTING != A2A_RUNTIME",
@@ -79,8 +67,8 @@
     "REGISTRY_DISCOVERY != PURCHASE_AUTHORITY",
     "A2A_AGENT_CARD_REQUIRES_REAL_SUPPORTED_INTERFACE",
     "GITHUB_ISSUE_INGRESS != A2A_TRANSPORT",
-    "DISCOVERY != PURCHASE",
+    "PAID_GITHUB_ISSUE_CHECKOUT != A2A_PAYMENT_RUNTIME",
     "DISCOVERABLE != PURCHASABLE != EXECUTION_AUTHORITY != EXECUTION_WITNESS"
   ],
-  "next_external_action": "Submit the JANUS GitHub repository URL to the Global A2A Registry, then independently query the public registry API and record the first confirmed listing before changing this status to LISTED."
+  "next_external_action": "Do not submit yet. Build and witness a real HTTPS A2A v1.0 interface for the bounded JANUS.SEARCH capability, then publish a truthful Agent Card and submit that runtime."
 }
