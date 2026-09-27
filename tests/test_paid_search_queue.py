@@ -85,8 +85,8 @@ def bundle(*, seed: str = "a", level: int = 1, block: int = 100, log: int = 1, p
         invoice=inv,
         request=req,
         payment_receipt=receipt,
-        readiness={"money_enabled": True, "autonomous_purchase_declared": True},
-        witness={"foreign_agent_witness": True},
+        readiness={"seller_commerce_authorized": True, "money_enabled": True, "autonomous_purchase_declared": True},
+        witness={"foreign_agent_witness": False},
         product={"sku": "JANUS.SEARCH", "machine_purchase": True},
     )
     entry = build_queue_entry(request=req, purchase_grant=grant, packet=packet, payment_receipt=receipt, policy=policy())
@@ -157,8 +157,6 @@ def test_valid_paid_settlement_is_never_rejected_for_queue_capacity(tmp_path: Pa
     first = bundle(seed="paid-first", level=1, block=100, buyer="github:first")[-1]
     second = bundle(seed="paid-late", level=5, block=101, buyer="github:second")[-1]
     assert enqueue(tmp_path, first, p)["queue_entry"] == "CREATED"
-    # Even though invoice-admission capacity is now full, an already-valid paid
-    # settlement is owed queue admission. Runtime load stays bounded by one ACTIVE slot.
     assert queue_capacity(tmp_path, p, now=datetime(2026, 9, 4, 0, 1, tzinfo=timezone.utc))["global_invoice_admission_available"] is False
     assert enqueue(tmp_path, second, p)["queue_entry"] == "CREATED"
 
