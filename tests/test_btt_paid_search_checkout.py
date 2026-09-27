@@ -20,7 +20,7 @@ def request(level=1):
 
 def oracle(price="0.00000050", close=NOW):
     return {
-        "provider":"BINANCE_SPOT_PUBLIC","endpoint":"https://api.binance.com/api/v3/avgPrice","symbol":"BTTUSDT","price":price,
+        "provider":"BINANCE_SPOT_PUBLIC_MARKET_DATA","endpoint":"https://data-api.binance.vision/api/v3/avgPrice","symbol":"BTTUSDT","price":price,
         "interval_minutes":5,"close_time_ms":int(close.timestamp()*1000),"close_time":close.isoformat().replace('+00:00','Z'),
         "fetched_at":NOW.isoformat().replace('+00:00','Z'),"max_age_seconds":600,
     }
@@ -44,6 +44,7 @@ def test_btt_invoice_freezes_oracle_price_amount_receiver_and_route():
     assert q["token_contract"]=="TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4"
     assert q["receiving_address"]=="TSqkDJX9uBEnA8mmRc4UN3Bw6hcujcvmd1"
     assert q["rounding"]=="CEILING_TO_BTT_ATOMIC_UNIT"
+    assert q["oracle"]["endpoint"]=="https://data-api.binance.vision/api/v3/avgPrice"
 
 
 def test_stale_btt_oracle_fails_closed():
