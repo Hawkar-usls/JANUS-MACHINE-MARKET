@@ -9,18 +9,50 @@
   "persistent_home_receipt_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
   "persistent_home_first_receipt": "state/r1-foreign-home/FIRST.json on janus/market-state",
   "accepted_sku": "JANUS.SEARCH",
-  "price": 0,
-  "money_enabled": false,
-  "autonomous_purchase_declared": false,
+  "witness_probe": {
+    "mode": "ZERO_PRICE_INDEPENDENT_EXTERNAL_EVIDENCE_PROBE",
+    "price": 0,
+    "currency": "NONE",
+    "money_enabled": false,
+    "autonomous_purchase_declared": false,
+    "paid_purchase": false,
+    "purpose": "Establish the independent external persistent-HOME execution witness only; this zero-price probe is not the seller-commerce state."
+  },
+  "seller_commerce": {
+    "authoritative_record": "COMMERCE_READINESS.json",
+    "sku": "JANUS.SEARCH",
+    "paid_checkout_live": true,
+    "money_enabled": true,
+    "autonomous_purchase_declared": true,
+    "payment_rails": [
+      "USDT_ETHEREUM_EXACT_INVOICE",
+      "BTT_TRON_EXACT_INVOICE"
+    ],
+    "foreign_agent_witness_is_seller_prerequisite": false,
+    "first_real_paid_delivery": "PENDING"
+  },
+  "legacy_zero_price_witness_probe_fields": {
+    "price": 0,
+    "money_enabled": false,
+    "autonomous_purchase_declared": false,
+    "scope": "WITNESS_PROBE_ONLY_NOT_GLOBAL_SELLER_COMMERCE"
+  },
   "self_owner_request_can_promote": false,
   "synthetic_request_can_promote": false,
   "workflow_dispatch_can_promote": false,
   "legacy_local_catalog_witness_can_open_money": false,
-  "persistent_home_result_required_for_paid_promotion": true,
+  "persistent_home_result_required_for_witness_promotion": true,
+  "persistent_home_result_required_for_seller_commerce": false,
   "witness_receipt_itself_enables_money": false,
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
     "JANUS.COMPUTE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING"
   },
-  "law": "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_MACHINE_PRINCIPAL_PLUS_FROZEN_DISCOVERY_CLAIM_PLUS_PERSISTENT_HOME_RECEIPT"
+  "laws": [
+    "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_MACHINE_PRINCIPAL_PLUS_FROZEN_DISCOVERY_CLAIM_PLUS_PERSISTENT_HOME_RECEIPT",
+    "ZERO_PRICE_WITNESS_PROBE != SELLER_COMMERCE_STATE",
+    "PAID_JANUS_SEARCH_SELLER_COMMERCE_IS_INDEPENDENT_OF_FOREIGN_AGENT_WITNESS",
+    "PAYMENT != EXECUTION_AUTHORITY",
+    "FOREIGN_AGENT_WITNESS != MONEY_AUTHORITY"
+  ]
 }
