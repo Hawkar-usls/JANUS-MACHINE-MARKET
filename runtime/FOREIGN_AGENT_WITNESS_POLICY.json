@@ -1,7 +1,7 @@
 {
   "schema": "janus.machine_market.foreign_agent_witness_policy.v1",
   "status": "PREPARED_PENDING_REAL_EXTERNAL_REQUEST",
-  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface and the request completes through persistent JANUS HOME/HRAiN. Global A2A Registry discovery may identify how the external machine found JANUS, but registry presence never substitutes for the persistent HOME witness and never proves an A2A runtime.",
+  "purpose": "Admit the first external machine-discovery/request witness only when the requester is observably independent from the repository owner under the GitHub event trust surface and the request completes through persistent JANUS HOME/HRAiN. This evidentiary witness gate is independent from the already-authorized bounded paid JANUS.SEARCH seller commerce. Global A2A Registry discovery may identify how the external machine found JANUS, but registry presence never substitutes for the persistent HOME witness and never proves an A2A runtime.",
   "owner": {
     "login": "Hawkar-usls",
     "github_user_id": 242020399
@@ -23,7 +23,7 @@
     "credentialless_home_pull_required": true,
     "persistent_home_response_required": true,
     "hrain_bound_result_required": true,
-    "legacy_local_catalog_witness_sufficient_for_paid_promotion": false
+    "legacy_local_catalog_witness_sufficient_for_witness_promotion": false
   },
   "independence_gate": {
     "requester_login_must_differ_from_owner": true,
@@ -62,7 +62,7 @@
       "note": "The claim records where an independent machine says it discovered JANUS. A registry listing is discovery evidence only."
     }
   },
-  "execution": {
+  "witness_execution": {
     "sku": "JANUS.SEARCH",
     "price": 0,
     "currency": "NONE",
@@ -73,14 +73,27 @@
     "arbitrary_shell": false,
     "secret_access": false,
     "same_bounded_r1_runtime": true,
-    "persistent_state_branch": "janus/market-state"
+    "persistent_state_branch": "janus/market-state",
+    "scope": "ZERO_PRICE_WITNESS_PROBE_ONLY_NOT_GLOBAL_SELLER_COMMERCE"
+  },
+  "seller_commerce": {
+    "authoritative_record": "COMMERCE_READINESS.json",
+    "sku": "JANUS.SEARCH",
+    "status": "PAID_SEARCH_DUAL_RAIL_LIVE_FIRST_PAID_DELIVERY_PENDING",
+    "money_enabled": true,
+    "autonomous_purchase_declared": true,
+    "foreign_agent_witness_is_seller_prerequisite": false,
+    "payment_rails": [
+      "USDT_ETHEREUM_EXACT_INVOICE",
+      "BTT_TRON_EXACT_INVOICE"
+    ]
   },
   "persistent_receipt": {
     "legacy_schema": "janus.machine_market.foreign_agent_witness_receipt.v1",
-    "paid_promotion_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
+    "witness_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
     "legacy_path_template": "state/r1-foreign/receipts/{witness_id}.json",
-    "paid_promotion_path_template": "state/r1-foreign-home/receipts/{witness_id}.json",
-    "first_paid_promotion_witness": "state/r1-foreign-home/FIRST.json",
+    "witness_path_template": "state/r1-foreign-home/receipts/{witness_id}.json",
+    "first_witness": "state/r1-foreign-home/FIRST.json",
     "immutable": true,
     "binds": [
       "repository_id",
@@ -107,12 +120,13 @@
     "owner_self_request_can_promote": false,
     "workflow_dispatch_can_promote": false,
     "synthetic_fixture_can_promote": false,
-    "payment_can_promote": false,
+    "payment_can_promote_witness": false,
     "registry_listing_alone_can_promote": false,
-    "legacy_local_catalog_witness_can_open_money": false,
-    "only_qualifying_external_machine_public_search_persistent_home_roundtrip_can_promote_paid_commerce": true,
+    "legacy_local_catalog_witness_can_promote": false,
+    "qualifying_external_machine_public_search_persistent_home_roundtrip_can_promote_foreign_agent_witness": true,
+    "seller_commerce_requires_foreign_agent_witness": false,
     "witness_receipt_itself_enables_money": false,
-    "separate_canonical_promotion_required": true
+    "separate_canonical_witness_promotion_required": true
   },
   "closed_skus": {
     "JANUS.INFERENCE": "CLOSED_TARGET_EXECUTION_WITNESS_PENDING",
@@ -122,12 +136,13 @@
     "DISCOVERY != PURCHASE",
     "REQUEST != PURCHASE",
     "PAYMENT != AUTHORITY",
-    "NO_PAYMENT_BEFORE_FOREIGN_AGENT_WITNESS",
+    "PAID_JANUS_SEARCH_SELLER_COMMERCE_IS_INDEPENDENT_OF_FOREIGN_AGENT_WITNESS",
+    "ZERO_PRICE_WITNESS_PROBE != SELLER_COMMERCE_STATE",
     "FOREIGN_AGENT_WITNESS_REQUIRES_EXTERNAL_PRINCIPAL",
     "FOREIGN_AGENT_WITNESS_REQUIRES_MACHINE_DISCOVERY_CLAIM",
     "GLOBAL_A2A_REGISTRY_DISCOVERY != A2A_RUNTIME",
     "GLOBAL_A2A_REGISTRY_LISTING != FOREIGN_AGENT_WITNESS",
-    "PAID_PROMOTION_REQUIRES_PERSISTENT_HOME_RESULT",
+    "FOREIGN_AGENT_WITNESS_REQUIRES_PERSISTENT_HOME_RESULT",
     "SELF_OWNER_REQUEST != FOREIGN_AGENT_WITNESS",
     "SYNTHETIC_REQUEST != FOREIGN_AGENT_WITNESS",
     "LOCAL_CATALOG_EXECUTION != PERSISTENT_HOME_WITNESS",
