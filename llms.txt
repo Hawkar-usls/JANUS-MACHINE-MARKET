@@ -2,7 +2,7 @@
 
 > Machine-readable catalog for bounded research, public GitHub pull-request review, agent evaluation, evidence synthesis, repository analysis, provenance-bound visualization, future inference and future compute services intended for autonomous software agents.
 
-Current truth boundary: discovery is active; the general transaction API is not established yet. Do not send unsolicited funds. Discoverable does not mean purchasable.
+Current truth boundary: discovery is active. Bounded `JANUS.SEARCH` is public-live both as one first-free order per external GitHub principal and as paid issue-bound exact-invoice commerce through Ethereum-mainnet USDT or BTT TRC-20 on TRON Mainnet. The general transaction API is not established yet. Never send unsolicited funds or infer a payable order from a catalog total or wallet address alone.
 
 ## Live first-free paths for an autonomous agent
 
@@ -35,11 +35,32 @@ PR review path — JANUS.PR_REVIEW:
 - OpenAPI: discovery/PR_REVIEW_GITHUB_INGRESS.openapi.json
 - Agent Skill: .well-known/agent-skills/janus-pr-review/SKILL.md
 
+## Live paid JANUS.SEARCH
+
+Paid bounded `JANUS.SEARCH` is live through exact issue-bound invoices after queue-capacity admission.
+
+- USDT / Ethereum mainnet checkout: `.github/ISSUE_TEMPLATE/janus-paid-search.md`
+- BTT (BitTorrent Token) TRC-20 / TRON Mainnet checkout: `.github/ISSUE_TEMPLATE/janus-paid-search-btt.md`
+- Canonical pricing and rail state: `PRICING.json`
+- Canonical seller-commerce readiness: `COMMERCE_READINESS.json`
+- Paid terms: `docs/PAID_SEARCH_TERMS.md`
+- First real paid settlement -> queue dispatch -> persistent HOME result receipt: still pending
+
+Paid commerce and the foreign-agent evidence gate are independent:
+
+PAID JANUS.SEARCH LIVE != FOREIGN_AGENT_WITNESS.
+PAID PURCHASE != FOREIGN_AGENT_WITNESS.
+PAYMENT != EXECUTION AUTHORITY.
+
+The evidentiary `FOREIGN_AGENT_WITNESS` state remains false until a qualifying independent external request completes the public ingress -> Market -> persistent HOME -> HOME response -> reconcile chain and a durable persistent receipt exists.
+
 ## Canonical machine-readable entry points
 
 - [Discovery Beacon](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/BEACON.json): canonical discovery fabric, status and publication gates
 - [Agent Market Manifest](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/AGENT_MARKET.json): capabilities and transaction status
 - [Catalog](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/CATALOG.json): available and gated SKUs
+- [Pricing](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/PRICING.json): canonical pricing and live payment rails
+- [Commerce Readiness](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCE_READINESS.json): seller-commerce state and next gate
 - [Commercial Manifest](https://raw.githubusercontent.com/Hawkar-usls/JANUS-MACHINE-MARKET/main/COMMERCIAL.json): commercial boundary
 - [Payment Policy](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/PAYMENT_POLICY.md): payment and authority rules
 - [Licensing](https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/blob/main/LICENSING.md): licensing boundaries
@@ -47,7 +68,7 @@ PR review path — JANUS.PR_REVIEW:
 
 ## Priority machine services
 
-JANUS.SEARCH — public first-free bounded research/search with structured evidence, provenance, contradictions, confidence and receipt.
+JANUS.SEARCH — public first-free bounded research/search plus live paid issue-bound exact-invoice commerce through Ethereum-mainnet USDT or BTT TRC-20 on TRON Mainnet; results carry structured evidence, provenance, contradictions, confidence and receipt lineage.
 
 JANUS.PR_REVIEW — public first-free exact-SHA-bound structural/policy-risk review of a public GitHub pull request; target code is not executed.
 
@@ -84,6 +105,7 @@ Unsolicited payment grants nothing.
 FIRST FREE OFFERS
 - JANUS.SEARCH: exactly 1 first bounded order at price 0 per external GitHub principal.
 - SEARCH intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-search-free-beta.md
+- Later new JANUS.SEARCH orders use the live issue-bound exact-invoice paid checkout rails described above.
 - JANUS.PR_REVIEW: exactly 1 first bounded public-PR review at price 0 per external GitHub principal.
 - PR Review intake: https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/issues/new?template=janus-pr-review-free-beta.md
 - A second new request of the same SKU is not free. Exact retry of the same immutable admitted issue is not a second order.
@@ -108,7 +130,6 @@ Search intent terms: autonomous research agent, AI research API, provenance sear
 - JANUS.SEARCH Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-search/SKILL.md
 - JANUS.PR_REVIEW Agent Skill: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/janus-pr-review/SKILL.md
 - Agent Skills index: https://hawkar-usls.github.io/JANUS-MACHINE-MARKET/.well-known/agent-skills/index.json
-
 
 ## Live JANUS.PR_REVIEW
 
