@@ -4,6 +4,8 @@
   "foreign_agent_witness": false,
   "promotion_authority": "PERSISTENT_HOME_RECEIPT_ONLY",
   "gate": "FIRST_REAL_EXTERNAL_MACHINE_PUBLIC_SEARCH_PERSISTENT_HOME_RECEIPT",
+  "money_enabled": false,
+  "money_enabled_scope": "FOREIGN_AGENT_WITNESS_PROBE_ONLY_NOT_SELLER_COMMERCE",
   "policy": "runtime/FOREIGN_AGENT_WITNESS_POLICY.json",
   "legacy_receipt_schema": "schemas/foreign-agent-witness-receipt.schema.json",
   "persistent_home_receipt_schema": "janus.machine_market.persistent_home_foreign_agent_witness_receipt.v1",
