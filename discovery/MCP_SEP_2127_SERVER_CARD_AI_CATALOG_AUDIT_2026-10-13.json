@@ -1,0 +1,156 @@
+{
+  "schema": "janus.machine_market.mcp_sep2127_server_card_ai_catalog_audit.v1",
+  "recorded_at": "2026-10-13",
+  "audit_id": "MCP_SEP_2127_SERVER_CARD_AI_CATALOG_COMPATIBILITY",
+  "status": "COMPATIBILITY_RECORDED_NOT_DEPLOYED",
+  "baseline_ref": "discovery/MCP_2026_07_28_BASELINE.json",
+  "publication_ref": "discovery/MCP_PUBLICATION.json",
+  "verified_sources": {
+    "sep": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/seps/2127-mcp-server-cards.md",
+    "sep_merged_pr": "https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127",
+    "schema": "https://github.com/modelcontextprotocol/ext-server-card/blob/main/schema.ts",
+    "json_schema": "https://github.com/modelcontextprotocol/ext-server-card/blob/main/schema.json",
+    "discovery": "https://github.com/modelcontextprotocol/ext-server-card/blob/main/docs/discovery.md",
+    "ai_catalog": "https://ai-catalog.io/spec/"
+  },
+  "status_distinction": {
+    "sep_2127": "FINAL_EXTENSIONS_TRACK_MERGED_2026_10_06",
+    "extension_identifier": "io.modelcontextprotocol/server-card",
+    "server_card_extension_repo": "EXPERIMENTAL_IMPLEMENTATION_STATUS",
+    "mcp_core_wire_version_target": "2026-07-28",
+    "required_by_core_mcp": false,
+    "live_janus_mcp_runtime": false,
+    "does_not_prove_adoption_or_live_server": true
+  },
+  "server_card_contract": {
+    "purpose": "STATIC_REMOTE_MCP_DISCOVERY_NOT_EXECUTION_AUTHORITY",
+    "schema_url": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+    "required_top_level_fields": [
+      "$schema",
+      "name",
+      "version",
+      "description"
+    ],
+    "name_pattern": "^[a-zA-Z0-9.-]+/[a-zA-Z0-9._-]+$",
+    "description_max_characters": 100,
+    "optional_top_level_fields": [
+      "title",
+      "websiteUrl",
+      "repository",
+      "icons",
+      "remotes",
+      "_meta"
+    ],
+    "remotes_optional_in_extension_schema": true,
+    "janus_live_publication_requires_at_least_one_verified_remote": true,
+    "remote_transport_types": [
+      "streamable-http",
+      "sse"
+    ],
+    "remote_fields": [
+      "type",
+      "url",
+      "headers",
+      "variables",
+      "supportedProtocolVersions"
+    ],
+    "remote_compatibility_requirements": [
+      "REMOTE_HTTPS_ENDPOINT_RESPONDS_AS_REAL_MCP_TRANSPORT",
+      "SERVER_INFO_NAME_AND_VERSION_MATCH_CARD",
+      "SERVER_DISCOVER_PROTOCOL_VERSIONS_VERIFIED",
+      "CARD_REMOTE_TRANSPORT_MATCHES_RUNTIME",
+      "NO_DEPRECATED_OR_NONEXISTENT_RUNTIME_ADVERTISED"
+    ],
+    "hosted_uri_rule": "ANY_UNRESERVED_URI",
+    "recommended_card_uri": "GET <streamable-http-url>/server-card",
+    "misleading_uri_conventions_to_avoid": [
+      "DOMAIN_ROOT_WELL_KNOWN_MCP_SERVER_CARD_IS_NOT_THE_RECOMMENDED_DEFAULT",
+      "DO_NOT_OVERLOAD_BARE_MCP_HTTP_ENDPOINT_GET_WITH_CARD"
+    ],
+    "do_not_list_in_static_card": [
+      "tools",
+      "resources",
+      "prompts",
+      "negotiated_server_capabilities",
+      "supported_extensions"
+    ],
+    "do_not_use_meta_as_capability_claim": true,
+    "live_runtime_values_override_static_card": true,
+    "mcp_registry_server_json_is_separate_contract": true
+  },
+  "ai_catalog_contract": {
+    "discovery_uri": "/.well-known/ai-catalog.json",
+    "publication_optional": true,
+    "media_type": "application/ai-catalog+json",
+    "minimum_fields": [
+      "specVersion",
+      "entries"
+    ],
+    "entry_identifier": "urn:air:{publisher}:{namespace}:{name}",
+    "mcp_entry_type": "application/mcp-server-card+json",
+    "entry_requires": [
+      "identifier",
+      "type",
+      "exactly_one_of_url_or_data"
+    ],
+    "may_reference_cards_on_other_domains": true,
+    "mcp_entry_can_be_published_without_live_janus_mcp_runtime": false,
+    "current_live_mcp_entries": 0,
+    "current_janus_mcp_catalog_publication_allowed": false,
+    "github_issues_openapi_is_not_mcp": true,
+    "janus_market_json_is_not_mcp_server_card": true,
+    "independent_ai_catalog_spec_does_not_grant_protocol_runtime": true
+  },
+  "security_and_operational_checks": {
+    "no_credentials_or_tokens": true,
+    "no_private_urls_or_internal_network_topology": true,
+    "no_nonpublic_session_data": true,
+    "production_https_tls_minimum": "1.2",
+    "server_card_cors_headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Headers": "Content-Type, If-None-Match",
+      "Access-Control-Expose-Headers": "ETag"
+    },
+    "suggested_cache_control": "public, max-age=3600",
+    "etag_and_conditional_get_recommended": true,
+    "discovery_endpoints_rate_limited_if_live": true,
+    "card_metadata_not_security_or_authz_authority": true,
+    "preserve_direct_live_authorization_checks": true
+  },
+  "janus_publication_gate": {
+    "state": "LOCKED_NO_LIVE_REMOTE_MCP_RUNTIME",
+    "publish_server_card_now": false,
+    "publish_mcp_ai_catalog_entry_now": false,
+    "publish_mcp_registry_server_json_now": false,
+    "create_live_endpoint_files_now": false,
+    "future_pass_requires": [
+      "MCP_2026_07_28_WIRE_CONFORMANCE_PASS",
+      "REAL_PUBLIC_REMOTE_MCP_HTTPS_ENDPOINT_OBSERVED",
+      "SERVER_DISCOVER_AND_PER_REQUEST_META_PASS",
+      "REMOTE_URL_TRANSPORT_AND_SUPPORTED_VERSIONS_REPLAYED",
+      "SERVER_CARD_VALID_AGAINST_CURRENT_EXTENSION_SCHEMA",
+      "CARD_AND_LIVE_SERVER_IDENTITY_CONSISTENT",
+      "NO_PRIMITIVES_OR_NEGOTIATED_CAPABILITIES_FABRICATED",
+      "PUBLIC_METADATA_PRIVACY_AND_CORS_SECURITY_PASS",
+      "AI_CATALOG_SPEC_CONFORMANCE_PASS_IF_CATALOG_PUBLISHED",
+      "SAME_ORIGIN_AND_PUBLIC_FETCH_OBSERVED_AFTER_DEPLOYMENT",
+      "INDEPENDENT_REGISTRY_SUBMISSION_GATE_SEPARATELY_PASSED"
+    ],
+    "next_legal_action": "AUDIT_AND_READINESS_ONLY_UNTIL_REAL_MCP_RUNTIME_EXISTS"
+  },
+  "cross_lane_firewall": {
+    "discovery_not_purchase_or_execution_authority": true,
+    "seller_commerce_authoritative_record": "COMMERCE_READINESS.json",
+    "seller_commerce_state": "PAID_JANUS_SEARCH_USDT_ETHEREUM_AND_BTT_TRON_ALREADY_LIVE",
+    "seller_commerce_changed_by_this_audit": false,
+    "first_real_paid_delivery": "PENDING",
+    "foreign_agent_witness_authoritative_record": "FOREIGN_AGENT_WITNESS.json",
+    "foreign_agent_witness": false,
+    "witness_promotion_authority": "PERSISTENT_HOME_RECEIPT_ONLY",
+    "foreign_agent_witness_changed_by_this_audit": false,
+    "MACHINE_INGRESS_SMOKE != FOREIGN_AGENT_WITNESS": true,
+    "PAID_PURCHASE != FOREIGN_AGENT_WITNESS": true,
+    "ZERO_PRICE_WITNESS_PROBE != SELLER_COMMERCE_STATE": true
+  }
+}
