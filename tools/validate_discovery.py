@@ -30,6 +30,7 @@ a2a = load_json("discovery/A2A_PUBLICATION.json")
 global_a2a = load_json("discovery/GLOBAL_A2A_REGISTRY.json")
 mcp = load_json("discovery/MCP_PUBLICATION.json")
 mcp_baseline = load_json("discovery/MCP_2026_07_28_BASELINE.json")
+mcp_cards = load_json("discovery/MCP_SEP_2127_SERVER_CARD_AI_CATALOG_AUDIT_2026-10-13.json")
 x402 = load_json("discovery/X402_BAZAAR_PUBLICATION.json")
 openapi = load_json("discovery/OPENAPI_PUBLICATION.json")
 witness_policy = load_json("runtime/FOREIGN_AGENT_WITNESS_POLICY.json")
@@ -153,6 +154,48 @@ require((mcp.get("registry_submission") or {}).get("create_manifest_now") is Fal
 require("SERVER_DISCOVER_IMPLEMENTED_AND_PASS" in (mcp.get("publication_gates") or []), "MCP_DISCOVER_GATE_MISSING")
 require("PER_REQUEST_META_CONTRACT_PASS" in (mcp.get("publication_gates") or []), "MCP_META_GATE_MISSING")
 
+# SEP-2127 was accepted on the Extensions Track, but an accepted SEP does not
+# constitute a JANUS MCP runtime. Keep the Server Card/AI Catalog surfaces
+# absent and audit-only until an actual remote MCP endpoint passes conformance.
+audit_path = "discovery/MCP_SEP_2127_SERVER_CARD_AI_CATALOG_AUDIT_2026-10-13.json"
+require(mcp.get("sep2127_server_card_audit_record") == audit_path, "MCP_SEP2127_AUDIT_REFERENCE_DRIFT")
+require(mcp.get("sep2127_status") == "FINAL_EXTENSIONS_TRACK_EXTENSION_RUNTIME_GATED", "MCP_SEP2127_STATUS_DRIFT")
+require(mcp.get("server_card_extension_status") == "EXPERIMENTAL_IMPLEMENTATION_NOT_DEPLOYED", "MCP_SERVER_CARD_EXTENSION_FALSE_LIVE")
+require(mcp.get("server_card_publication_allowed") is False, "MCP_SERVER_CARD_PREMATURE_PUBLICATION")
+require(mcp.get("ai_catalog_mcp_entry_publication_allowed") is False, "MCP_AI_CATALOG_PREMATURE_MCP_ENTRY")
+require(mcp.get("server_card_location_recommended") == "GET <streamable-http-url>/server-card", "MCP_SERVER_CARD_URI_DRIFT")
+require(mcp.get("ai_catalog_location_optional") == "/.well-known/ai-catalog.json", "AI_CATALOG_DISCOVERY_URI_DRIFT")
+require(mcp_cards.get("status") == "COMPATIBILITY_RECORDED_NOT_DEPLOYED", "MCP_SEP2127_AUDIT_PREMATURE_RUNTIME")
+sep_status = mcp_cards.get("status_distinction") or {}
+require(sep_status.get("sep_2127") == "FINAL_EXTENSIONS_TRACK_MERGED_2026_10_06", "MCP_SEP2127_RATIFICATION_DRIFT")
+require(sep_status.get("server_card_extension_repo") == "EXPERIMENTAL_IMPLEMENTATION_STATUS", "MCP_SERVER_CARD_EXTENSION_STATUS_DRIFT")
+require(sep_status.get("live_janus_mcp_runtime") is False, "MCP_SEP2127_FALSE_RUNTIME")
+card = mcp_cards.get("server_card_contract") or {}
+require(card.get("description_max_characters") == 100, "MCP_SERVER_CARD_DESCRIPTION_LIMIT_DRIFT")
+require(card.get("schema_url") == "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json", "MCP_SERVER_CARD_SCHEMA_DRIFT")
+require(card.get("janus_live_publication_requires_at_least_one_verified_remote") is True, "MCP_SERVER_CARD_REMOTE_GATE_MISSING")
+require(card.get("live_runtime_values_override_static_card") is True, "MCP_STATIC_CARD_MUST_NOT_OVERRIDE_LIVE_RUNTIME")
+catalog_contract = mcp_cards.get("ai_catalog_contract") or {}
+require(catalog_contract.get("discovery_uri") == "/.well-known/ai-catalog.json", "MCP_AI_CATALOG_URI_DRIFT")
+require(catalog_contract.get("mcp_entry_type") == "application/mcp-server-card+json", "MCP_AI_CATALOG_CARD_MEDIA_TYPE_DRIFT")
+require(catalog_contract.get("current_live_mcp_entries") == 0, "MCP_AI_CATALOG_FALSE_LIVE_ENTRY")
+require(catalog_contract.get("current_janus_mcp_catalog_publication_allowed") is False, "MCP_AI_CATALOG_PUBLICATION_GATE_DRIFT")
+gates = mcp_cards.get("janus_publication_gate") or {}
+require(gates.get("state") == "LOCKED_NO_LIVE_REMOTE_MCP_RUNTIME", "MCP_SERVER_CARD_UNLOCKED_WITHOUT_RUNTIME")
+for gate in ["publish_server_card_now", "publish_mcp_ai_catalog_entry_now",
+             "publish_mcp_registry_server_json_now", "create_live_endpoint_files_now"]:
+    require(gates.get(gate) is False, f"MCP_SEP2127_PREMATURE_PUBLICATION:{gate}")
+boundaries = mcp_cards.get("cross_lane_firewall") or {}
+require(boundaries.get("seller_commerce_changed_by_this_audit") is False, "MCP_SEP2127_SELLER_STATE_MUST_NOT_CHANGE")
+require(boundaries.get("foreign_agent_witness_changed_by_this_audit") is False, "MCP_SEP2127_FOREIGN_WITNESS_MUST_NOT_CHANGE")
+require(boundaries.get("foreign_agent_witness") is False, "MCP_SEP2127_FALSE_FOREIGN_WITNESS")
+require(boundaries.get("witness_promotion_authority") == "PERSISTENT_HOME_RECEIPT_ONLY", "MCP_SEP2127_FALSE_WITNESS_AUTHORITY")
+for gate in ["REAL_REMOTE_MCP_RUNTIME_REQUIRED_BEFORE_SERVER_CARD",
+             "SERVER_CARD_SCHEMA_AND_RUNTIME_CONSISTENCY_PASS",
+             "AI_CATALOG_MCP_ENTRY_REQUIRES_VERIFIED_LIVE_SERVER_CARD",
+             "SERVER_CARD_CORS_TLS_AND_PUBLIC_METADATA_SECURITY_PASS"]:
+    require(gate in (mcp.get("publication_gates") or []), f"MCP_SEP2127_GATE_MISSING:{gate}")
+
 agent_mcp = ((agent.get("discovery_protocols") or {}).get("mcp") or {})
 require(agent_mcp.get("target_spec_revision") == "2026-07-28", "AGENT_MARKET_MCP_REVISION_DRIFT")
 require(agent_mcp.get("runtime_model") == "STATELESS_REQUEST_RESPONSE", "AGENT_MARKET_MCP_MODEL_DRIFT")
@@ -222,6 +265,10 @@ for path in [
     ".well-known/agent-card.json",
     "server.json",
     "openapi.json",
+    ".well-known/ai-catalog.json",
+    "server-card.json",
+    "mcp/server-card",
+    "mcp/server-card.json",
 ]:
     require(not (ROOT / path).exists(), f"PREMATURE_LIVE_DISCOVERY_DESCRIPTOR:{path}")
 
@@ -237,4 +284,6 @@ print("MCP_TARGET_SPEC=2026-07-28")
 print("MCP_PROTOCOL_MODEL=STATELESS")
 print("MCP_SERVER_DISCOVER_REQUIRED=TRUE")
 print("MCP_PUBLISHED=FALSE")
+print("MCP_SEP_2127_SERVER_CARD_AUDIT=RECORDED_NO_LIVE_MCP_RUNTIME")
+print("MCP_AI_CATALOG_MCP_ENTRIES=ZERO")
 print("X402_BAZAAR_REGISTERED=FALSE")
