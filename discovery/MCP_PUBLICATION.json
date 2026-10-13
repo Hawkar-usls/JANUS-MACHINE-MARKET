@@ -68,7 +68,11 @@
     "NO_CLOSED_SKU_EXPOSED_AS_EXECUTABLE",
     "MCP_PUBLISHER_SERVER_JSON_SCHEMA_VALID",
     "REGISTRY_NAMESPACE_OWNERSHIP_PASS",
-    "REGISTRY_PUBLICATION_OBSERVED"
+    "REGISTRY_PUBLICATION_OBSERVED",
+    "REAL_REMOTE_MCP_RUNTIME_REQUIRED_BEFORE_SERVER_CARD",
+    "SERVER_CARD_SCHEMA_AND_RUNTIME_CONSISTENCY_PASS",
+    "AI_CATALOG_MCP_ENTRY_REQUIRES_VERIFIED_LIVE_SERVER_CARD",
+    "SERVER_CARD_CORS_TLS_AND_PUBLIC_METADATA_SECURITY_PASS"
   ],
   "prohibited_premature_claims": [
     "LIVE_MCP_RUNTIME",
@@ -98,5 +102,12 @@
     "publish": "mcp-publisher publish [PATH]",
     "create_manifest_now": false,
     "reason": "NO_LIVE_MCP_RUNTIME"
-  }
+  },
+  "sep2127_server_card_audit_record": "discovery/MCP_SEP_2127_SERVER_CARD_AI_CATALOG_AUDIT_2026-10-13.json",
+  "sep2127_status": "FINAL_EXTENSIONS_TRACK_EXTENSION_RUNTIME_GATED",
+  "server_card_extension_status": "EXPERIMENTAL_IMPLEMENTATION_NOT_DEPLOYED",
+  "server_card_publication_allowed": false,
+  "ai_catalog_mcp_entry_publication_allowed": false,
+  "server_card_location_recommended": "GET <streamable-http-url>/server-card",
+  "ai_catalog_location_optional": "/.well-known/ai-catalog.json"
 }
