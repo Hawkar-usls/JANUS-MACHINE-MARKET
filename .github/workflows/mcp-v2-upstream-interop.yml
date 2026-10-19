@@ -1,0 +1,43 @@
+name: JANUS MCP v2 upstream dual-era reference interoperability
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/mcp_v2_reference_interop.py'
+      - '.github/workflows/mcp-v2-upstream-interop.yml'
+      - 'discovery/MCP_2026_07_28_BASELINE.json'
+      - 'discovery/MCP_PUBLICATION.json'
+      - 'FOREIGN_AGENT_WITNESS.json'
+      - 'COMMERCE_READINESS.json'
+      - 'PRICING.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-reference-stdio:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned upstream MCP reference server release
+        run: |
+          python -m pip install --disable-pip-version-check 'mcp-server-time==2026.10.19'
+          python -m pip show mcp-server-time
+      - name: Exercise real upstream reference server in 2026 and 2025 protocol modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          JANUS_MCP_V2_REPORT=mcp-v2-interop-report.json python tools/mcp_v2_reference_interop.py 2>&1 | tee mcp-v2-reference-run.log
+      - name: Save upstream-only regression receipt without claiming JANUS live MCP runtime
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: janus-mcp-v2-official-reference-interop
+          path: |
+            mcp-v2-interop-report.json
+            mcp-v2-reference-run.log
+          if-no-files-found: warn
+          retention-days: 21
