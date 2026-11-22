@@ -1,0 +1,31 @@
+{
+  "schema_id": "hawkar.project-status.v1",
+  "project": "JANUS-MACHINE-MARKET",
+  "repository": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET",
+  "portfolio_class": "agent_marketplace_prototype",
+  "last_reviewed": "2026-11-22",
+  "maturity": "ACTIVE_PROTOTYPE",
+  "completion_status": "GITHUB_ISSUES_FIRST_FREE_DISCOVERY_IMPLEMENTED__GENERAL_PAID_COMMERCE_HOLD",
+  "summary": "Agent-native machine-readable catalog and bounded GitHub Issues request surface for JANUS research and review services.",
+  "implemented": [
+    "Machine-readable service catalog, OpenAPI discovery and bounded entry instructions",
+    "First-free JANUS.SEARCH and JANUS.PR_REVIEW GitHub Issues request contracts",
+    "Source-bound handling that keeps product and marketplace authority separate"
+  ],
+  "not_established": [
+    "General-purpose live machine-purchase and settlement endpoint",
+    "External recurring revenue or buyer adoption",
+    "Universal target execution and paid provider fulfillment"
+  ],
+  "flagship_research": false,
+  "source_review": {
+    "scope": "PUBLIC_METADATA_AND_SOURCE_DOCUMENTATION_ONLY",
+    "main_commit_before_metadata_update": "8696a8baf181aaa98862080696f53419c1682a19",
+    "canonical_detailed_status": "README.md",
+    "ci_reference": "https://github.com/Hawkar-usls/JANUS-MACHINE-MARKET/actions",
+    "independent_external_science_validation": false,
+    "no_runtime_or_model_change": true
+  },
+  "visibility_policy": "https://github.com/Hawkar-usls/Janus/blob/audit/portfolio-20261122-full-reconciliation/portfolio-visibility.json",
+  "presentation_standard": "https://github.com/Hawkar-usls/Janus/blob/main/docs/PUBLIC_REPOSITORY_PRESENTATION_STANDARD.md"
+}
